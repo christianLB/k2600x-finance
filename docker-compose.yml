@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  nextjs_app:
+    image: k2600x/k2600x-dashboard:latest
+    container_name: k2600x-dashboard
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - /volume1/docker/k2600x-finance/env/.env:/app/.env 
+    environment:
+      - NODE_ENV=production
+    networks:
+      - nextjs_network
+
+networks:
+  nextjs_network:
+    driver: bridge

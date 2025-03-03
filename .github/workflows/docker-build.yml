@@ -1,0 +1,22 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main # Se ejecuta cuando hagas `git push` en main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # Usa el runner de GitHub
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t k2600x/k2600x-dashboard .
+
+      - name: Push Docker image
+        run: docker push k2600x/k2600x-dashboard
