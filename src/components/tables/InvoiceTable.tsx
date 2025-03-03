@@ -13,21 +13,21 @@ import {
   TableCell,
 } from "@/components/ui/table";
 
-interface Invoice {
-  id: number;
-  invoiceNumber: string;
-  precioUnitario: number;
-  cantidad: number;
-  concepto: string;
-  fechaInvoice: string;
-  yearFacturado: number;
-  archivos: any[];
-  total: number;
-  documentId: string;
-  date: string;
-  client: any;
-  currency: string;
-}
+// interface Invoice {
+//   id: number;
+//   invoiceNumber: string;
+//   precioUnitario: number;
+//   cantidad: number;
+//   concepto: string;
+//   fechaInvoice: string;
+//   yearFacturado: number;
+//   archivos: any[];
+//   total: number;
+//   documentId: string;
+//   date: string;
+//   client: any;
+//   currency: string;
+// }
 
 export default function InvoiceTable() {
   const [page, setPage] = useState(1);

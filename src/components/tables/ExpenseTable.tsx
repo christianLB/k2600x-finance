@@ -10,27 +10,27 @@ import { Popover, Transition } from "@headlessui/react";
 import { format } from "date-fns";
 import { useStrapiCollection } from "../../hooks/useStrapiCollection";
 
-interface ExpenseCategory {
-  id: number;
-  name: string;
-}
-interface ExpenseGroup {
-  id: number;
-  name: string;
-}
-interface Expense {
-  documentId: string;
-  amount: number;
-  currency: string;
-  name: string;
-  expense_category: ExpenseCategory | null;
-  expense_group: ExpenseGroup | null;
-  date: string;
-  needsRevision: boolean;
-}
+// interface ExpenseCategory {
+//   id: number;
+//   name: string;
+// }
+// interface ExpenseGroup {
+//   id: number;
+//   name: string;
+// }
+// interface Expense {
+//   documentId: string;
+//   amount: number;
+//   currency: string;
+//   name: string;
+//   expense_category: ExpenseCategory | null;
+//   expense_group: ExpenseGroup | null;
+//   date: string;
+//   needsRevision: boolean;
+//}
 
 export default function ExpenseTable() {
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
   const pageSize = 10;
   const [selectedExpenses, setSelectedExpenses] = useState(new Set<string>());
   const [editingDate, setEditingDate] = useState<{

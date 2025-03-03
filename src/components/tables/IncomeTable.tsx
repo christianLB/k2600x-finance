@@ -9,20 +9,20 @@ import { Popover, Transition } from "@headlessui/react";
 import { format } from "date-fns";
 import { useStrapiCollection } from "../../hooks/useStrapiCollection";
 
-interface Client {
-  id: number;
-  name: string;
-}
+// interface Client {
+//   id: number;
+//   name: string;
+// }
 
-interface Income {
-  id: number;
-  amount: number;
-  name: string;
-  client: Client;
-  currency: string;
-  date: string;
-  documentId: string;
-}
+// interface Income {
+//   id: number;
+//   amount: number;
+//   name: string;
+//   client: Client;
+//   currency: string;
+//   date: string;
+//   documentId: string;
+// }
 
 export default function IncomeTable() {
   const [page, setPage] = useState(1);

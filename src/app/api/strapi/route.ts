@@ -6,19 +6,19 @@ const strapiConfig = {
 };
 
 // Helper para manejar errores de Strapi
-const handleStrapiError = (error: any) => {
-  console.error('Strapi error:', error);
-  const message =
-    error.error?.message ||
-    error.message?.message ||
-    error.message ||
-    'An error occurred';
-  return {
-    error: true,
-    message,
-    details: error,
-  };
-};
+// const handleStrapiError = (error: any) => {
+//   console.error('Strapi error:', error);
+//   const message =
+//     error.error?.message ||
+//     error.message?.message ||
+//     error.message ||
+//     'An error occurred';
+//   return {
+//     error: true,
+//     message,
+//     details: error,
+//   };
+// };
 
 export async function POST(req: NextRequest) {
   try {

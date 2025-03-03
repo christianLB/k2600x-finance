@@ -3,7 +3,7 @@ import IncomeTable from "@/components/tables/IncomeTable";
 import InvoiceTable from "@/components/tables/InvoiceTable";
 import YearlyReportTable from "@/components/tables/YearlyExpenseReportTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils"; // shadcn usa esto a veces para combinar clases
+// import { cn } from "@/lib/utils"; // shadcn usa esto a veces para combinar clases
 
 
 export default function FinancePage() {

@@ -40,7 +40,7 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
 
   useEffect(() => {
     if (Array.isArray(report)) {
-      //@ts-ignore
+      //@ts-expect-error
       setTableData(report);
     }
   }, [report]);
