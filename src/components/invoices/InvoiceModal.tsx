@@ -46,6 +46,7 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
   const [yearFacturado, setYearFacturado] = useState("");
   const [monthFacturado, setMonthFacturado] = useState("");
   const [selectedClient, setSelectedClient] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false); // Estado para el loader de generar documento
 
   const { data: clients, isLoading: loadingClients } = useStrapiCollection<any>("clients");
   const { create, update } = useStrapiCollection<any>("invoices", { enabled: false });
@@ -73,16 +74,14 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
   }, [invoice]);
 
   useEffect(() => {
-  if (open && !invoice) {
-    const today = new Date();
-    const currentMonth = String(today.getMonth() + 1).padStart(2, "0"); // Enero es 0
-    const currentYear = String(today.getFullYear());
-
-    setMonthFacturado(currentMonth);
-    setYearFacturado(currentYear);
-  }
-}, [open, invoice]);
-
+    if (open && !invoice) {
+      const today = new Date();
+      const currentMonth = String(today.getMonth() + 1).padStart(2, "0");
+      const currentYear = String(today.getFullYear());
+      setMonthFacturado(currentMonth);
+      setYearFacturado(currentYear);
+    }
+  }, [open, invoice]);
 
   const handleSave = () => {
     const payload = {
@@ -92,8 +91,8 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
       concepto,
       fechaInvoice: fechaInvoice?.toISOString().split("T")[0] || null,
       yearFacturado: parseInt(yearFacturado),
-      monthFacturado: monthFacturado,
-      client: selectedClient ? parseInt(selectedClient) : null, // Relación con client
+      monthFacturado,
+      client: selectedClient ? parseInt(selectedClient) : null,
     };
 
     const action = invoice?.id
@@ -118,6 +117,48 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
     return action;
   };
 
+  const handleGenerateDocument = async () => {
+    if (!invoice?.documentId) return;
+
+    setIsGenerating(true);
+    try {
+      const res = await fetch(`/api/create-invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentId: invoice.documentId,
+          invoiceNumber,
+          precioUnitario,
+          cantidad,
+          fechaInvoice: fechaInvoice?.toISOString().split("T")[0] || null,
+          yearFacturado: parseInt(yearFacturado),
+          monthFacturado
+         }),
+      });
+
+      if (!res.ok) throw new Error("Error al generar el documento");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoice-${invoiceNumber}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      toast.success("Documento generado correctamente");
+    } catch (error) {
+      toast.error("Error generando el documento");
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const canGenerateDocument = invoice && !invoice.archivos?.length;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -126,46 +167,18 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
         </DialogHeader>
 
         <div className="space-y-3">
-          <Input
-            placeholder="Número de Factura"
-            value={invoiceNumber}
-            onChange={(e) => setInvoiceNumber(e.target.value)}
-          />
-          <Input
-            placeholder="Precio Unitario"
-            type="number"
-            value={precioUnitario}
-            onChange={(e) => setPrecioUnitario(e.target.value)}
-          />
-          <Input
-            placeholder="Cantidad"
-            type="number"
-            value={cantidad}
-            onChange={(e) => setCantidad(e.target.value)}
-          />
-          <Input
-            placeholder="Concepto"
-            value={concepto}
-            onChange={(e) => setConcepto(e.target.value)}
-          />
+          <Input placeholder="Número de Factura" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} />
+          <Input placeholder="Precio Unitario" type="number" value={precioUnitario} onChange={(e) => setPrecioUnitario(e.target.value)} />
+          <Input placeholder="Cantidad" type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
+          <Input placeholder="Concepto" value={concepto} onChange={(e) => setConcepto(e.target.value)} />
           <div>
             <label className="block text-sm font-medium text-gray-700">Fecha del Invoice</label>
-            <DatePicker
-              selected={fechaInvoice}
-              onChange={setFechaInvoice}
-              dateFormat="yyyy-MM-dd"
-              className="w-full border rounded-md p-2"
-            />
+            <DatePicker selected={fechaInvoice} onChange={setFechaInvoice} dateFormat="yyyy-MM-dd" className="w-full border rounded-md p-2" />
           </div>
 
-          {/* Select Cliente */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Cliente</label>
-            <Select
-              value={selectedClient}
-              onValueChange={setSelectedClient}
-              disabled={loadingClients}
-            >
+            <Select value={selectedClient} onValueChange={setSelectedClient} disabled={loadingClients}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecciona un cliente" />
               </SelectTrigger>
@@ -179,7 +192,6 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
             </Select>
           </div>
 
-          {/* Nuevo campo mesFacturado */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Mes Facturado</label>
             <Select value={monthFacturado} onValueChange={setMonthFacturado}>
@@ -196,21 +208,17 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
             </Select>
           </div>
 
-          <Input
-            placeholder="Año Facturado"
-            type="number"
-            value={yearFacturado}
-            onChange={(e) => setYearFacturado(e.target.value)}
-          />
+          <Input placeholder="Año Facturado" type="number" value={yearFacturado} onChange={(e) => setYearFacturado(e.target.value)} />
         </div>
 
         <div className="mt-4 flex justify-end space-x-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave}>
-            {invoice ? "Actualizar" : "Crear"}
-          </Button>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          {canGenerateDocument && (
+            <Button onClick={handleGenerateDocument} disabled={isGenerating}>
+              {isGenerating ? "Generando..." : "Generar Documento"}
+            </Button>
+          )}
+          <Button onClick={handleSave}>{invoice ? "Actualizar" : "Crear"}</Button>
         </div>
       </DialogContent>
     </Dialog>
