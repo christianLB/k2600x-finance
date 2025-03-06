@@ -21,26 +21,32 @@ const fetchCollection = async <T>(
   collection: string,
   params: UseStrapiCollectionOptions = {}
 ): Promise<T[]> => {
-  const response = await fetch(`/api/strapi`, {
+  // Construyes el payload que mandarás a `/api/strapi`.
+  // Si tu endpoint usa "query" para luego transformar, inclúyelo de manera explícita:
+  const { filters, populate, sort, pagination } = params;
+
+  const response = await fetch("/api/strapi", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       method: "GET",
       collection,
       query: {
-        ...params.filters,
-        populate: params.populate || "*",
+        filters,
+        populate: populate ?? "*",
+        sort,
+        pagination,
       },
     }),
   });
 
-  const data: StrapiResponse<T[]> = await response.json();
+  if (!response.ok) {
+    throw new Error(`Error fetching collection ${collection}`);
+  }
 
-  if (!response.ok) throw new Error("Error fetching collection");
-
-  // Manejo de StrapiResponse<T[]> vs array directo:
-  if (Array.isArray(data)) return data;
-  return Array.isArray(data.data) ? data.data : [];
+  // Si tu endpoint devuelve la forma { data: [ ... ] }:
+  const json: StrapiResponse<T[]> = await response.json();
+  return json.data ?? []; // asumiendo que si no hay data, devuelves array vacío
 };
 
 export const useStrapiCollection = <T>(
@@ -48,8 +54,6 @@ export const useStrapiCollection = <T>(
   params: UseStrapiCollectionOptions = {}
 ) => {
   const queryClient = useQueryClient();
-
-  // Extraemos "enabled" y lo pasamos al useQuery
   const { enabled = true, ...restParams } = params;
 
   const {
@@ -58,9 +62,9 @@ export const useStrapiCollection = <T>(
     isLoading,
     refetch,
   } = useQuery<T[], Error>({
-    queryKey: [collection, restParams] as const,
+    queryKey: [collection, restParams],
     queryFn: () => fetchCollection<T>(collection, restParams),
-    enabled, // <--- Aquí usamos la flag
+    enabled,
   });
 
   const createMutation = useMutation<StrapiMutationResponse<T>, Error, T>({
