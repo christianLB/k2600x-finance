@@ -147,3 +147,49 @@ export async function convertFileToPdf(fileBuffer, originalFileName = "document.
   }
 }
 
+/**
+ * Convierte un HTML a PDF usando el endpoint /api/v1/convert/html/pdf de Stirling.
+ * @param {string} htmlContent - El contenido HTML a convertir.
+ * @param {number} [zoom=1] - Zoom level para la conversión (por defecto 1).
+ * @returns {Promise<Buffer>} - Devuelve un Buffer con el PDF resultante.
+ */
+export async function convertHtmlToPdf(htmlContent, zoom = 1) {
+  const url = "http://192.168.1.11:7890/api/v1/convert/html/pdf";
+  console.log("[Stirling] ConvertHtmlToPdf URL:", url);
+
+  const formData = new FormData();
+  // 'fileInput' es el campo que espera el endpoint de Stirling
+  // Le pasamos el contenido HTML como si fuera un archivo "document.html"
+  formData.append("fileInput", Buffer.from(htmlContent, "utf8"), "document.html");
+
+  // Opcional: puedes pasar el zoom como string
+  formData.append("zoom", String(zoom));
+
+  const headers = formData.getHeaders();
+  console.log("[Stirling] ConvertHtmlToPdf FormData headers:", headers);
+
+  try {
+    const response = await axios.post(url, formData, {
+      headers: {
+        ...headers,
+        Accept: "application/pdf"
+      },
+      responseType: "arraybuffer", // Recibimos el PDF en binario
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
+    });
+
+    console.log("[Stirling] ConvertHtmlToPdf Response status:", response.status);
+    if (response.status !== 200) {
+      throw new Error(`Stirling ConvertHtmlToPdf error: ${response.status}`);
+    }
+
+    // Retornamos el PDF como Buffer
+    return Buffer.from(response.data);
+  } catch (error) {
+    console.error("[Stirling] ConvertHtmlToPdf Request error:", error);
+    throw error;
+  }
+}
+
+

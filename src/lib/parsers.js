@@ -107,7 +107,7 @@ function parseMovementBlock(lines) {
   if (!amountMatch) {
     return null;
   }
-  const [_, amountRaw, , , , currencyRaw] = amountMatch;
+  const [, amountRaw, , , , currencyRaw] = amountMatch;
 
   // Armamos los campos
   const name = conceptLines.join(" ").replace(/\s+/g, " ").trim();
@@ -187,7 +187,7 @@ function extractEmissionDate(fullText) {
 
   // match: ["Fecha de emisión: 7 de Febrero de 2025", "7", "Febrero", "2025"]
   // Conviertes el mes textual a número si lo deseas o lo dejas textual
-  const [_, day, monthWord, year] = match;
+  const [, day, monthWord, year] = match;
   // Podrías mapear "Febrero" -> 02, etc. Para simplificar, retórnalo en string.
   return `${day} ${monthWord} ${year}`;
 }

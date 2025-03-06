@@ -20,6 +20,7 @@ interface InvoiceModalProps {
   open: boolean;
   onClose: () => void;
   invoice?: any;
+  onInvoiceUpdated?: (invoice: any) => void; // callback para actualizar el invoice en el padre
 }
 
 const months = [
@@ -37,7 +38,7 @@ const months = [
   { value: "12", label: "December" },
 ];
 
-export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalProps) {
+export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated }: InvoiceModalProps) {
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [precioUnitario, setPrecioUnitario] = useState("");
   const [cantidad, setCantidad] = useState("");
@@ -46,12 +47,15 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
   const [yearFacturado, setYearFacturado] = useState("");
   const [monthFacturado, setMonthFacturado] = useState("");
   const [selectedClient, setSelectedClient] = useState<string>("");
-  const [isGenerating, setIsGenerating] = useState(false); // Estado para el loader de generar documento
+  const [isGenerating, setIsGenerating] = useState(false);
+  // Estado local para mantener el invoice y refrescar el modal cuando se actualice
+  const [localInvoice, setLocalInvoice] = useState(invoice);
 
   const { data: clients, isLoading: loadingClients } = useStrapiCollection<any>("clients");
   const { create, update } = useStrapiCollection<any>("invoices", { enabled: false });
 
   useEffect(() => {
+    setLocalInvoice(invoice);
     if (invoice) {
       setInvoiceNumber(String(invoice.invoiceNumber));
       setPrecioUnitario(String(invoice.precioUnitario));
@@ -95,20 +99,22 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
       client: selectedClient ? parseInt(selectedClient) : null,
     };
 
-    const action = invoice?.id
+    const action = localInvoice?.id
       ? update(
-          { documentId: String(invoice.documentId), updatedData: payload },
+          { documentId: String(localInvoice.documentId), updatedData: payload },
           {
-            onSuccess: () => {
+            onSuccess: (updated) => {
               toast.success("Invoice actualizado correctamente");
+              setLocalInvoice(updated);
               onClose();
             },
             onError: (err) => toast.error(`Error al actualizar: ${err.message}`),
           }
         )
       : create(payload, {
-          onSuccess: () => {
+          onSuccess: (created) => {
             toast.success("Invoice creado correctamente");
+            setLocalInvoice(created);
             onClose();
           },
           onError: (err) => toast.error(`Error al crear: ${err.message}`),
@@ -118,7 +124,14 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
   };
 
   const handleGenerateDocument = async () => {
-    if (!invoice?.documentId) return;
+    if (!localInvoice?.documentId) return;
+
+    // Buscar datos completos del cliente seleccionado
+    const clientData = clients?.find((client: any) => client.id.toString() === selectedClient);
+    if (!clientData) {
+      toast.error("No se ha seleccionado un cliente válido");
+      return;
+    }
 
     setIsGenerating(true);
     try {
@@ -126,30 +139,37 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          documentId: invoice.documentId,
+          documentId: localInvoice.documentId,
           invoiceNumber,
           precioUnitario,
           cantidad,
           fechaInvoice: fechaInvoice?.toISOString().split("T")[0] || null,
           yearFacturado: parseInt(yearFacturado),
-          monthFacturado
-         }),
+          monthFacturado,
+          billToName: clientData.name,
+          billToAddress: clientData.address,
+          billToCity: clientData.city,
+          billToState: clientData.state,
+          billToZip: clientData.zip,
+          taxId: clientData.taxId,
+          tax: clientData.taxRate || "0.00"
+        }),
       });
 
       if (!res.ok) throw new Error("Error al generar el documento");
 
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Invoice-${invoiceNumber}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
+      // Se asume que el endpoint retorna el invoice actualizado
+      const updatedInvoice = await res.json();
       toast.success("Documento generado correctamente");
-    } catch (error) {
+
+      // Actualizar el estado local para que se refresque el modal
+      setLocalInvoice(updatedInvoice);
+
+      // Si se pasa un callback, también se notifica al padre
+      if (onInvoiceUpdated) {
+        onInvoiceUpdated(updatedInvoice);
+      }
+    } catch (error: any) {
       toast.error("Error generando el documento");
       console.error(error);
     } finally {
@@ -157,13 +177,30 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
     }
   };
 
-  const canGenerateDocument = invoice && !invoice.archivos?.length;
+  const renderDocumentLink = () => {
+    if (localInvoice && localInvoice.archivos && localInvoice.archivos.length > 0) {
+      const file = localInvoice.archivos[0];
+      const documentUrl = file.url.startsWith("http")
+        ? file.url
+        : `${process.env.NEXT_PUBLIC_STRAPI_URL}${file.url}`;
+      return (
+        <div className="mt-2">
+          <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+            Ver Documento Generado
+          </a>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const canGenerateDocument = localInvoice && (!localInvoice.archivos || localInvoice.archivos.length === 0);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{invoice ? "Editar Invoice" : "Crear Invoice"}</DialogTitle>
+          <DialogTitle>{localInvoice ? "Editar Invoice" : "Crear Invoice"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -211,6 +248,8 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
           <Input placeholder="Año Facturado" type="number" value={yearFacturado} onChange={(e) => setYearFacturado(e.target.value)} />
         </div>
 
+        {renderDocumentLink()}
+
         <div className="mt-4 flex justify-end space-x-2">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           {canGenerateDocument && (
@@ -218,7 +257,7 @@ export default function InvoiceModal({ open, onClose, invoice }: InvoiceModalPro
               {isGenerating ? "Generando..." : "Generar Documento"}
             </Button>
           )}
-          <Button onClick={handleSave}>{invoice ? "Actualizar" : "Crear"}</Button>
+          <Button onClick={handleSave}>{localInvoice ? "Actualizar" : "Crear"}</Button>
         </div>
       </DialogContent>
     </Dialog>

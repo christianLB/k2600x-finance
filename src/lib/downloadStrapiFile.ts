@@ -1,6 +1,6 @@
 import { getAuthHeaders } from '@/lib/strapi-auth';
 
-export async function downloadStrapiFile(fileUrl) {
+export async function downloadStrapiFile(fileUrl: string) {
   const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL;
   if (!baseUrl) {
     throw new Error('La variable NEXT_PUBLIC_STRAPI_URL no está definida');
