@@ -4,6 +4,7 @@ import InvoiceTable from "@/components/invoices/InvoiceTable";
 import YearlyReportTable from "@/components/tables/YearlyExpenseReportTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientTable from "@/components/clients/ClientTable";
+import OperationsTable from "@/components/tables/OperationsTable";
 // import { cn } from "@/lib/utils"; // shadcn usa esto a veces para combinar clases
 
 
@@ -22,7 +23,8 @@ export default function FinancePage() {
           </TabsList>
 
           <TabsContent value="expenses" className="pt-4">
-            <ExpenseTable />
+            {/* <ExpenseTable /> */}
+            <OperationsTable />
           </TabsContent>
 
           <TabsContent value="income" className="pt-4">
