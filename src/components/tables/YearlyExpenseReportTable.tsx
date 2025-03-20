@@ -1,7 +1,6 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { useStrapiCollection } from "../../hooks/useStrapiCollection";
 import { Loader } from "@/components/ui/loader";
 import {
   Table,
@@ -11,11 +10,12 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import GroupBreakdownRow from "./GroupBreakdownRow"; // Ya migrado antes
+import GroupBreakdownRow from "./GroupBreakdownRow";
+import fetchYearlyReport from "@/lib/fetchYearlyReport";
 
 interface MonthData {
-  category: string;
-  category_id: string;
+  tag_id: number | null;
+  category: string | null;
   months: number[];
   total: number;
 }
@@ -25,32 +25,33 @@ interface YearlyReportTableProps {
 }
 
 export default function YearlyReportTable({ year }: YearlyReportTableProps) {
-  const {
-    data: report,
-    isLoading: reportLoading,
-    error: reportError,
-  } = useStrapiCollection<MonthData[]>("expenses/yearly-report", {
-    filters: { year },
-  });
-
   const [tableData, setTableData] = useState<MonthData[]>([]);
-  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (Array.isArray(report)) {
-      //@ts-expect-error
-      setTableData(report);
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const { data } = await fetchYearlyReport(year);
+        setTableData(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [report]);
 
-  function makeCellId(category: string, monthIndex: number) {
-    return `${category}-${monthIndex}`;
+    fetchData();
+  }, [year]);
+
+  function makeCellId(tag: number | null, monthIndex: number) {
+    return `${tag ?? "null"}-${monthIndex}`;
   }
 
-  function toggleExpand(category: string, monthIndex: number) {
-    const cellId = makeCellId(category, monthIndex);
+  function toggleExpand(tag: number | null, monthIndex: number) {
+    const cellId = makeCellId(tag, monthIndex);
     setExpandedCells((prev) => ({
       ...prev,
       [cellId]: !prev[cellId],
@@ -59,60 +60,47 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
 
   return (
     <div className="space-y-4 border p-4 rounded-md bg-white">
-      <div className="font-semibold">Yearly Expense Report - {year}</div>
+      <div className="font-semibold">Yearly Operations Report - {year}</div>
 
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Category</TableHead>
-              {[
-                "Enero",
-                "Febrero",
-                "Marzo",
-                "Abril",
-                "Mayo",
-                "Junio",
-                "Julio",
-                "Agosto",
-                "Septiembre",
-                "Octubre",
-                "Noviembre",
-                "Diciembre",
-              ].map((month) => (
+              <TableHead>Categoría</TableHead>
+              {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((month) => (
                 <TableHead key={month}>{month}</TableHead>
               ))}
               <TableHead>Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {reportLoading ? (
+            {loading ? (
               <TableRow>
                 <TableCell colSpan={14} className="text-center">
                   <Loader />
                 </TableCell>
               </TableRow>
-            ) : reportError ? (
+            ) : error ? (
               <TableRow>
                 <TableCell colSpan={14} className="text-center text-red-600">
-                  Error: {reportError.message}
+                  Error: {error}
                 </TableCell>
               </TableRow>
             ) : tableData.length > 0 ? (
-              tableData.map(({ category, category_id, months, total }) => (
-                <Fragment key={category}>
-                  {/* Fila principal */}
+              tableData.map(({ category, tag_id, months, total }) => (
+                <Fragment key={`${tag_id}-${category}`}>
                   <TableRow>
-                    <TableCell className="font-semibold">{category}</TableCell>
-
+                    <TableCell className="font-semibold">
+                      {category ?? "Sin categoría"}
+                    </TableCell>
                     {months.map((amount, monthIndex) => {
-                      const cellId = makeCellId(category, monthIndex);
+                      const cellId = makeCellId(tag_id, monthIndex);
                       const isExpanded = expandedCells[cellId];
 
                       return (
                         <TableCell
                           key={monthIndex}
-                          onClick={() => toggleExpand(category, monthIndex)}
+                          onClick={() => toggleExpand(tag_id, monthIndex)}
                           className="cursor-pointer relative"
                         >
                           {amount === 0 ? "-" : amount.toFixed(2)}
@@ -124,27 +112,26 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
                         </TableCell>
                       );
                     })}
-
                     <TableCell className="font-semibold">
                       {total.toFixed(2)}
                     </TableCell>
                   </TableRow>
 
-                  {/* Sub-filas (GroupBreakdownRow) */}
                   {months.map((_, monthIndex) => {
-                    const cellId = makeCellId(category, monthIndex);
+                    const cellId = makeCellId(tag_id, monthIndex);
                     const isExpanded = expandedCells[cellId];
 
                     return (
-                      <GroupBreakdownRow
-                        key={`${cellId}-breakdown`}
-                        category={category}
-                        categoryId={category_id}
-                        monthIndex={monthIndex}
-                        year={year}
-                        isExpanded={isExpanded}
-                        colSpan={14}
-                      />
+                      <></>
+                      // <GroupBreakdownRow
+                      //   key={`${cellId}-breakdown`}
+                      //   category={category ?? "Sin categoría"}
+                      //   categoryId={tag_id}
+                      //   monthIndex={monthIndex}
+                      //   year={year}
+                      //   isExpanded={isExpanded}
+                      //   colSpan={14}
+                      // />
                     );
                   })}
                 </Fragment>

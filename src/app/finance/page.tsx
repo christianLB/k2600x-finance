@@ -18,7 +18,7 @@ export default function FinancePage() {
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="income">Income</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
-            <TabsTrigger value="clients">Clients</TabsTrigger>
+            {/* <TabsTrigger value="clients">Clients</TabsTrigger> */}
             <TabsTrigger value="yearly">Yearly Report</TabsTrigger>
           </TabsList>
 
