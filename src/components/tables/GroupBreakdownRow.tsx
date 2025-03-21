@@ -1,6 +1,6 @@
 "use client";
-import React from "react";
-import { useStrapiCollection } from "../../hooks/useStrapiCollection";
+import React, { useEffect, useState } from "react";
+//import { useStrapiCollection } from "../../hooks/useStrapiCollection";
 import { Loader } from "@/components/ui/loader";
 import {
   Table,
@@ -10,10 +10,11 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import fetchMonthlyGroupReport from "@/lib/fetchMonthlyGroupReport";
 
 interface GroupBreakdownRowProps {
   category: string;
-  categoryId: string;
+  parent_tag_id: number;
   monthIndex: number;
   year: number;
   isExpanded: boolean;
@@ -22,26 +23,35 @@ interface GroupBreakdownRowProps {
 
 export default function GroupBreakdownRow({
   category,
-  categoryId,
+  parent_tag_id,
   monthIndex,
   year,
   isExpanded,
   colSpan = 14,
 }: GroupBreakdownRowProps) {
+  console.log(isExpanded)
   const realMonth = String(monthIndex + 1).padStart(2, "0");
 
-  const {
-    data: groupData,
-    isLoading,
-    error,
-  } = useStrapiCollection("expenses/groups", {
-    enabled: isExpanded,
-    filters: {
-      year,
-      month: realMonth,
-      category: categoryId,
-    },
-  });
+  const [groupData, setTableData] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const { data } = await fetchMonthlyGroupReport(year, realMonth, parent_tag_id);
+        setTableData(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (isExpanded) {
+      fetchData();
+    }
+  }, [year, realMonth, parent_tag_id, isExpanded]);
 
   if (!isExpanded) {
     return null;
@@ -50,13 +60,13 @@ export default function GroupBreakdownRow({
   return (
     <tr>
       <td colSpan={colSpan} className="bg-gray-100 p-4">
-        {isLoading && <Loader />}
+        {loading && <Loader />}
         {error && (
           <div className="text-red-600">
-            Error al cargar grupos: {error.message}
+            Error al cargar grupos: 
           </div>
         )}
-        {!isLoading && !error && groupData && (
+        {!loading && !error && groupData && (
           <>
             <strong>
               Breakdown para {category} / Mes {monthIndex + 1}
@@ -74,7 +84,7 @@ export default function GroupBreakdownRow({
                 <TableBody>
                   {groupData.map((g: any) => (
                     <TableRow key={g.group_id}>
-                      <TableCell>{g.group_name || "Sin nombre"}</TableCell>
+                      <TableCell>{g.tag_name || "Sin nombre"}</TableCell>
                       <TableCell>{Number(g.total_amount).toFixed(2)}</TableCell>
                     </TableRow>
                   ))}

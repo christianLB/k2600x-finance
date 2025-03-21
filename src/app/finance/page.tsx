@@ -1,4 +1,4 @@
-import ExpenseTable from "@/components/tables/ExpenseTable";
+//import ExpenseTable from "@/components/tables/ExpenseTable";
 import IncomeTable from "@/components/tables/IncomeTable";
 import InvoiceTable from "@/components/invoices/InvoiceTable";
 import YearlyReportTable from "@/components/tables/YearlyExpenseReportTable";

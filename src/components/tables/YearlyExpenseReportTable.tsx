@@ -93,7 +93,8 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
                     <TableCell className="font-semibold">
                       {category ?? "Sin categoría"}
                     </TableCell>
-                    {months.map((amount, monthIndex) => {
+                    {[...Array(12)].map((_, monthIndex) => {
+                      const amount = months[monthIndex] ?? 0;
                       const cellId = makeCellId(tag_id, monthIndex);
                       const isExpanded = expandedCells[cellId];
 
@@ -117,21 +118,20 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
                     </TableCell>
                   </TableRow>
 
-                  {months.map((_, monthIndex) => {
+                  {[...Array(12)].map((_, monthIndex) => {
                     const cellId = makeCellId(tag_id, monthIndex);
                     const isExpanded = expandedCells[cellId];
 
                     return (
-                      <></>
-                      // <GroupBreakdownRow
-                      //   key={`${cellId}-breakdown`}
-                      //   category={category ?? "Sin categoría"}
-                      //   categoryId={tag_id}
-                      //   monthIndex={monthIndex}
-                      //   year={year}
-                      //   isExpanded={isExpanded}
-                      //   colSpan={14}
-                      // />
+                      <GroupBreakdownRow
+                        key={`${cellId}-breakdown`}
+                        category={category ?? "Sin categoría"}
+                        parent_tag_id={Number(tag_id)}
+                        monthIndex={monthIndex}
+                        year={year}
+                        isExpanded={isExpanded}
+                        colSpan={14}
+                      />
                     );
                   })}
                 </Fragment>

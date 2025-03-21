@@ -13,8 +13,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+//import { Checkbox } from "@/components/ui/checkbox";
+//import { PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import MultiSelect from "../ui/multi-select";
 
@@ -29,7 +29,7 @@ export interface Operacion {
 
 export function OperationsTable() {
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  //const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // Hooks de Strapi
   const { data: operaciones = [], update, refetch } = useStrapiCollection<Operacion>("operations", {
@@ -99,7 +99,7 @@ export function OperationsTable() {
       cell: (row: Operacion) => (
         <div className="flex items-center gap-2 justify-center">
           <button onClick={() => handleDelete(row.documentId)} className="text-gray-500 hover:text-red-600">
-            <Trash2Icon className="w-4 h-4" />
+            {/* <Trash2Icon className="w-4 h-4" /> */}
           </button>
         </div>
       ),
