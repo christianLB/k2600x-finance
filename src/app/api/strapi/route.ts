@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
       let url = id ? `${baseUrl}/${id}` : baseUrl;
 
       if (query && Object.keys(query).length > 0) {
-        const queryString = new URLSearchParams(query).toString();
+        const queryString = objectToQueryString(query); // usa la función helper aquí
         url += `?${queryString}`;
       }
 
@@ -258,3 +258,18 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+
+// Helper que convierte objetos anidados en query strings compatibles con Strapi
+function objectToQueryString(obj: any, prefix = ''): string {
+  return Object.entries(obj)
+    .map(([key, value]) => {
+      const finalKey = prefix ? `${prefix}[${key}]` : key;
+      if (typeof value === 'object' && value !== null) {
+        return objectToQueryString(value, finalKey);
+      }
+      return `${encodeURIComponent(finalKey)}=${encodeURIComponent(value as string)}`;
+    })
+    .join('&');
+}
+

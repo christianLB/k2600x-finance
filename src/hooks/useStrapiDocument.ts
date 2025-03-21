@@ -5,7 +5,7 @@ interface StrapiResponse<T> {
   error?: any;
 }
 
-interface StrapiMutationResponse<T> {
+export interface StrapiMutationResponse<T> {
   data?: T;
   error?: any;
 }
