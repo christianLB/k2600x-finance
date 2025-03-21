@@ -10,7 +10,7 @@ interface MultiSelectProps {
   options: Option[];
   defaultValue?: number[];
   placeholder?: string;
-  onChange: (selectedIds: number[]) => void;
+  onChange: (selectedIds: string[]) => void;
 }
 
 const MultiSelect: React.FC<MultiSelectProps> = ({ options, defaultValue, placeholder, onChange }) => {
@@ -24,7 +24,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ options, defaultValue, placeh
       getOptionValue={(option) => option.id.toString()}
       value={selectedOptions}
       placeholder={placeholder || "Selecciona..."}
-      onChange={(selected) => onChange(selected.map((opt: any) => Number(opt.id)))}
+      onChange={(selected) => onChange(selected.map((opt: any) => opt.id))}
       className="text-black"
     />
   );

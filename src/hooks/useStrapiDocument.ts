@@ -53,6 +53,7 @@ export function useStrapiDocument<T>(
 
   const updateMutation = useMutation<StrapiMutationResponse<T>, Error, Partial<T>>({
     mutationFn: async (updatedData) => {
+      console.log('mutatin update')
       if (!documentId) throw new Error("No documentId provided for update");
       const res = await fetch("/api/strapi", {
         method: "POST",
