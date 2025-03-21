@@ -46,7 +46,6 @@ export function StrapiTable<T>({
   createButtonText,
   onEdit,
   renderActions,
-  deleteButtonText,
   extraFilters = {}, // Filtros opcionales adicionales
 }: StrapiTableProps<T>) {
   const [page, setPage] = useState(1);
@@ -120,10 +119,15 @@ export function StrapiTable<T>({
     const id = getId(item);
     setSelected((prev) => {
       const copy = new Set(prev);
-      copy.has(id) ? copy.delete(id) : copy.add(id);
+      if (copy.has(id)) {
+        copy.delete(id);
+      } else {
+        copy.add(id);
+      }
       return copy;
     });
   }
+
 
   function toggleSelectAll(allRows: T[]) {
     setSelected((prev) =>

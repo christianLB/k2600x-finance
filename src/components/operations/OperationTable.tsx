@@ -44,7 +44,7 @@ export function OperationsTable() {
     },
     {
       header: "Descripción",
-      cell: (row: Operacion) => row.descripcion || "Sin descripción",
+      cell: (row: Operacion) => row.descripcion?.substring(0,100) || "Sin descripción",
     },
     {
       header: "Tag",
