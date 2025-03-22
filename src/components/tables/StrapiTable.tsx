@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useStrapiCollection, UseStrapiCollectionOptions } from "@/hooks/useStrapiCollection";
+import {
+  useStrapiCollection,
+  UseStrapiCollectionOptions,
+} from "@/hooks/useStrapiCollection";
 import { useStrapiDocument } from "@/hooks/useStrapiDocument";
 import {
   Table,
@@ -52,7 +55,9 @@ export function StrapiTable<T>({
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const confirm = useConfirm();
-  const [documentIdToDelete, setDocumentIdToDelete] = useState<string | null>(null);
+  const [documentIdToDelete, setDocumentIdToDelete] = useState<string | null>(
+    null
+  );
 
   const { delete: deleteItemMutation } = useStrapiDocument<T>(
     collection,
@@ -75,8 +80,12 @@ export function StrapiTable<T>({
     ? (data as { data: T[] }).data
     : [];
 
-  const total =//@ts-ignore (pagination)
-    (data && typeof data === "object" && "meta" in data && data.meta?.pagination?.total) || 0;
+  const total =
+    (data &&
+      typeof data === "object" &&
+      "meta" in data && //@ts-ignore (pagination)
+      data.meta?.pagination?.total) ||
+    0;
   const totalPages = Math.ceil(total / pageSize);
 
   const extraColumnsCount =
@@ -85,17 +94,24 @@ export function StrapiTable<T>({
   const defaultRenderActions = (item: T) => (
     <div className="flex items-center gap-2 justify-center">
       {onEdit && (
-        <button onClick={() => onEdit(item)} className="text-gray-500 hover:text-blue-600">
+        <button
+          onClick={() => onEdit(item)}
+          className="text-gray-500 hover:text-blue-600"
+        >
           <PencilIcon className="w-4 h-4" />
         </button>
       )}
-      <button onClick={() => handleDelete(item)} className="text-gray-500 hover:text-red-600">
+      <button
+        onClick={() => handleDelete(item)}
+        className="text-gray-500 hover:text-red-600"
+      >
         <Trash2Icon className="w-4 h-4" />
       </button>
     </div>
   );
 
-  const actionsRenderer = renderActions || (onEdit ? defaultRenderActions : null);
+  const actionsRenderer =
+    renderActions || (onEdit ? defaultRenderActions : null);
 
   function handleDelete(item: T) {
     //@ts-ignore
@@ -169,14 +185,19 @@ export function StrapiTable<T>({
                 </TableHead>
               ))}
               {actionsRenderer && (
-                <TableHead className="p-2 border text-center">Acciones</TableHead>
+                <TableHead className="p-2 border text-center">
+                  Acciones
+                </TableHead>
               )}
             </tr>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length + extraColumnsCount} className="text-center py-4">
+                <TableCell
+                  colSpan={columns.length + extraColumnsCount}
+                  className="text-center py-4"
+                >
                   <Loader />
                 </TableCell>
               </TableRow>
@@ -185,20 +206,30 @@ export function StrapiTable<T>({
                 <TableRow key={idx}>
                   {selectable && (
                     <TableCell className="p-2 border">
-                      <Checkbox checked={isSelected(item)} onCheckedChange={() => toggleSelect(item)} />
+                      <Checkbox
+                        checked={isSelected(item)}
+                        onCheckedChange={() => toggleSelect(item)}
+                      />
                     </TableCell>
                   )}
                   {columns.map((col, colIdx) => (
-                    <TableCell key={colIdx} className="p-2 border">{col.cell(item)}</TableCell>
+                    <TableCell key={colIdx} className="p-2 border">
+                      {col.cell(item)}
+                    </TableCell>
                   ))}
                   {actionsRenderer && (
-                    <TableCell className="p-2 border text-center">{actionsRenderer(item)}</TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {actionsRenderer(item)}
+                    </TableCell>
                   )}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length + extraColumnsCount} className="text-center py-4">
+                <TableCell
+                  colSpan={columns.length + extraColumnsCount}
+                  className="text-center py-4"
+                >
                   Sin registros
                 </TableCell>
               </TableRow>
@@ -207,17 +238,63 @@ export function StrapiTable<T>({
         </Table>
       </div>
 
-      <div className="flex justify-between items-center px-2">
+      <div className="flex flex-col md:flex-row justify-between items-center px-2 gap-2">
         <span className="text-sm text-gray-500">
-          Mostrando {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, total)} de {total} registros
+          Mostrando {(page - 1) * pageSize + 1} -{" "}
+          {Math.min(page * pageSize, total)} de {total} registros
         </span>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-            Anterior
+        <div className="flex flex-wrap items-center gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setPage(1)}
+            disabled={page === 1}
+          >
+            «
           </Button>
-          <span className="self-center text-sm">Página {page} de {totalPages || 1}</span>
-          <Button size="sm" onClick={() => setPage(p => (p < totalPages ? p + 1 : p))} disabled={page >= totalPages}>
-            Siguiente
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            ‹
+          </Button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(
+              (i) => i === 1 || i === totalPages || Math.abs(i - page) <= 1
+            )
+            .map((i) => (
+              <Button
+                key={i}
+                size="icon"
+                variant={i === page ? "default" : "ghost"}
+                onClick={() => setPage(i)}
+              >
+                {i}
+              </Button>
+            ))}
+
+          {totalPages > 5 && page < totalPages - 2 && (
+            <span className="px-1 text-sm text-gray-400">...</span>
+          )}
+
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+          >
+            ›
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setPage(totalPages)}
+            disabled={page >= totalPages}
+          >
+            »
           </Button>
         </div>
       </div>
