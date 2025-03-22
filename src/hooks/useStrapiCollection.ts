@@ -9,7 +9,7 @@ interface StrapiMutationResponse<T> {
   error?: string;
 }
 
-interface UseStrapiCollectionOptions {
+export interface UseStrapiCollectionOptions {
   filters?: Record<string, unknown>;
   populate?: string[];
   sort?: string[];

@@ -13,10 +13,12 @@ export interface Operacion {
   documentId: string;
   id: number;
   fechaMovimiento: string;
+  fechaValor: string;
   monto: number;
   descripcion: string;
   operation_tag?: { id: number; name: string } | null;
   posibleDuplicado: boolean;
+  estadoConciliacion: string;
 }
 
 export function OperationsTable() {
@@ -47,10 +49,39 @@ export function OperationsTable() {
   }
   };
 
+  const handleToggleDuplicado = async (operation: Operacion, value: boolean) => {
+    try {
+      await updateMutation.mutateAsync({
+        documentId: operation.documentId,
+        updatedData: { posibleDuplicado: value },
+      });
+      toast.success("Estado de duplicado actualizado");
+    } catch {
+      toast.error("Error al actualizar duplicado");
+    }
+  };
+
+  const handleEstadoChange = async (operation: Operacion, estado: string) => {
+    try {
+      await updateMutation.mutateAsync({
+        documentId: operation.documentId,
+        updatedData: { estadoConciliacion: estado },
+      });
+      toast.success("Estado actualizado");
+    } catch {
+      toast.error("Error al actualizar estado");
+    }
+  };
+
+
   const columns = [
     {
-      header: "Fecha",
+      header: "Fecha Mov.",
       cell: (row: Operacion) => format(new Date(row.fechaMovimiento), "dd/MM/yyyy"),
+    },
+    {
+      header: "Fecha Val.",
+      cell: (row: Operacion) => format(new Date(row.fechaValor), "dd/MM/yyyy"),
     },
     {
       header: "Monto",
@@ -74,8 +105,32 @@ export function OperationsTable() {
     },
     {
       header: "Duplicado",
-      cell: (row: Operacion) => (row.posibleDuplicado ? "Sí" : "No"),
+      cell: (row: Operacion) => (
+        <select
+          value={row.posibleDuplicado ? "true" : "false"}
+          onChange={(e) => handleToggleDuplicado(row, e.target.value === "true")}
+          className="border rounded px-2 py-1 text-sm"
+        >
+          <option value="true">Sí</option>
+          <option value="false">No</option>
+        </select>
+      ),
     },
+    {
+      header: "Estado",
+      cell: (row: Operacion) => (
+        <select
+          value={row.estadoConciliacion || "pendiente"}
+          onChange={(e) => handleEstadoChange(row, e.target.value)}
+          className="border rounded px-2 py-1 text-sm"
+        >
+          <option value="pendiente">Pendiente</option>
+          <option value="procesado">Procesado</option>
+          <option value="conciliado">Conciliado</option>
+          <option value="revisar">Revisar</option>
+        </select>
+      ),
+    }
   ];
 
   return (
@@ -87,6 +142,9 @@ export function OperationsTable() {
         onEdit={() => handleOpenModal()}
         selectable={false}
         pageSize={10}
+        queryOptions={{
+          sort: ["posibleDuplicado:desc", "fechaValor:desc"],
+        }}
       />
       <OperationModal
         open={modalOpen}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useStrapiCollection } from "@/hooks/useStrapiCollection";
+import { useStrapiCollection, UseStrapiCollectionOptions } from "@/hooks/useStrapiCollection";
 import { useStrapiDocument } from "@/hooks/useStrapiDocument";
 import {
   Table,
@@ -34,6 +34,7 @@ export interface StrapiTableProps<T> {
   renderActions?: (item: T) => React.ReactNode;
   deleteButtonText?: string;
   extraFilters?: Record<string, any>; // NUEVO: para filtros adicionales
+  queryOptions?: UseStrapiCollectionOptions;
 }
 
 export function StrapiTable<T>({
@@ -46,7 +47,7 @@ export function StrapiTable<T>({
   createButtonText,
   onEdit,
   renderActions,
-  extraFilters = {}, // Filtros opcionales adicionales
+  queryOptions
 }: StrapiTableProps<T>) {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -64,13 +65,13 @@ export function StrapiTable<T>({
   // MODIFICADO: añadir refetch explícito para paginación
   const { data, isLoading, refetch } = useStrapiCollection<T>(collection, {
     pagination: { page, pageSize },
-    //filters: extraFilters, // Aplicar filtros extra dinámicamente
+    ...queryOptions,
   });
 
   // NUEVO: aseguramos que la tabla se refresque al cambiar de página o filtros
   useEffect(() => {
     refetch();
-  }, [page, pageSize, extraFilters, refetch]);
+  }, [page, pageSize, queryOptions, refetch]);
 
   const rows: T[] = Array.isArray(data)
     ? data
@@ -97,7 +98,9 @@ export function StrapiTable<T>({
   const actionsRenderer = renderActions || (onEdit ? defaultRenderActions : null);
 
   function handleDelete(item: T) {
-    const docId = getId(item);
+    //const docId = getId(item);
+    //@ts-ignore
+    const docId = item?.documentId ;
     if (!docId) return;
     confirm({
       title: "¿Eliminar ítem?",
