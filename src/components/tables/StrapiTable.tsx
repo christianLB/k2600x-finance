@@ -33,7 +33,7 @@ export interface StrapiTableProps<T> {
   onEdit?: (item: T) => void;
   renderActions?: (item: T) => React.ReactNode;
   deleteButtonText?: string;
-  extraFilters?: Record<string, any>; // NUEVO: para filtros adicionales
+  extraFilters?: Record<string, any>;
   queryOptions?: UseStrapiCollectionOptions;
 }
 
@@ -47,13 +47,11 @@ export function StrapiTable<T>({
   createButtonText,
   onEdit,
   renderActions,
-  queryOptions
+  queryOptions,
 }: StrapiTableProps<T>) {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-
   const confirm = useConfirm();
-
   const [documentIdToDelete, setDocumentIdToDelete] = useState<string | null>(null);
 
   const { delete: deleteItemMutation } = useStrapiDocument<T>(
@@ -62,13 +60,11 @@ export function StrapiTable<T>({
     { enabled: false }
   );
 
-  // MODIFICADO: añadir refetch explícito para paginación
   const { data, isLoading, refetch } = useStrapiCollection<T>(collection, {
     pagination: { page, pageSize },
     ...queryOptions,
   });
 
-  // NUEVO: aseguramos que la tabla se refresque al cambiar de página o filtros
   useEffect(() => {
     refetch();
   }, [page, pageSize, queryOptions, refetch]);
@@ -78,6 +74,10 @@ export function StrapiTable<T>({
     : data && Array.isArray((data as { data: T[] }).data)
     ? (data as { data: T[] }).data
     : [];
+
+  const total =//@ts-ignore (pagination)
+    (data && typeof data === "object" && "meta" in data && data.meta?.pagination?.total) || 0;
+  const totalPages = Math.ceil(total / pageSize);
 
   const extraColumnsCount =
     (selectable ? 1 : 0) + (renderActions ? 1 : onEdit ? 1 : 0);
@@ -98,9 +98,8 @@ export function StrapiTable<T>({
   const actionsRenderer = renderActions || (onEdit ? defaultRenderActions : null);
 
   function handleDelete(item: T) {
-    //const docId = getId(item);
     //@ts-ignore
-    const docId = item?.documentId ;
+    const docId = item?.documentId;
     if (!docId) return;
     confirm({
       title: "¿Eliminar ítem?",
@@ -130,7 +129,6 @@ export function StrapiTable<T>({
       return copy;
     });
   }
-
 
   function toggleSelectAll(allRows: T[]) {
     setSelected((prev) =>
@@ -209,14 +207,19 @@ export function StrapiTable<T>({
         </Table>
       </div>
 
-      <div className="flex justify-center space-x-2">
-        <Button size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-          Anterior
-        </Button>
-        <span>Página {page}</span>
-        <Button size="sm" onClick={() => setPage(p => p + 1)}>
-          Siguiente
-        </Button>
+      <div className="flex justify-between items-center px-2">
+        <span className="text-sm text-gray-500">
+          Mostrando {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, total)} de {total} registros
+        </span>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+            Anterior
+          </Button>
+          <span className="self-center text-sm">Página {page} de {totalPages || 1}</span>
+          <Button size="sm" onClick={() => setPage(p => (p < totalPages ? p + 1 : p))} disabled={page >= totalPages}>
+            Siguiente
+          </Button>
+        </div>
       </div>
     </div>
   );

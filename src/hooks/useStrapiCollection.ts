@@ -1,7 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+interface StrapiPaginationMeta {
+  pagination: {
+    page: number;
+    pageSize: number;
+    pageCount: number;
+    total: number;
+  };
+}
+
 interface StrapiResponse<T> {
-  data: T;
+  data: T[];
+  meta: StrapiPaginationMeta;
 }
 
 interface StrapiMutationResponse<T> {
@@ -11,18 +21,16 @@ interface StrapiMutationResponse<T> {
 
 export interface UseStrapiCollectionOptions {
   filters?: Record<string, unknown>;
-  populate?: string[];
+  populate?: string[] | string;
   sort?: string[];
   pagination?: { page: number; pageSize: number };
-  enabled?: boolean; // <--- ADICIÓN
+  enabled?: boolean;
 }
 
 const fetchCollection = async <T>(
   collection: string,
   params: UseStrapiCollectionOptions = {}
-): Promise<T[]> => {
-  // Construyes el payload que mandarás a `/api/strapi`.
-  // Si tu endpoint usa "query" para luego transformar, inclúyelo de manera explícita:
+): Promise<StrapiResponse<T>> => {
   const { filters, populate, sort, pagination } = params;
 
   const response = await fetch("/api/strapi", {
@@ -44,9 +52,8 @@ const fetchCollection = async <T>(
     throw new Error(`Error fetching collection ${collection}`);
   }
 
-  // Si tu endpoint devuelve la forma { data: [ ... ] }:
-  const json: StrapiResponse<T[]> = await response.json();
-  return json.data ?? []; // asumiendo que si no hay data, devuelves array vacío
+  const json: StrapiResponse<T> = await response.json();
+  return json;
 };
 
 export const useStrapiCollection = <T>(
@@ -61,7 +68,7 @@ export const useStrapiCollection = <T>(
     error,
     isLoading,
     refetch,
-  } = useQuery<T[], Error>({
+  } = useQuery<StrapiResponse<T>, Error>({
     queryKey: [collection, restParams],
     queryFn: () => fetchCollection<T>(collection, restParams),
     enabled,
@@ -87,8 +94,6 @@ export const useStrapiCollection = <T>(
     { documentId: string; updatedData: Partial<T> }
   >({
     mutationFn: async ({ documentId, updatedData }) => {
-      if (!documentId) throw new Error("documentId is required for update");
-
       const response = await fetch(`/api/strapi`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,7 +104,6 @@ export const useStrapiCollection = <T>(
           data: updatedData,
         }),
       });
-
       const result: StrapiMutationResponse<T> = await response.json();
       if (!response.ok) throw new Error(result.error || "Error updating document");
       return result;
@@ -109,8 +113,6 @@ export const useStrapiCollection = <T>(
 
   const deleteMutation = useMutation<StrapiMutationResponse<null>, Error, string>({
     mutationFn: async (documentId) => {
-      if (!documentId) throw new Error("documentId is required for delete");
-
       const response = await fetch(`/api/strapi`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -120,7 +122,6 @@ export const useStrapiCollection = <T>(
           id: documentId,
         }),
       });
-
       if (!response.ok) throw new Error("Failed to delete document");
       return { data: null };
     },
@@ -128,7 +129,7 @@ export const useStrapiCollection = <T>(
   });
 
   return {
-    data,
+    data: data ?? { data: [], meta: {} },
     error,
     isLoading,
     refetch,

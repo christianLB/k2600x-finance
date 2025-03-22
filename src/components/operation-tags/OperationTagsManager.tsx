@@ -22,7 +22,7 @@ interface Tag {
 }
 
 export default function OperationTagsManager() {
-  const { data: tags = [], refetch, create } = useStrapiCollection<Tag>("operation-tags", {
+  const { data: {data: tags = []}, refetch, create } = useStrapiCollection<Tag>("operation-tags", {
     populate: ["parent_tag"],
   });
 
