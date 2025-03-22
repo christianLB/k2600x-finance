@@ -24,8 +24,8 @@ export function OperationsTable() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const { data: tags = [] } = useStrapiCollection("operation-tags");
-console.log(tags)
-const updateMutation = useStrapiUpdateMutation<Operacion>("operations");
+
+  const updateMutation = useStrapiUpdateMutation<Operacion>("operations");
 
   const handleOpenModal = (operation?: Operacion) => {
     setSelectedOperation(operation || null);
