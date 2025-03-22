@@ -9,7 +9,12 @@ import { PencilIcon, Trash2Icon, PlusIcon } from "lucide-react";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 import { useConfirm } from "@/hooks/useConfirm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 interface Tag {
@@ -22,16 +27,24 @@ interface Tag {
 }
 
 export default function OperationTagsManager() {
-  const { data: {data: tags = []}, refetch, create } = useStrapiCollection<Tag>("operation-tags", {
+  const {
+    data: { data: tags = [] },
+    refetch,
+    create,
+  } = useStrapiCollection<Tag>("operation-tags", {
+    pagination: { page: 1, pageSize: 1000 },
     populate: ["parent_tag"],
   });
 
   const [treeData, setTreeData] = useState<NodeModel<number>[]>([]);
-  const { mutateAsync: updateTag } = useStrapiUpdateMutation<Tag>("operation-tags");
+  const { mutateAsync: updateTag } =
+    useStrapiUpdateMutation<Tag>("operation-tags");
   const confirm = useConfirm();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [tagDraft, setTagDraft] = useState<Partial<Tag> & { parent_tag?: number | null }>({});
+  const [tagDraft, setTagDraft] = useState<
+    Partial<Tag> & { parent_tag?: number | null }
+  >({});
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -42,15 +55,19 @@ export default function OperationTagsManager() {
         text: tag.name,
         droppable: true,
         data: tag,
-      }));//@ts-ignore
+      })); //@ts-ignore
       setTreeData(mapped);
     }
   }, [tags]);
 
-  const handleDrop = async (newTree: NodeModel<number>[], { dragSourceId, dropTargetId }: any) => {
+  const handleDrop = async (
+    newTree: NodeModel<number>[],
+    { dragSourceId, dropTargetId }: any
+  ) => {
     setTreeData(newTree);
-    const dragged = treeData.find(n => n.id === dragSourceId);
-    const documentId = (dragged?.data as unknown as Tag)?.documentId ?? String(dragSourceId);
+    const dragged = treeData.find((n) => n.id === dragSourceId);
+    const documentId =
+      (dragged?.data as unknown as Tag)?.documentId ?? String(dragSourceId);
 
     try {
       await updateTag({
@@ -63,8 +80,12 @@ export default function OperationTagsManager() {
     }
   };
 
-  const handleEdit = (tag: Tag) => {//@ts-ignore (parent_tag)
-    setTagDraft({ name: tag.name, color: tag.color, parent_tag: tag.parent_tag?.id ?? null });
+  const handleEdit = (tag: Tag) => {
+    setTagDraft({
+      name: tag.name,
+      color: tag.color, //@ts-ignore (parent_tag)
+      parent_tag: tag.parent_tag?.id ?? null,
+    });
     setEditingId(tag.id);
     setModalOpen(true);
   };
@@ -80,7 +101,11 @@ export default function OperationTagsManager() {
           await fetch(`/api/strapi`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ method: "DELETE", collection: "operation-tags", id: tag.id }),
+            body: JSON.stringify({
+              method: "DELETE",
+              collection: "operation-tags",
+              id: tag.id,
+            }),
           });
           refetch();
         } catch (err) {
@@ -90,7 +115,8 @@ export default function OperationTagsManager() {
     });
   };
 
-  const handleCreate = (parentId?: number) => {//@ts-ignore (parent tag)
+  const handleCreate = (parentId?: number) => {
+    //@ts-ignore (parent tag)
     setTagDraft({ name: "", color: "#ccc", parent_tag: parentId ?? null });
     setEditingId(null);
     setModalOpen(true);
@@ -105,7 +131,10 @@ export default function OperationTagsManager() {
 
     try {
       if (editingId) {
-        await updateTag({ documentId: String(editingId), updatedData: payload });
+        await updateTag({
+          documentId: String(editingId),
+          updatedData: payload,
+        });
       } else {
         await create({ ...payload } as Tag);
       }
@@ -149,20 +178,34 @@ export default function OperationTagsManager() {
                     <span>{node.text}</span>
                   </div>
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => handleEdit(tag)}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleEdit(tag)}
+                    >
                       <PencilIcon className="w-4 h-4 text-gray-600" />
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDelete(tag)}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDelete(tag)}
+                    >
                       <Trash2Icon className="w-4 h-4 text-red-600" />
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleCreate(tag.id)}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleCreate(tag.id)}
+                    >
                       <PlusIcon className="w-4 h-4 text-green-600" />
                     </Button>
                   </div>
                 </div>
               );
             }}
-            dragPreviewRender={(monitorProps) => <div>{monitorProps.item.text}</div>}
+            dragPreviewRender={(monitorProps) => (
+              <div>{monitorProps.item.text}</div>
+            )}
             onDrop={handleDrop}
           />
         </DndProvider>
@@ -177,12 +220,16 @@ export default function OperationTagsManager() {
             <Input
               placeholder="Nombre del tag"
               value={tagDraft.name ?? ""}
-              onChange={(e) => setTagDraft({ ...tagDraft, name: e.target.value })}
+              onChange={(e) =>
+                setTagDraft({ ...tagDraft, name: e.target.value })
+              }
             />
             <Input
               type="color"
               value={tagDraft.color ?? "#cccccc"}
-              onChange={(e) => setTagDraft({ ...tagDraft, color: e.target.value })}
+              onChange={(e) =>
+                setTagDraft({ ...tagDraft, color: e.target.value })
+              }
             />
             <Button onClick={handleSave} disabled={!tagDraft.name}>
               Guardar
