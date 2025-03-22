@@ -142,7 +142,7 @@ export function OperationsTable() {
         selectable={false}
         pageSize={10}
         queryOptions={{
-          sort: ["posibleDuplicado:desc", "fechaValor:desc"],
+          sort: ["fechaValor:desc"],
         }}
       />
       <OperationModal
