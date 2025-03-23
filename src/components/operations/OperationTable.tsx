@@ -22,33 +22,45 @@ export interface Operacion {
 }
 
 export function OperationsTable() {
-  const [selectedOperation, setSelectedOperation] = useState<Operacion | null>(null);
+  const [selectedOperation, setSelectedOperation] = useState<Operacion | null>(
+    null
+  );
   const [modalOpen, setModalOpen] = useState(false);
 
-  const { data: { data: tags } } = useStrapiCollection("operation-tags");
+  const {
+    data: { data: tags },
+  } = useStrapiCollection("operation-tags", {
+    pagination: { page: 1, pageSize: 500 },
+  });
   const updateMutation = useStrapiUpdateMutation<Operacion>("operations");
-  
+
   const handleOpenModal = (operation?: Operacion) => {
     setSelectedOperation(operation || null);
     setModalOpen(true);
   };
 
   // ✅ Handler separado y async para actualizar el tag
-  const handleTagChange = async (operation: Operacion, selectedIds: string[]) => {
+  const handleTagChange = async (
+    operation: Operacion,
+    selectedIds: string[]
+  ) => {
     const tagId = selectedIds[0] || null;
-    console.log(tagId)
+    console.log(tagId);
     try {
-    await updateMutation.mutateAsync({
-      documentId: operation.documentId,//@ts-ignore
-      updatedData: { operation_tag: tagId },
-    });
-    toast.success("Tag actualizado");
-  } catch {
-    toast.error("Error al actualizar tag");
-  }
+      await updateMutation.mutateAsync({
+        documentId: operation.documentId, //@ts-ignore
+        updatedData: { operation_tag: tagId },
+      });
+      toast.success("Tag actualizado");
+    } catch {
+      toast.error("Error al actualizar tag");
+    }
   };
 
-  const handleToggleDuplicado = async (operation: Operacion, value: boolean) => {
+  const handleToggleDuplicado = async (
+    operation: Operacion,
+    value: boolean
+  ) => {
     try {
       await updateMutation.mutateAsync({
         documentId: operation.documentId,
@@ -72,11 +84,11 @@ export function OperationsTable() {
     }
   };
 
-
   const columns = [
     {
       header: "Fecha Mov.",
-      cell: (row: Operacion) => format(new Date(row.fechaMovimiento), "dd/MM/yyyy"),
+      cell: (row: Operacion) =>
+        format(new Date(row.fechaMovimiento), "dd/MM/yyyy"),
     },
     {
       header: "Fecha Val.",
@@ -88,7 +100,8 @@ export function OperationsTable() {
     },
     {
       header: "Descripción",
-      cell: (row: Operacion) => row.descripcion?.substring(0, 100) || "Sin descripción",
+      cell: (row: Operacion) =>
+        row.descripcion?.substring(0, 100) || "Sin descripción",
     },
     {
       header: "Tag",
@@ -98,7 +111,9 @@ export function OperationsTable() {
           defaultValue={row.operation_tag ? [row.operation_tag.id] : []}
           placeholder="Seleccionar tag"
           // singleSelect
-          onChange={(selectedIds: string[]) => handleTagChange(row, selectedIds)}
+          onChange={(selectedIds: string[]) =>
+            handleTagChange(row, selectedIds)
+          }
         />
       ),
     },
@@ -107,7 +122,9 @@ export function OperationsTable() {
       cell: (row: Operacion) => (
         <select
           value={row.posibleDuplicado ? "true" : "false"}
-          onChange={(e) => handleToggleDuplicado(row, e.target.value === "true")}
+          onChange={(e) =>
+            handleToggleDuplicado(row, e.target.value === "true")
+          }
           className="border rounded px-2 py-1 text-sm"
         >
           <option value="true">Sí</option>
@@ -129,7 +146,7 @@ export function OperationsTable() {
           <option value="revisar">Revisar</option>
         </select>
       ),
-    }
+    },
   ];
 
   return (

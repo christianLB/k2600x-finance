@@ -32,7 +32,7 @@ export default function OperationTagsManager() {
     refetch,
     create,
   } = useStrapiCollection<Tag>("operation-tags", {
-    pagination: { page: 1, pageSize: 100 },
+    pagination: { page: 1, pageSize: 500 },
     populate: ["parent_tag"],
   });
 
