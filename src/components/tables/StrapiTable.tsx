@@ -53,6 +53,7 @@ export function StrapiTable<T>({
   queryOptions,
 }: StrapiTableProps<T>) {
   const [page, setPage] = useState(1);
+  const [size, setSize] = useState(pageSize); // ⬅️ estado interno de pageSize
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const confirm = useConfirm();
   const [documentIdToDelete, setDocumentIdToDelete] = useState<string | null>(
@@ -66,7 +67,7 @@ export function StrapiTable<T>({
   );
 
   const { data, isLoading, refetch } = useStrapiCollection<T>(collection, {
-    pagination: { page, pageSize },
+    pagination: { page, pageSize: size },
     ...queryOptions,
   });
 
@@ -243,6 +244,20 @@ export function StrapiTable<T>({
           Mostrando {(page - 1) * pageSize + 1} -{" "}
           {Math.min(page * pageSize, total)} de {total} registros
         </span>
+        <select
+          className="text-sm border rounded px-2 py-1"
+          value={size}
+          onChange={(e) => {
+            setSize(Number(e.target.value));
+            setPage(1); // reiniciar a página 1
+          }}
+        >
+          {[10, 25, 50, 100].map((n) => (
+            <option key={n} value={n}>
+              {n} por página
+            </option>
+          ))}
+        </select>
         <div className="flex flex-wrap items-center gap-1">
           <Button
             size="icon"
