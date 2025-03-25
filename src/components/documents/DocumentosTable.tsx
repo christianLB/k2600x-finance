@@ -89,7 +89,8 @@ export default function DocumentosTable() {
     },
     {
       header: "Tags",
-      cell: (row: Documento) => (
+      cell: () => (
+        // row: Documento
         <>sarsa</>
         // <MultiSelect
         //   options={tags.map((tag) => ({ id: tag.id, label: tag.name }))}
