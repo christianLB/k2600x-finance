@@ -1,7 +1,7 @@
 "use client";
 
 import { StrapiTable } from "@/components/tables/StrapiTable";
-import { useStrapiCollection } from "@/hooks/useStrapiCollection";
+//import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 // import { useState } from "react";
 import { toast } from "sonner";
@@ -20,7 +20,7 @@ interface Documento {
 }
 
 export default function DocumentosTable() {
-  const { data: tags = [] } = useStrapiCollection("tags");
+  //const { data: tags = [] } = useStrapiCollection("tags");
   const update = useStrapiUpdateMutation<Documento>("documentos");
 
   // const handleTagChange = async (doc: Documento, selected: number[]) => {
