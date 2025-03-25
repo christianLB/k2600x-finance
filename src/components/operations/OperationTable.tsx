@@ -4,10 +4,12 @@ import { format } from "date-fns";
 import { StrapiTable } from "@/components/tables/StrapiTable";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { toast } from "sonner";
-import MultiSelect from "../ui/multi-select";
-import OperationModal from "./OperationModal";
 import { useState } from "react";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
+import OperationModal from "./OperationModal";
+
+// Import the new TagsSelector component
+import { TagsSelector, Tag } from "@/components/operation-tags/TagsSelector";
 
 export interface Operacion {
   documentId: string;
@@ -16,7 +18,8 @@ export interface Operacion {
   fechaValor: string;
   monto: number;
   descripcion: string;
-  operation_tag?: { id: number; name: string } | null;
+  // Union type: either a tag id or an object with tag details
+  operation_tag?: number | { id: number; name: string } | null;
   posibleDuplicado: boolean;
   estadoConciliacion: string;
 }
@@ -31,6 +34,7 @@ export function OperationsTable() {
     data: { data: tags },
   } = useStrapiCollection("operation-tags", {
     pagination: { page: 1, pageSize: 500 },
+    populate: ["parent_tag", "children_tags"],
   });
   const updateMutation = useStrapiUpdateMutation<Operacion>("operations");
 
@@ -39,17 +43,11 @@ export function OperationsTable() {
     setModalOpen(true);
   };
 
-  // ✅ Handler separado y async para actualizar el tag
-  const handleTagChange = async (
-    operation: Operacion,
-    selectedIds: string[]
-  ) => {
-    const tagId = selectedIds[0] || null;
-    console.log(tagId);
+  const handleTagChange = async (operation: Operacion, selectedTag: Tag) => {
     try {
       await updateMutation.mutateAsync({
-        documentId: operation.documentId, //@ts-ignore
-        updatedData: { operation_tag: tagId },
+        documentId: operation.documentId,
+        updatedData: { operation_tag: selectedTag.id },
       });
       toast.success("Tag actualizado");
     } catch {
@@ -105,17 +103,22 @@ export function OperationsTable() {
     },
     {
       header: "Tag",
-      cell: (row: Operacion) => (
-        <MultiSelect
-          options={tags.map((tag: any) => ({ id: tag.id, label: tag.name }))}
-          defaultValue={row.operation_tag ? [row.operation_tag.id] : []}
-          placeholder="Seleccionar tag"
-          // singleSelect
-          onChange={(selectedIds: string[]) =>
-            handleTagChange(row, selectedIds)
-          }
-        />
-      ),
+      cell: (row: Operacion) => {
+        const tagList = (tags as Tag[]) || [];
+        const currentTag =
+          typeof row.operation_tag === "number"
+            ? tagList.find((t: Tag) => t.id === row.operation_tag) ?? null
+            : (row.operation_tag as Tag) ?? null;
+
+        return (
+          <TagsSelector
+            tags={tagList}
+            currentTag={currentTag}
+            placeholder="Seleccionar tag"
+            onSelect={(tag: Tag) => handleTagChange(row, tag)}
+          />
+        );
+      },
     },
     {
       header: "Duplicado",
@@ -158,9 +161,7 @@ export function OperationsTable() {
         onEdit={() => handleOpenModal()}
         selectable={false}
         pageSize={10}
-        queryOptions={{
-          sort: ["fechaValor:desc"],
-        }}
+        queryOptions={{ sort: ["fechaValor:desc"] }}
       />
       <OperationModal
         open={modalOpen}
