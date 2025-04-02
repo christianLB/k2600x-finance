@@ -1,73 +1,94 @@
-"use client";
+// "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Controller } from "react-hook-form";
-import { useInvoiceForm } from "@/hooks/invoices/useInvoiceForm";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { Controller, useForm } from "react-hook-form";
 
-interface InvoiceModalProps {
+export interface OperationModalProps {
   open: boolean;
   onClose: () => void;
-  invoice?: any;
-  onInvoiceUpdated?: (invoice: any) => void;
+  operation: any; // For update only, operation is required
+  onOperationUpdated?: (operation: any) => void;
 }
 
-const months = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
+const origenOptions = [
+  { value: "automatica-gasto", label: "Automática Gasto" },
+  { value: "automatica-transferencia", label: "Automática Transferencia" },
+  { value: "manual", label: "Manual" },
 ];
 
-export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated }: InvoiceModalProps) {
-  // Llamamos al hook que encapsula la lógica del formulario
-  const { control, handleSubmit, isEditMode, handleGenerateDocument, invoiceData } = useInvoiceForm({
-    invoice,
-    onInvoiceUpdated,
-    open,
+const estadoOptions = [
+  { value: "pendiente", label: "Pendiente" },
+  { value: "procesado", label: "Procesado" },
+  { value: "conciliado", label: "Conciliado" },
+  { value: "revisar", label: "Revisar" },
+];
+
+export default function OperationModal({
+  open,
+  onClose,
+  operation,
+  onOperationUpdated,
+}: OperationModalProps) {
+  // Initialize form with all operation fields
+  if (!operation) return null;
+  const { control, handleSubmit, reset } = useForm({
+    defaultValues: {
+      fechaMovimiento: new Date(operation.fechaMovimiento),
+      fechaValor: new Date(operation.fechaValor),
+      monto: operation.monto,
+      moneda: operation.moneda,
+      descripcion: operation.descripcion,
+      cuenta: operation.cuenta,
+      titularCuenta: operation.titularCuenta,
+      concepto: operation.concepto,
+      observaciones: operation.observaciones,
+      origen: operation.origen,
+      posibleDuplicado: operation.posibleDuplicado,
+      estadoConciliacion: operation.estadoConciliacion,
+      procesadoPorAutomatizacion: operation.procesadoPorAutomatizacion,
+      cuentaDestino: operation.cuentaDestino,
+      referenciaBancaria: operation.referenciaBancaria,
+      comision: operation.comision,
+      justificante: operation.justificante,
+    },
   });
+
+  const onSubmit = (data: any) => {
+    // Here add your update mutation or API call.
+    // For example, call onOperationUpdated callback if provided.
+    if (onOperationUpdated) {
+      onOperationUpdated({ ...operation, ...data });
+    }
+    onClose();
+    reset();
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Editar Invoice" : "Crear Invoice"}</DialogTitle>
+          <DialogTitle>Editar Operación</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+          {/* Fecha Movimiento */}
           <Controller
-            name="invoiceNumber"
-            control={control}
-            render={({ field }) => <Input placeholder="Número de Factura" {...field} />}
-          />
-          <Controller
-            name="precioUnitario"
-            control={control}
-            render={({ field }) => <Input placeholder="Precio Unitario" type="number" {...field} />}
-          />
-          <Controller
-            name="cantidad"
-            control={control}
-            render={({ field }) => <Input placeholder="Cantidad" type="number" {...field} />}
-          />
-          <Controller
-            name="concepto"
-            control={control}
-            render={({ field }) => <Input placeholder="Concepto" {...field} />}
-          />
-          <Controller
-            name="fechaInvoice"
+            name="fechaMovimiento"
             control={control}
             render={({ field }) => (
               <DatePicker
@@ -78,34 +99,81 @@ export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated 
               />
             )}
           />
+          {/* Fecha Valor */}
           <Controller
-            name="selectedClient"
+            name="fechaValor"
             control={control}
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona un cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Aquí deberías mapear la lista de clientes. Por ejemplo:
-                      clients.map(client => (
-                        <SelectItem key={client.id} value={client.id.toString()}>{client.name}</SelectItem>
-                      ))
-                  */}
-                </SelectContent>
-              </Select>
+              <DatePicker
+                selected={field.value}
+                onChange={field.onChange}
+                dateFormat="yyyy-MM-dd"
+                placeholderText="Fecha Valor"
+                className="w-full border rounded-md p-2"
+              />
             )}
           />
+          {/* Monto */}
           <Controller
-            name="monthFacturado"
+            name="monto"
+            control={control}
+            render={({ field }) => (
+              <Input placeholder="Monto" type="number" {...field} />
+            )}
+          />
+          {/* Moneda */}
+          <Controller
+            name="moneda"
+            control={control}
+            render={({ field }) => <Input placeholder="Moneda" {...field} />}
+          />
+          {/* Descripción */}
+          <Controller
+            name="descripcion"
+            control={control}
+            render={({ field }) => (
+              <Input placeholder="Descripción" {...field} />
+            )}
+          />
+          {/* Cuenta */}
+          <Controller
+            name="cuenta"
+            control={control}
+            render={({ field }) => <Input placeholder="Cuenta" {...field} />}
+          />
+          {/* Titular Cuenta */}
+          <Controller
+            name="titularCuenta"
+            control={control}
+            render={({ field }) => (
+              <Input placeholder="Titular de Cuenta" {...field} />
+            )}
+          />
+          {/* Concepto */}
+          <Controller
+            name="concepto"
+            control={control}
+            render={({ field }) => <Input placeholder="Concepto" {...field} />}
+          />
+          {/* Observaciones */}
+          <Controller
+            name="observaciones"
+            control={control}
+            render={({ field }) => (
+              <Input placeholder="Observaciones" {...field} />
+            )}
+          />
+          {/* Origen */}
+          <Controller
+            name="origen"
             control={control}
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona un mes" />
+                  <SelectValue placeholder="Selecciona el origen" />
                 </SelectTrigger>
                 <SelectContent>
-                  {months.map(({ value, label }) => (
+                  {origenOptions.map(({ value, label }) => (
                     <SelectItem key={value} value={value}>
                       {label}
                     </SelectItem>
@@ -114,40 +182,103 @@ export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated 
               </Select>
             )}
           />
+          {/* Estado Conciliacion */}
           <Controller
-            name="yearFacturado"
+            name="estadoConciliacion"
             control={control}
-            render={({ field }) => <Input placeholder="Año Facturado" type="number" {...field} />}
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona el estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {estadoOptions.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           />
-          {invoiceData?.archivos?.length > 0 && (
-            <div className="mt-2">
-              <a
-                href={
-                  invoiceData.archivos[0].url.startsWith("http")
-                    ? invoiceData.archivos[0].url
-                    : `${process.env.NEXT_PUBLIC_STRAPI_URL}${invoiceData.archivos[0].url}`
+          {/* Posible Duplicado */}
+          <Controller
+            name="posibleDuplicado"
+            control={control}
+            render={({ field }) => (
+              <div className="flex items-center">
+                <Input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                  className="mr-2"
+                />
+                <span>Posible duplicado</span>
+              </div>
+            )}
+          />
+          {/* Procesado Por Automatizacion */}
+          <Controller
+            name="procesadoPorAutomatizacion"
+            control={control}
+            render={({ field }) => (
+              <Input placeholder="Procesado por Automatización" {...field} />
+            )}
+          />
+          {/* Cuenta Destino */}
+          <Controller
+            name="cuentaDestino"
+            control={control}
+            render={({ field }) => (
+              <Input placeholder="Cuenta Destino" {...field} />
+            )}
+          />
+          {/* Referencia Bancaria */}
+          <Controller
+            name="referenciaBancaria"
+            control={control}
+            render={({ field }) => (
+              <Input placeholder="Referencia Bancaria" {...field} />
+            )}
+          />
+          {/* Comisión */}
+          <Controller
+            name="comision"
+            control={control}
+            render={({ field }) => (
+              <Input placeholder="Comisión" type="number" {...field} />
+            )}
+          />
+          {/* Justificante */}
+          <Controller
+            name="justificante"
+            control={control}
+            render={({ field }) => (
+              <Input
+                placeholder="Justificante"
+                type="file"
+                onChange={(e) =>
+                  field.onChange(e.target.files ? e.target.files[0] : null)
                 }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 underline"
-              >
-                Ver Documento Generado
-              </a>
-            </div>
-          )}
+              />
+            )}
+          />
           <div className="mt-4 flex justify-end space-x-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                onClose();
+                reset();
+              }}
+            >
               Cancelar
             </Button>
-            {isEditMode && (
-              <Button type="button" onClick={handleGenerateDocument}>
-                Generar Documento
-              </Button>
-            )}
-            <Button type="submit">{isEditMode ? "Actualizar" : "Crear"}</Button>
+            <Button type="submit">Actualizar</Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
   );
 }
+
+export {};

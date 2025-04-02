@@ -158,7 +158,7 @@ export function OperationsTable() {
         collection="operations"
         columns={columns}
         title="Listado de Operaciones"
-        onEdit={() => handleOpenModal()}
+        onEdit={(operation) => handleOpenModal(operation)}
         selectable={false}
         pageSize={10}
         queryOptions={{ sort: ["fechaValor:desc"] }}
@@ -166,7 +166,7 @@ export function OperationsTable() {
       <OperationModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        invoice={selectedOperation}
+        operation={selectedOperation}
       />
     </div>
   );
