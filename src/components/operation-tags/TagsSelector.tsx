@@ -1,50 +1,30 @@
-// "use client";
+"use client";
 
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Tag, TagTreeNode } from "@/types/tag";
+import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 
-// Define the Tag type (should match the one in your system)
-export interface Tag {
-  id: number;
-  name: string;
-  parent_tag?: { id: number } | null;
-  children_tags?: Tag[];
-}
-
-// Extend Tag with children array for tree building
-export interface TagTreeNode extends Tag {
-  children?: TagTreeNode[];
-}
-
-export interface TagsSelectorProps {
-  tags: Tag[];
+interface TagsSelectorProps {
+  appliesTo: string;
   currentTag?: Tag | null;
   placeholder?: string;
   onSelect: (tag: Tag) => void;
 }
 
-// Build a tree structure from a flat list of tags
+// Función para construir árbol desde lista plana
 const buildTagTree = (tags: Tag[]): TagTreeNode[] => {
-  if (tags.some((tag) => tag.children_tags !== undefined)) {
-    return tags
-      .filter((tag) => !tag.parent_tag)
-      .map((tag) => ({
-        ...tag,
-        children: tag.children_tags || [],
-      }));
-  }
   const map = new Map<number, TagTreeNode>();
-  tags.forEach((tag) => {
-    map.set(tag.id, { ...tag, children: [] });
-  });
+  tags.forEach((tag) => map.set(tag.id, { ...tag, children: [] }));
+
   const tree: TagTreeNode[] = [];
   map.forEach((tag) => {
-    if (tag.parent_tag && tag.parent_tag.id && map.has(tag.parent_tag.id)) {
+    if (tag.parent_tag?.id && map.has(tag.parent_tag.id)) {
       map.get(tag.parent_tag.id)?.children?.push(tag);
     } else {
       tree.push(tag);
@@ -53,59 +33,69 @@ const buildTagTree = (tags: Tag[]): TagTreeNode[] => {
   return tree;
 };
 
-// Recursive component to render a tag tree item and its children
-interface TagTreeItemProps {
+// Componente recursivo para renderizar el árbol
+const TagTreeItem: React.FC<{
   node: TagTreeNode;
   depth: number;
   onSelect: (tag: Tag) => void;
-}
-
-const TagTreeItem: React.FC<TagTreeItemProps> = ({ node, depth, onSelect }) => {
-  return (
-    <div>
-      <div
-        style={{ paddingLeft: depth * 16, cursor: "pointer" }}
-        onClick={() => onSelect(node)}
-      >
-        {node.name}
-      </div>
-      {node.children &&
-        node.children.map((child) => (
-          <TagTreeItem
-            key={child.id}
-            node={child}
-            depth={depth + 1}
-            onSelect={onSelect}
-          />
-        ))}
+}> = ({ node, depth, onSelect }) => (
+  <div>
+    <div
+      style={{ paddingLeft: depth * 16, cursor: "pointer" }}
+      onClick={() => onSelect(node)}
+    >
+      {node.name}
     </div>
-  );
-};
+    {node.children?.map((child) => (
+      <TagTreeItem
+        key={child.id}
+        node={child}
+        depth={depth + 1}
+        onSelect={onSelect}
+      />
+    ))}
+  </div>
+);
 
 export const TagsSelector: React.FC<TagsSelectorProps> = ({
-  tags,
+  appliesTo,
   currentTag,
   placeholder = "Seleccionar tag",
   onSelect,
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const {
+    data: { data: tags = [] },
+    isLoading,
+  } = useStrapiCollection<Tag>("operation-tags", {
+    filters: { appliesTo: { $contains: appliesTo } },
+    pagination: { page: 1, pageSize: 500 },
+    populate: ["parent_tag"],
+  });
+
   const treeData = buildTagTree(tags);
 
   return (
-    <Popover>
+    <Popover onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline">
           {currentTag ? currentTag.name : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent style={{ width: 300, maxHeight: 400, overflowY: "auto" }}>
-        {treeData.map((node) => (
-          <TagTreeItem
-            key={node.id}
-            node={node}
-            depth={0}
-            onSelect={onSelect}
-          />
-        ))}
+        {isLoading ? (
+          <div>Cargando tags...</div>
+        ) : (
+          treeData.map((node) => (
+            <TagTreeItem
+              key={node.id}
+              node={node}
+              depth={0}
+              onSelect={onSelect}
+            />
+          ))
+        )}
       </PopoverContent>
     </Popover>
   );

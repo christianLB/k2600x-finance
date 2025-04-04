@@ -16,48 +16,41 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Tag } from "@/types/tag";
 
-interface Tag {
-  id: number;
-  documentId: string;
-  name: string;
-  color?: string;
-  icon?: string;
-  parent_tag?: { id: number } | null;
+interface TagsManagerProps {
+  appliesTo: string;
 }
 
-export default function OperationTagsManager() {
+export default function TagsManager({ appliesTo }: TagsManagerProps) {
+  const collection = "operation-tags";
   const {
     data: { data: tags = [] },
     refetch,
     create,
-  } = useStrapiCollection<Tag>("operation-tags", {
+  } = useStrapiCollection<Tag>(collection, {
+    filters: { appliesTo: { $contains: appliesTo } },
     pagination: { page: 1, pageSize: 500 },
     populate: ["parent_tag"],
   });
 
   const [treeData, setTreeData] = useState<NodeModel<number>[]>([]);
-  const { mutateAsync: updateTag } =
-    useStrapiUpdateMutation<Tag>("operation-tags");
+  const { mutateAsync: updateTag } = useStrapiUpdateMutation<Tag>(collection);
   const confirm = useConfirm();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [tagDraft, setTagDraft] = useState<
-    Partial<Tag> & { parent_tag?: number | null }
-  >({});
+  const [tagDraft, setTagDraft] = useState<Partial<Tag>>({});
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (tags.length) {
-      const mapped = tags.map((tag) => ({
-        id: tag.id,
-        parent: tag.parent_tag?.id ?? 0,
-        text: tag.name,
-        droppable: true,
-        data: tag,
-      })); //@ts-ignore
-      setTreeData(mapped);
-    }
+    const mapped = tags.map((tag: any) => ({
+      id: tag.id,
+      parent: tag.parent_tag?.id ?? 0,
+      text: tag.name,
+      droppable: true,
+      data: tag,
+    }));
+    setTreeData(mapped);
   }, [tags]);
 
   const handleDrop = async (
@@ -65,9 +58,7 @@ export default function OperationTagsManager() {
     { dragSourceId, dropTargetId }: any
   ) => {
     setTreeData(newTree);
-    const dragged = treeData.find((n) => n.id === dragSourceId);
-    const documentId =
-      (dragged?.data as unknown as Tag)?.documentId ?? String(dragSourceId);
+    const documentId = String(dragSourceId);
 
     try {
       await updateTag({
@@ -81,11 +72,8 @@ export default function OperationTagsManager() {
   };
 
   const handleEdit = (tag: Tag) => {
-    setTagDraft({
-      name: tag.name,
-      color: tag.color, //@ts-ignore (parent_tag)
-      parent_tag: tag.parent_tag?.id ?? null,
-    });
+    //@ts-ignore
+    setTagDraft({ name: tag.name, color: tag.color });
     setEditingId(tag.id);
     setModalOpen(true);
   };
@@ -93,30 +81,19 @@ export default function OperationTagsManager() {
   const handleDelete = (tag: Tag) => {
     confirm({
       title: "¿Eliminar tag?",
-      description: `Esta acción no se puede deshacer. Se eliminará el tag '${tag.name}'.`,
+      description: `Esta acción eliminará '${tag.name}'.`,
       confirmText: "Eliminar",
       cancelText: "Cancelar",
       onConfirm: async () => {
-        try {
-          await fetch(`/api/strapi`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              method: "DELETE",
-              collection: "operation-tags",
-              id: tag.id,
-            }),
-          });
-          refetch();
-        } catch (err) {
-          console.error("Error al eliminar tag", err);
-        }
+        //@ts-ignore
+        await updateTag({ documentId: String(tag.id), updatedData: null });
+        refetch();
       },
     });
   };
 
   const handleCreate = (parentId?: number) => {
-    //@ts-ignore (parent tag)
+    //@ts-ignore
     setTagDraft({ name: "", color: "#ccc", parent_tag: parentId ?? null });
     setEditingId(null);
     setModalOpen(true);
@@ -124,9 +101,8 @@ export default function OperationTagsManager() {
 
   const handleSave = async () => {
     const payload = {
-      name: tagDraft.name,
-      color: tagDraft.color,
-      parent_tag: tagDraft.parent_tag ?? null,
+      ...tagDraft,
+      appliesTo: [appliesTo],
     };
 
     try {
@@ -136,7 +112,7 @@ export default function OperationTagsManager() {
           updatedData: payload,
         });
       } else {
-        await create({ ...payload } as Tag);
+        await create(payload as Tag);
       }
       refetch();
       setModalOpen(false);
@@ -146,95 +122,88 @@ export default function OperationTagsManager() {
   };
 
   return (
-    <div className="flex gap-4">
-      <div className="w-full max-w-md p-4 border rounded-md bg-white">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="font-semibold">Tags jerárquicos</h2>
-          <Button size="sm" onClick={() => handleCreate(undefined)}>
-            <PlusIcon className="w-4 h-4 mr-1" /> Nuevo
-          </Button>
-        </div>
-        <DndProvider backend={HTML5Backend}>
-          <Tree
-            tree={treeData}
-            rootId={0}
-            render={(node, { depth, isOpen, onToggle }) => {
-              const tag = node.data as unknown as Tag;
-              return (
-                <div
-                  style={{ marginInlineStart: depth * 16 }}
-                  className="flex justify-between items-center py-1 px-2 hover:bg-gray-100 rounded"
-                >
-                  <div className="flex items-center gap-2">
-                    {node.droppable && (
-                      <span onClick={onToggle} className="cursor-pointer">
-                        {isOpen ? "▾" : "▸"}
-                      </span>
-                    )}
-                    <span
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: tag.color || "#ccc" }}
-                    ></span>
-                    <span>{node.text}</span>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleEdit(tag)}
-                    >
-                      <PencilIcon className="w-4 h-4 text-gray-600" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDelete(tag)}
-                    >
-                      <Trash2Icon className="w-4 h-4 text-red-600" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleCreate(tag.id)}
-                    >
-                      <PlusIcon className="w-4 h-4 text-green-600" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            }}
-            dragPreviewRender={(monitorProps) => (
-              <div>{monitorProps.item.text}</div>
-            )}
-            onDrop={handleDrop}
-          />
-        </DndProvider>
+    <div className="p-4 border rounded bg-white">
+      <div className="flex justify-between mb-2">
+        <h2 className="font-semibold">Tags: {appliesTo}</h2>
+        <Button size="sm" onClick={() => handleCreate()}>
+          <PlusIcon className="w-4 h-4 mr-1" />
+          Nuevo
+        </Button>
       </div>
+      <DndProvider backend={HTML5Backend}>
+        <Tree
+          tree={treeData}
+          rootId={0}
+          onDrop={handleDrop}
+          render={(node, { depth, isOpen, onToggle }) => {
+            //@ts-ignore
+            const tag = node.data as Tag;
+            return (
+              <div
+                style={{ marginInlineStart: depth * 16 }}
+                className="flex justify-between items-center py-1 px-2 hover:bg-gray-100 rounded"
+              >
+                <div className="flex items-center gap-2">
+                  {node.droppable && (
+                    <span onClick={onToggle} className="cursor-pointer">
+                      {isOpen ? "▾" : "▸"}
+                    </span>
+                  )}
+                  <span
+                    className="w-3 h-3 rounded-full" //@ts-ignore
+                    style={{ backgroundColor: tag.color || "#ccc" }}
+                  ></span>
+                  <span>{node.text}</span>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleEdit(tag)}
+                  >
+                    <PencilIcon className="w-4 h-4 text-gray-600" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleDelete(tag)}
+                  >
+                    <Trash2Icon className="w-4 h-4 text-red-600" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleCreate(tag.id)}
+                  >
+                    <PlusIcon className="w-4 h-4 text-green-600" />
+                  </Button>
+                </div>
+              </div>
+            );
+          }}
+        />
+      </DndProvider>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar Tag" : "Nuevo Tag"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="Nombre del tag"
-              value={tagDraft.name ?? ""}
-              onChange={(e) =>
-                setTagDraft({ ...tagDraft, name: e.target.value })
-              }
-            />
-            <Input
-              type="color"
-              value={tagDraft.color ?? "#cccccc"}
-              onChange={(e) =>
-                setTagDraft({ ...tagDraft, color: e.target.value })
-              }
-            />
-            <Button onClick={handleSave} disabled={!tagDraft.name}>
-              Guardar
-            </Button>
-          </div>
+          <Input
+            placeholder="Nombre del tag"
+            value={tagDraft.name ?? ""}
+            onChange={(e) => setTagDraft({ ...tagDraft, name: e.target.value })}
+          />
+          <Input
+            type="color" //@ts-ignore
+            value={tagDraft.color ?? "#cccccc"}
+            onChange={(
+              e //@ts-ignore
+            ) => setTagDraft({ ...tagDraft, color: e.target.value })}
+          />
+          <Button onClick={handleSave} disabled={!tagDraft.name}>
+            Guardar
+          </Button>
         </DialogContent>
       </Dialog>
     </div>

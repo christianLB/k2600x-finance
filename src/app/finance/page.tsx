@@ -48,7 +48,8 @@ export default function FinancePage() {
           </TabsContent>
 
           <TabsContent value="tags" className="pt-4">
-            <OperationTagsManager />
+            <OperationTagsManager appliesTo="operation" />
+            <OperationTagsManager appliesTo="documento" />
           </TabsContent>
         </Tabs>
       </div>
