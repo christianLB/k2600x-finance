@@ -100,9 +100,9 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   };
 
   const handleSave = async () => {
-    const payload = {
+    const payload: Partial<Tag> = {
       ...tagDraft,
-      appliesTo: [appliesTo],
+      appliesTo: appliesTo, // Changed to single value
     };
 
     try {

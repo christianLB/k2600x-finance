@@ -2,6 +2,7 @@ export interface Tag {
   id: number;
   name: string;
   parent_tag?: { id: number } | null;
+  appliesTo: string;
   children_tags?: Tag[];
 }
 
