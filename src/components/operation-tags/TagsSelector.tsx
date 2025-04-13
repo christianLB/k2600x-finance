@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Popover,
   PopoverTrigger,
@@ -63,7 +63,7 @@ export const TagsSelector: React.FC<TagsSelectorProps> = ({
   placeholder = "Seleccionar tag",
   onSelect,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [, setIsOpen] = useState(false);
 
   const {
     data: { data: tags = [] },

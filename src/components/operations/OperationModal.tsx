@@ -1,4 +1,4 @@
-// "use client";
+"use client";
 
 import {
   Dialog,
@@ -46,26 +46,26 @@ export default function OperationModal({
   onOperationUpdated,
 }: OperationModalProps) {
   // Initialize form with all operation fields
-  if (!operation) return null;
+  
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
-      fechaMovimiento: new Date(operation.fechaMovimiento),
-      fechaValor: new Date(operation.fechaValor),
-      monto: operation.monto,
-      moneda: operation.moneda,
-      descripcion: operation.descripcion,
-      cuenta: operation.cuenta,
-      titularCuenta: operation.titularCuenta,
-      concepto: operation.concepto,
-      observaciones: operation.observaciones,
-      origen: operation.origen,
-      posibleDuplicado: operation.posibleDuplicado,
-      estadoConciliacion: operation.estadoConciliacion,
-      procesadoPorAutomatizacion: operation.procesadoPorAutomatizacion,
-      cuentaDestino: operation.cuentaDestino,
-      referenciaBancaria: operation.referenciaBancaria,
-      comision: operation.comision,
-      justificante: operation.justificante,
+      fechaMovimiento: new Date(operation?.fechaMovimiento),
+      fechaValor: new Date(operation?.fechaValor),
+      monto: operation?.monto,
+      moneda: operation?.moneda,
+      descripcion: operation?.descripcion,
+      cuenta: operation?.cuenta,
+      titularCuenta: operation?.titularCuenta,
+      concepto: operation?.concepto,
+      observaciones: operation?.observaciones,
+      origen: operation?.origen,
+      posibleDuplicado: operation?.posibleDuplicado,
+      estadoConciliacion: operation?.estadoConciliacion,
+      procesadoPorAutomatizacion: operation?.procesadoPorAutomatizacion,
+      cuentaDestino: operation?.cuentaDestino,
+      referenciaBancaria: operation?.referenciaBancaria,
+      comision: operation?.comision,
+      justificante: operation?.justificante,
     },
   });
 
@@ -78,6 +78,8 @@ export default function OperationModal({
     onClose();
     reset();
   };
+
+  if (!operation) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
