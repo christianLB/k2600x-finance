@@ -7,7 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Controller } from "react-hook-form";
-import { useInvoiceForm as useInvoiceForm_v2 } from "@/hooks/invoices/useInvoiceForm_v2";
+import { useInvoiceForm as useInvoiceForm_v2 } from "@/hooks/invoices/useInvoiceForm";
 
 interface InvoiceModalProps {
   open: boolean;

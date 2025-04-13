@@ -1,7 +1,7 @@
 // useInvoiceForm.ts
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useStrapiDocument } from "@/hooks/useStrapiDocument";
+import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { toast } from "sonner";
 
@@ -36,23 +36,14 @@ interface UseInvoiceFormParams {
 export function useInvoiceForm({ invoice, onInvoiceUpdated, open }: UseInvoiceFormParams) {
   // Modo edición se determina por la existencia de documentId
   const isEditMode = Boolean(invoice?.documentId);
-
   // Configuramos React Hook Form con defaultValues
   const { control, handleSubmit, reset, watch } = useForm<InvoiceFormValues>({ defaultValues });
 
-  // Para edición, usamos useStrapiDocument (envía la llamada a /api/strapi con method GET)
-  const invoiceDocument = useStrapiDocument<any>(
-    "invoices",
-    invoice?.documentId ?? "",
-    { populate: "*", enabled: Boolean(invoice?.documentId) }
-  );
-
+  const updateInvoice = useStrapiUpdateMutation<any>("invoices");
   // Para creación, usamos useStrapiCollection con enabled:false para disparar la mutación manualmente
   const { create } = useStrapiCollection<any>("invoices", { enabled: false });
-
-  // La data a utilizar: si estamos en edición, la proveniente del hook; si no, la pasada en props
-  const invoiceData = isEditMode ? invoiceDocument.data : invoice;
-
+  // La data a utilizar: si estamos en edición, la pasada en props
+  const invoiceData = invoice;
   // Sincronizamos los valores del formulario cuando cambia la data
   useEffect(() => {
     if (invoiceData) {
@@ -70,7 +61,6 @@ export function useInvoiceForm({ invoice, onInvoiceUpdated, open }: UseInvoiceFo
       reset(defaultValues);
     }
   }, [invoiceData, reset]);
-
   // Si se abre el modal en modo creación, asignamos mes y año actuales (por ejemplo, para prellenar esos campos)
   useEffect(() => {
     if (open && !isEditMode) {
@@ -82,7 +72,6 @@ export function useInvoiceForm({ invoice, onInvoiceUpdated, open }: UseInvoiceFo
       });
     }
   }, [open, isEditMode, reset, watch]);
-
   // Función de envío del formulario
   const onSubmit = (data: InvoiceFormValues) => {
     const payload = {
@@ -95,14 +84,12 @@ export function useInvoiceForm({ invoice, onInvoiceUpdated, open }: UseInvoiceFo
       monthFacturado: data.monthFacturado,
       client: data.selectedClient ? parseInt(data.selectedClient, 10) : null,
     };
-
-    if (isEditMode) {
-      invoiceDocument.update(
-        { updatedData: payload },
+    if (isEditMode && invoice?.documentId) {
+      updateInvoice.mutateAsync(
+        { documentId: invoice.documentId, updatedData: payload },
         {
           onSuccess: (updated) => {
             toast.success("Invoice actualizado correctamente");
-            invoiceDocument.refetch();
             if (onInvoiceUpdated) onInvoiceUpdated(updated);
           },
           onError: (err: any) => toast.error(`Error al actualizar: ${err.message}`),
@@ -118,38 +105,33 @@ export function useInvoiceForm({ invoice, onInvoiceUpdated, open }: UseInvoiceFo
       });
     }
   };
-
   // Función para generar el documento (solo en modo edición)
   const handleGenerateDocument = async () => {
-    if (!isEditMode || !invoiceData?.documentId) return;
+    if (!isEditMode || !invoice?.documentId) return;
     const values = watch();
-    // Aquí podrías agregar validación del cliente, etc.
     try {
       const res = await fetch(`/api/create-invoice`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          documentId: invoiceData.documentId,
+          documentId: invoice.documentId,
           invoiceNumber: values.invoiceNumber,
           precioUnitario: values.precioUnitario,
           cantidad: values.cantidad,
           fechaInvoice: values.fechaInvoice ? values.fechaInvoice.toISOString().split("T")[0] : null,
           yearFacturado: parseInt(values.yearFacturado, 10),
           monthFacturado: values.monthFacturado,
-          // Se pueden incluir otros datos, como información del cliente.
         }),
       });
       if (!res.ok) throw new Error("Error al generar el documento");
       const updatedInvoice = await res.json();
       toast.success("Documento generado correctamente");
-      invoiceDocument.refetch();
       if (onInvoiceUpdated) onInvoiceUpdated(updatedInvoice);
     } catch (error: any) {
       toast.error("Error generando el documento");
       console.error(error);
     }
   };
-
   return {
     control,
     handleSubmit: handleSubmit(onSubmit),

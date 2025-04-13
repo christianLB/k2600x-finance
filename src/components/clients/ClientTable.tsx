@@ -1,6 +1,6 @@
 "use client";
 
-import { StrapiTable, ColumnDefinition } from "@/components/tables/StrapiTable";
+import { ColumnDefinition, StrapiTable } from "@/components/tables/StrapiTable";
 import ClientModal from "./ClientModal";
 import { useState } from "react";
 
@@ -40,7 +40,7 @@ export default function ClientTable() {
       <ClientModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        client={selectedClient}
+        client={selectedClient as Client || null}
       />
     </div>
   );

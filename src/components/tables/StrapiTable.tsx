@@ -40,7 +40,7 @@ export interface StrapiTableProps<T> {
   queryOptions?: UseStrapiCollectionOptions;
 }
 
-export function StrapiTableNew2<T>({
+export function StrapiTable<T>({
   collection,
   columns,
   title,
@@ -57,7 +57,7 @@ export function StrapiTableNew2<T>({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const confirm = useConfirm();
 
-  const { mutate: deleteItem, isPending: isDeleting } = useStrapiDelete(collection, () => refetch());
+  const { mutate: deleteItem } = useStrapiDelete(collection, () => refetch());
 
   const { data, isLoading, refetch } = useStrapiCollection<T>(collection, { pagination: { page, pageSize: size }, ...queryOptions });
 
