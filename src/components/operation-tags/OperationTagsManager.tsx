@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/types/tag";
-import { v4 as uuidv4 } from 'uuid'; // Import UUID
 
 interface TagsManagerProps {
   appliesTo: string;
@@ -26,7 +25,7 @@ interface TagsManagerProps {
 export default function TagsManager({ appliesTo }: TagsManagerProps) {
   const collection = "operation-tags";
   const {
-    data: { data: tags = [] },
+    data: { data: tags = [] } = { data: [] }, // Provide default value
     refetch,
     create,
   } = useStrapiCollection<Tag>(collection, {
@@ -44,7 +43,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    const mapped = tags.map((tag: any) => ({
+    const mapped = tags.map((tag) => ({
       id: tag.id,
       parent: tag.parent_tag?.id ?? 0,
       text: tag.name,
@@ -73,7 +72,6 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   };
 
   const handleEdit = (tag: Tag) => {
-    //@ts-ignore
     setTagDraft({ name: tag.name, color: tag.color });
     setEditingId(tag.id);
     setModalOpen(true);
@@ -86,7 +84,6 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
       confirmText: "Eliminar",
       cancelText: "Cancelar",
       onConfirm: async () => {
-        //@ts-ignore
         await updateTag({ documentId: String(tag.id), updatedData: null });
         refetch();
       },
@@ -94,31 +91,25 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   };
 
   const handleCreate = (parentId?: number) => {
-    //@ts-ignore
     setTagDraft({ name: "", color: "#ccc", parent_tag: parentId ?? null });
     setEditingId(null);
     setModalOpen(true);
   };
 
   const handleSave = async () => {
-    let payload: Partial<Tag> = {
-      ...tagDraft,
-      appliesTo: appliesTo,
-    };
-
-    // Include documentId for both create and update
-    if (!payload.documentId) {
-      payload.documentId = uuidv4();
-    }
-
     try {
       if (editingId) {
+        // Update existing tag
         await updateTag({
           documentId: String(editingId),
-          updatedData: payload,
+          updatedData: tagDraft, // Send only updated fields
         });
       } else {
-        await create(payload as Tag);
+        // Create new tag
+        await create({
+          ...tagDraft,
+          appliesTo: appliesTo,
+        } as Tag); // Ensure complete object is sent
       }
       refetch();
       setModalOpen(false);
@@ -142,7 +133,6 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
           rootId={0}
           onDrop={handleDrop}
           render={(node, { depth, isOpen, onToggle }) => {
-            //@ts-ignore
             const tag = node.data as Tag;
             return (
               <div
@@ -156,7 +146,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
                     </span>
                   )}
                   <span
-                    className="w-3 h-3 rounded-full" //@ts-ignore
+                    className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: tag.color || "#ccc" }}
                   ></span>
                   <span>{node.text}</span>
@@ -201,11 +191,9 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
             onChange={(e) => setTagDraft({ ...tagDraft, name: e.target.value })}
           />
           <Input
-            type="color" //@ts-ignore
+            type="color"
             value={tagDraft.color ?? "#cccccc"}
-            onChange={(
-              e //@ts-ignore
-            ) => setTagDraft({ ...tagDraft, color: e.target.value })}
+            onChange={(e) => setTagDraft({ ...tagDraft, color: e.target.value })}
           />
           <Button onClick={handleSave} disabled={!tagDraft.name}>
             Guardar
