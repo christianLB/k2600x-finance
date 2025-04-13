@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/types/tag";
+import { v4 as uuidv4 } from 'uuid'; // Import UUID
 
 interface TagsManagerProps {
   appliesTo: string;
@@ -100,10 +101,15 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   };
 
   const handleSave = async () => {
-    const payload: Partial<Tag> = {
+    let payload: Partial<Tag> = {
       ...tagDraft,
-      appliesTo: appliesTo, // Changed to single value
+      appliesTo: appliesTo,
     };
+
+    // Include documentId for both create and update
+    if (!payload.documentId) {
+      payload.documentId = uuidv4();
+    }
 
     try {
       if (editingId) {
