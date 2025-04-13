@@ -5,7 +5,7 @@ import {
   useStrapiCollection,
   UseStrapiCollectionOptions,
 } from "@/hooks/useStrapiCollection";
-import { useStrapiDocument } from "@/hooks/useStrapiDocument";
+import useStrapiDelete from "@/hooks/useStrapiDelete";
 import {
   Table,
   TableHeader,
@@ -40,7 +40,7 @@ export interface StrapiTableProps<T> {
   queryOptions?: UseStrapiCollectionOptions;
 }
 
-export function StrapiTable<T>({
+export function StrapiTableNew2<T>({
   collection,
   columns,
   title,
@@ -53,27 +53,15 @@ export function StrapiTable<T>({
   queryOptions,
 }: StrapiTableProps<T>) {
   const [page, setPage] = useState(1);
-  const [size, setSize] = useState(pageSize); // ⬅️ estado interno de pageSize
+  const [size, setSize] = useState(pageSize);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const confirm = useConfirm();
-  const [documentIdToDelete, setDocumentIdToDelete] = useState<string | null>(
-    null
-  );
 
-  const { delete: deleteItemMutation } = useStrapiDocument<T>(
-    collection,
-    documentIdToDelete ?? undefined,
-    { enabled: false }
-  );
+  const { mutate: deleteItem, isPending: isDeleting } = useStrapiDelete(collection, () => refetch());
 
-  const { data, isLoading, refetch } = useStrapiCollection<T>(collection, {
-    pagination: { page, pageSize: size },
-    ...queryOptions,
-  });
+  const { data, isLoading, refetch } = useStrapiCollection<T>(collection, { pagination: { page, pageSize: size }, ...queryOptions });
 
-  useEffect(() => {
-    refetch();
-  }, [page, pageSize, queryOptions, refetch]);
+  useEffect(() => { refetch(); }, [page, size, queryOptions, refetch]);
 
   const rows: T[] = Array.isArray(data)
     ? data
@@ -84,8 +72,8 @@ export function StrapiTable<T>({
   const total =
     (data &&
       typeof data === "object" &&
-      "meta" in data && //@ts-ignore (pagination)
-      data.meta?.pagination?.total) ||
+      "meta" in data &&
+      (data as any).meta?.pagination?.total) ||
     0;
   const totalPages = Math.ceil(total / pageSize);
 
@@ -115,8 +103,7 @@ export function StrapiTable<T>({
     renderActions || (onEdit ? defaultRenderActions : null);
 
   function handleDelete(item: T) {
-    //@ts-ignore
-    const docId = item?.documentId;
+    const docId = (item as any)?.id || (item as any)?.documentId;
     if (!docId) return;
     confirm({
       title: "¿Eliminar ítem?",
@@ -124,8 +111,7 @@ export function StrapiTable<T>({
       confirmText: "Eliminar",
       cancelText: "Cancelar",
       onConfirm: () => {
-        setDocumentIdToDelete(docId);
-        deleteItemMutation();
+        deleteItem(item as any);
       },
     });
   }
@@ -249,7 +235,7 @@ export function StrapiTable<T>({
           value={size}
           onChange={(e) => {
             setSize(Number(e.target.value));
-            setPage(1); // reiniciar a página 1
+            setPage(1);
           }}
         >
           {[10, 25, 50, 100].map((n) => (
