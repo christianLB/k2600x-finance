@@ -1,8 +1,8 @@
 "use client";
 
 import { StrapiTable, ColumnDefinition } from "@/components/tables/StrapiTable";
-import { useState } from "react";
 import ClientModal from "./ClientModal";
+import { useState } from "react";
 
 export interface Client {
   documentId: string;
@@ -14,34 +14,33 @@ export default function ClientTable() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const handleOpenModal = (Client?: Client) => {
-    setSelectedClient(Client || null);
+  const handleOpenModal = (client?: Client) => {
+    setSelectedClient(client || null);
     setModalOpen(true);
   };
 
-  // Definición de columnas.
+  // Define columns for the table
   const columns: ColumnDefinition<Client>[] = [
     {
-      header: "Cliente",
-      cell: (client) => client.name || "Sin cliente",
+      header: "Nombre",
+      cell: (client) => client.name,
     },
   ];
 
   return (
     <div>
       <StrapiTable<Client>
-        collection="Clients"
-        title="Listado de Clients"
+        collection="clients"
+        title="Listado de Clientes"
         columns={columns}
-        onEdit={() => handleOpenModal()}
-        onCreate={() => handleOpenModal()}
-        createButtonText="Crear Client"
+        onEdit={(client) => handleOpenModal(client)}
+        createButtonText="Crear Cliente"
         selectable
       />
       <ClientModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        client={selectedClient || undefined}
+        client={selectedClient}
       />
     </div>
   );

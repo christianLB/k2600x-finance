@@ -1,7 +1,7 @@
 // useInvoiceForm.ts
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useStrapiDocument } from "@/hooks/useStrapiDocument";
+import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { toast } from "sonner";
 import { Client } from "@/components/clients/ClientTable";
@@ -26,18 +26,12 @@ export function useClientForm({ client }: UseClientFormparams) {
   // Configuramos React Hook Form con defaultValues
   const { control, handleSubmit, reset } = useForm<ClientFormValues>({ defaultValues });
 
-  // Para edición, usamos useStrapiDocument (envía la llamada a /api/strapi con method GET)
-  const clientDocument = useStrapiDocument<any>(
-    "clients",
-    client?.documentId ?? "",
-    { populate: "*", enabled: Boolean(client?.documentId) }
-  );
-
+  const updateClient = useStrapiUpdateMutation<any>("clients");
   // Para creación, usamos useStrapiCollection con enabled:false para disparar la mutación manualmente
   const { create } = useStrapiCollection<any>("clients", { enabled: false });
 
-  // La data a utilizar: si estamos en edición, la proveniente del hook; si no, la pasada en props
-  const clientData = isEditMode ? clientDocument.data : client;
+  // La data a utilizar: si estamos en edición, la pasada en props
+  const clientData = client;
 
   // Sincronizamos los valores del formulario cuando cambia la data
   useEffect(() => {
@@ -55,14 +49,12 @@ export function useClientForm({ client }: UseClientFormparams) {
     const payload = {
       name: data.name,
     };
-
-    if (isEditMode) {
-      clientDocument.update(
-        { updatedData: payload },
+    if (isEditMode && client?.documentId) {
+      updateClient.mutateAsync(
+        { documentId: client.documentId, updatedData: payload },
         {
           onSuccess: () => {
-            toast.success("Invoice actualizado correctamente");
-            clientDocument.refetch();
+            toast.success("Cliente actualizado correctamente");
           },
           onError: (err: any) => toast.error(`Error al actualizar: ${err.message}`),
         }
@@ -70,7 +62,7 @@ export function useClientForm({ client }: UseClientFormparams) {
     } else {
       create(payload, {
         onSuccess: () => {
-          toast.success("Invoice creado correctamente");
+          toast.success("Cliente creado correctamente");
         },
         onError: (err: any) => toast.error(`Error al crear: ${err.message}`),
       });

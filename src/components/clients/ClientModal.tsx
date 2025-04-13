@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import "react-datepicker/dist/react-datepicker.css";
 import { Controller } from "react-hook-form";
-import { useClientForm } from "@/hooks/clients/useClientForm";
+import { useClientForm as useClientForm_v2 } from "@/hooks/clients/useClientForm";
 import { Client } from "./ClientTable";
 
 interface ClientModalProps {
@@ -16,7 +16,7 @@ interface ClientModalProps {
 
 export default function ClientModal({ open, onClose, client }: ClientModalProps) {
   // Llamamos al hook que encapsula la lógica del formulario
-  const { control, handleSubmit, isEditMode } = useClientForm({
+  const { control, handleSubmit, isEditMode } = useClientForm_v2({
     client,
     open,
   });
@@ -25,7 +25,7 @@ export default function ClientModal({ open, onClose, client }: ClientModalProps)
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Editar Invoice" : "Crear Invoice"}</DialogTitle>
+          <DialogTitle>{isEditMode ? "Editar Cliente" : "Crear Cliente"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
           <Controller
@@ -33,13 +33,10 @@ export default function ClientModal({ open, onClose, client }: ClientModalProps)
             control={control}
             render={({ field }) => <Input placeholder="Nombre" {...field} />}
           />
-         
-  
           <div className="mt-4 flex justify-end space-x-2">
             <Button variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-           
             <Button type="submit">{isEditMode ? "Actualizar" : "Crear"}</Button>
           </div>
         </form>
