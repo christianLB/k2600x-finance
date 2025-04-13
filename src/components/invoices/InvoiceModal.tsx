@@ -7,7 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Controller } from "react-hook-form";
-import { useInvoiceForm } from "@/hooks/invoices/useInvoiceForm";
+import { useInvoiceForm as useInvoiceForm_v2 } from "@/hooks/invoices/useInvoiceForm_v2";
 
 interface InvoiceModalProps {
   open: boolean;
@@ -33,7 +33,7 @@ const months = [
 
 export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated }: InvoiceModalProps) {
   // Llamamos al hook que encapsula la lógica del formulario
-  const { control, handleSubmit, isEditMode, handleGenerateDocument, invoiceData } = useInvoiceForm({
+  const { control, handleSubmit, isEditMode, handleGenerateDocument, invoiceData } = useInvoiceForm_v2({
     invoice,
     onInvoiceUpdated,
     open,
