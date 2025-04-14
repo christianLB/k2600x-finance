@@ -9,6 +9,7 @@ import { PencilIcon, Trash2Icon, PlusIcon } from "lucide-react";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 import { useConfirm } from "@/hooks/useConfirm";
+import useStrapiDelete from "@/hooks/useStrapiDelete";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
 
   const [treeData, setTreeData] = useState<NodeModel<Tag>[]>([]);
   const { mutateAsync: updateTag } = useStrapiUpdateMutation<Tag>(collection);
+  const { mutateAsync: deleteTag } = useStrapiDelete<Tag>(collection);
   //const confirm = useConfirm();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,14 +45,17 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    const mapped = tags.map((tag: Tag) => ({
-      id: tag.id,
-      parent: tag.parent_tag as string | number,
-      text: tag.name,
-      droppable: true,
-      data: tag,
-    }));
-    setTreeData(mapped);
+    if (tags && Array.isArray(tags)) {
+      const mapped = tags.map((tag: Tag) => ({
+        id: tag.id,
+        parent: (tag.parent_tag as any)?.id || 0, // Adjust parent mapping
+        text: tag.name,
+        droppable: true,
+        data: tag,
+      }));
+      setTreeData(mapped);
+    } else {
+    }
   }, [tags]);
 
   const handleDrop = async (
@@ -78,16 +83,18 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   };
 
   const handleDelete = (tag: Tag) => {
-    // confirm({
-    //   title: "¿Eliminar tag?",
-    //   description: `Esta acción eliminará '${tag.name}'.`,
-    //   confirmText: "Eliminar",
-    //   cancelText: "Cancelar",
-    //   onConfirm: async () => {
-    //     await updateTag({ documentId: String(tag.id), updatedData: null });
-    //     refetch();
-    //   },
-    // });
+    //confirm({
+    //  title: "¿Eliminar tag?",
+    //  description: `Esta acción eliminará '${tag.name}'.`,
+    //  confirmText: "Eliminar",
+    //  cancelText: "Cancelar",
+    //  onConfirm: async () => {
+    //    await deleteTag(String(tag.id));
+    //    refetch();
+    //  },
+    //});
+    deleteTag(String(tag.id));
+    refetch();
   };
 
   const handleCreate = (parentId?: number) => {
