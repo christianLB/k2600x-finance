@@ -1,11 +1,12 @@
 "use client";
 
 import { StrapiTable } from "@/components/tables/StrapiTable";
-//import { useStrapiCollection } from "@/hooks/useStrapiCollection";
+import DocumentoModal from "./DocumentoModal";
+import { Button } from "@/components/ui/button";
+import { TagsSelector } from "@/components/operation-tags/TagsSelector";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
-// import { useState } from "react";
 import { toast } from "sonner";
-// import MultiSelect from "../ui/multi-select";
+import { useState } from "react";
 
 interface Documento {
   id: number;
@@ -16,37 +17,38 @@ interface Documento {
     url: string;
     name: string;
   };
-  tags?: { id: number; name: string }[];
+  content?: string;
+  operation_tag?: { id: number; name: string } | null;
 }
 
 export default function DocumentosTable() {
-  //const { data: tags = [] } = useStrapiCollection("tags");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<Documento | null>(null);
+
   const update = useStrapiUpdateMutation<Documento>("documentos");
 
-  // const handleTagChange = async (doc: Documento, selected: number[]) => {
-  //   try {
-  //     await update.mutateAsync({
-  //       documentId: doc.documentId,
-  //       updatedData: { tags: selected },
-  //     });
-  //     toast.success("Tags actualizados");
-  //   } catch {
-  //     toast.error("Error al actualizar tags");
-  //   }
-  // };
+  const handleEdit = (doc: Documento) => {
+    setEditingDoc({
+      ...doc,
+      documentId: String(doc.id), // Ensure documentId is a string for modal (fixes TS error)
+    });
+    setModalOpen(true);
+  };
 
-  const handleEstadoChange = async (
-    doc: Documento,
-    estado: Documento["estado"]
-  ) => {
+  const handleCreate = () => {
+    setEditingDoc(null);
+    setModalOpen(true);
+  };
+
+  const handleTagChange = async (doc: Documento, tagId: number) => {
     try {
       await update.mutateAsync({
-        documentId: doc.documentId,
-        updatedData: { estado },
+        id: doc.documentId,
+        updatedData: { operation_tag: tagId },
       });
-      toast.success("Estado actualizado");
+      toast.success("Tag actualizado");
     } catch {
-      toast.error("Error al actualizar estado");
+      toast.error("Error al actualizar tag");
     }
   };
 
@@ -69,46 +71,51 @@ export default function DocumentosTable() {
     },
     {
       header: "Estado",
-      cell: (row: Documento) => (
-        <select
-          className="text-sm border rounded px-2 py-1"
-          value={row.estado}
-          onChange={(e) =>
-            handleEstadoChange(row, e.target.value as Documento["estado"])
-          }
-        >
-          <option value="pendiente">Pendiente</option>
-          <option value="procesado">Procesado</option>
-          <option value="error ">Error</option>
-        </select>
-      ),
+      cell: (row: Documento) => row.estado,
     },
     {
       header: "Resumen",
       cell: (row: Documento) => row.resumen?.substring(0, 100) || "",
     },
     {
-      header: "Tags",
-      cell: () => (
-        // row: Documento
-        <>sarsa</>
-        // <MultiSelect
-        //   options={tags.map((tag) => ({ id: tag.id, label: tag.name }))}
-        //   defaultValue={row.tags?.map((t) => t.id) || []}
-        //   onChange={(ids) => handleTagChange(row, ids)}
-        // />
+      header: "Tag",
+      cell: (row: Documento) => (
+        <TagsSelector
+          appliesTo="documento"
+          currentTag={row.operation_tag?.id || null}
+          onSelect={(tagId) => handleTagChange(row, tagId)}
+        />
+      ),
+    },
+    {
+      header: "Acciones",
+      cell: (row: Documento) => (
+        <Button size="sm" onClick={() => handleEdit(row)}>
+          Editar
+        </Button>
       ),
     },
   ];
 
   return (
-    <StrapiTable<Documento>
-      collection="documentos"
-      columns={columns}
-      title="Listado de Documentos"
-      pageSize={10}
-      selectable={false}
-      queryOptions={{ populate: ["tags", "archivo"] }}
-    />
+    <div>
+      <div className="flex justify-end mb-2">
+        <Button onClick={handleCreate}>Crear Documento</Button>
+      </div>
+      <StrapiTable<Documento>
+        collection="documentos"
+        columns={columns}
+        title="Listado de Documentos"
+        pageSize={10}
+        selectable={false}
+        //queryOptions={{ populate: ["*"] }}
+      />
+      <DocumentoModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        documento={editingDoc}
+        onSuccess={() => setModalOpen(false)}
+      />
+    </div>
   );
 }
