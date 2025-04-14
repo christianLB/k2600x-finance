@@ -38,7 +38,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   const [treeData, setTreeData] = useState<NodeModel<Tag>[]>([]);
   const { mutateAsync: updateTag } = useStrapiUpdateMutation<Tag>(collection);
   const { mutateAsync: deleteTag } = useStrapiDelete<Tag>(collection);
-  //const confirm = useConfirm();
+  const confirm = useConfirm();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [tagDraft, setTagDraft] = useState<Partial<Tag>>({});
@@ -83,18 +83,16 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   };
 
   const handleDelete = (tag: Tag) => {
-    //confirm({
-    //  title: "¿Eliminar tag?",
-    //  description: `Esta acción eliminará '${tag.name}'.`,
-    //  confirmText: "Eliminar",
-    //  cancelText: "Cancelar",
-    //  onConfirm: async () => {
-    //    await deleteTag(String(tag.id));
-    //    refetch();
-    //  },
-    //});
-    deleteTag(String(tag.id));
-    refetch();
+    confirm({
+      title: "¿Eliminar tag?",
+      description: `Esta acción eliminará '${tag.name}'.`,
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      onConfirm: async () => {
+        await deleteTag(String(tag.id));
+        refetch();
+      },
+    });
   };
 
   const handleCreate = (parentId?: number) => {
