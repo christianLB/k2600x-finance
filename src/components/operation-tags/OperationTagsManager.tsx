@@ -34,7 +34,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
     populate: ["parent_tag"],
   });
 
-  const [treeData, setTreeData] = useState<NodeModel<number>[]>([]);
+  const [treeData, setTreeData] = useState<NodeModel<Tag>[]>([]);
   const { mutateAsync: updateTag } = useStrapiUpdateMutation<Tag>(collection);
   const confirm = useConfirm();
 
@@ -43,9 +43,9 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    const mapped = tags.map((tag) => ({
+    const mapped = tags.map((tag: Tag) => ({
       id: tag.id,
-      parent: tag.parent_tag?.id ?? 0,
+      parent: tag.parent_tag as string | number,
       text: tag.name,
       droppable: true,
       data: tag,
@@ -54,7 +54,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   }, [tags]);
 
   const handleDrop = async (
-    newTree: NodeModel<number>[],
+    newTree: NodeModel<Tag>[],
     { dragSourceId, dropTargetId }: any
   ) => {
     setTreeData(newTree);
@@ -78,20 +78,20 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   };
 
   const handleDelete = (tag: Tag) => {
-    confirm({
-      title: "¿Eliminar tag?",
-      description: `Esta acción eliminará '${tag.name}'.`,
-      confirmText: "Eliminar",
-      cancelText: "Cancelar",
-      onConfirm: async () => {
-        await updateTag({ documentId: String(tag.id), updatedData: null });
-        refetch();
-      },
-    });
+    // confirm({
+    //   title: "¿Eliminar tag?",
+    //   description: `Esta acción eliminará '${tag.name}'.`,
+    //   confirmText: "Eliminar",
+    //   cancelText: "Cancelar",
+    //   onConfirm: async () => {
+    //     await updateTag({ documentId: String(tag.id), updatedData: null });
+    //     refetch();
+    //   },
+    // });
   };
 
   const handleCreate = (parentId?: number) => {
-    setTagDraft({ name: "", color: "#ccc", parent_tag: parentId ?? null });
+    setTagDraft({ name: "", color: "#ccc", parent_tag: parentId });
     setEditingId(null);
     setModalOpen(true);
   };
@@ -133,7 +133,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
           rootId={0}
           onDrop={handleDrop}
           render={(node, { depth, isOpen, onToggle }) => {
-            const tag = node.data as Tag;
+            const tag = node.data as unknown as Tag;
             return (
               <div
                 style={{ marginInlineStart: depth * 16 }}
@@ -193,7 +193,9 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
           <Input
             type="color"
             value={tagDraft.color ?? "#cccccc"}
-            onChange={(e) => setTagDraft({ ...tagDraft, color: e.target.value })}
+            onChange={(e) =>
+              setTagDraft({ ...tagDraft, color: e.target.value })
+            }
           />
           <Button onClick={handleSave} disabled={!tagDraft.name}>
             Guardar
