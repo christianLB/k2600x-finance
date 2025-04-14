@@ -47,7 +47,7 @@ export default function DocumentoModal({ open, onClose, documento, onSuccess }: 
       if (file) {
         // Use File directly (browser FormData)
         const uploaded = await uploadPdfToStrapi(file, file.name);
-        archivoId = uploaded[0]?.id;
+        archivoId = uploaded.id;
       }
       const data: any = {
         resumen,
@@ -78,10 +78,10 @@ export default function DocumentoModal({ open, onClose, documento, onSuccess }: 
         <DialogTitle>{documento ? "Editar Documento" : "Crear Documento"}</DialogTitle>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <label>
-            Archivo PDF:
+            Archivo:
             <Input
               type="file"
-              accept="application/pdf"
+              accept="*"
               ref={fileInputRef}
               onChange={handleFileChange}
               disabled={loading}
