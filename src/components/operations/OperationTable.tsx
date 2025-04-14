@@ -5,11 +5,10 @@ import { StrapiTable } from "@/components/tables/StrapiTable";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
+import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import OperationModal from "./OperationModal";
 import { Tag } from "@/types/tag";
 import { TagsSelector } from "../operation-tags/TagsSelector";
-
-// Import the new TagsSelector component
 
 export interface Operacion {
   documentId: string;
@@ -30,12 +29,12 @@ export function OperationsTable() {
   );
   const [modalOpen, setModalOpen] = useState(false);
 
-  // const {
-  //   data: { data: tags },
-  // } = useStrapiCollection("operation-tags", {
-  //   pagination: { page: 1, pageSize: 500 },
-  //   populate: ["parent_tag", "children_tags"],
-  // });
+  const { data: tagData = { data: [] } } = useStrapiCollection<Tag>("operation-tags", {
+    pagination: { page: 1, pageSize: 500 },
+    populate: ["parent_tag", "children_tags"],
+  });
+  const tagList: Tag[] = tagData.data || [];
+
   const updateMutation = useStrapiUpdateMutation<Operacion>("operations");
 
   const handleOpenModal = (operation?: Operacion) => {
@@ -104,17 +103,17 @@ export function OperationsTable() {
     {
       header: "Tag",
       cell: (row: Operacion) => {
-        //const tagList = (tags as Tag[]) || [];
-        // const currentTag =
-        //   typeof row.operation_tag === "number"
-        //     ? tagList.find((t: Tag) => t.id === row.operation_tag) ?? null
-        //     : (row.operation_tag as Tag) ?? null;
-
+        // Determine the current tag object for this row
+        let currentTag: Tag | null = null;
+        if (typeof row.operation_tag === "number") {
+          currentTag = tagList.find((t) => t.id === row.operation_tag) || null;
+        } else if (row.operation_tag && typeof row.operation_tag === "object") {
+          currentTag = tagList.find((t) => t.id === row.operation_tag.id) || row.operation_tag;
+        }
         return (
           <TagsSelector
             appliesTo="operation"
-            //tags={tagList}
-            // currentTag={currentTag}
+            currentTag={currentTag}
             placeholder="Seleccionar tag"
             onSelect={(tag: Tag) => handleTagChange(row, tag)}
           />

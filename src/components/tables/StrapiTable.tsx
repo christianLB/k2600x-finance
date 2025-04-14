@@ -75,7 +75,7 @@ export function StrapiTable<T>({
       "meta" in data &&
       (data as any).meta?.pagination?.total) ||
     0;
-  const totalPages = Math.ceil(total / pageSize);
+  const totalPages = Math.ceil(total / size);
 
   const extraColumnsCount =
     (selectable ? 1 : 0) + (renderActions ? 1 : onEdit ? 1 : 0);
@@ -227,8 +227,8 @@ export function StrapiTable<T>({
 
       <div className="flex flex-col md:flex-row justify-between items-center px-2 gap-2">
         <span className="text-sm text-gray-500">
-          Mostrando {(page - 1) * pageSize + 1} -{" "}
-          {Math.min(page * pageSize, total)} de {total} registros
+          Mostrando {(page - 1) * size + 1} -{" "}
+          {Math.min(page * size, total)} de {total} registros
         </span>
         <select
           className="text-sm border rounded px-2 py-1"

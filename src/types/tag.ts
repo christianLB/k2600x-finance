@@ -1,5 +1,6 @@
 export interface Tag {
   id: number;
+  documentId: string;
   name: string;
   parent_tag: Tag;
   appliesTo: string;

@@ -11,16 +11,16 @@ export function useStrapiUpdateMutation<T>(collection: string) {
   return useMutation<
     StrapiMutationResponse<T>,
     Error,
-    { documentId: string; updatedData: Partial<T> }
+    { id: string; updatedData: Partial<T> }
   >({
-    mutationFn: async ({ documentId, updatedData }) => {
+    mutationFn: async ({ id, updatedData }) => {
       const res = await fetch("/api/strapi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           method: "PUT",
           collection,
-          id: documentId,
+          id,
           data: updatedData,
         }),
       });
@@ -30,10 +30,10 @@ export function useStrapiUpdateMutation<T>(collection: string) {
       }
       return result;
     },
-    onSuccess: (_, { documentId }) => {
+    onSuccess: (_, { id }) => {
       // invalidar tanto el listado como el detalle si existen
       queryClient.invalidateQueries({ queryKey: [collection] });
-      queryClient.invalidateQueries({ queryKey: [collection, documentId] });
+      queryClient.invalidateQueries({ queryKey: [collection, id] });
     },
   });
 }

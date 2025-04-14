@@ -70,8 +70,10 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
     setTreeData(newTree);
 
     try {
+      const tag = tags.find((t) => t.id === dragSourceId);
+      const docId = tag?.documentId || dragSourceId;
       await updateTag({
-        documentId: String(dragSourceId),
+        id: docId,
         updatedData: {
           parent_tag: dropTargetId !== 0 ? dropTargetId : null,
         },
@@ -95,7 +97,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
       confirmText: "Eliminar",
       cancelText: "Cancelar",
       onConfirm: async () => {
-        await deleteTag(String(tag.id));
+        await deleteTag({ id: tag.documentId });
         refetch();
       },
     });
@@ -111,8 +113,10 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
     try {
       const sanitized = sanitizeTagDraft(tagDraft);
       if (editingId) {
+        const tag = tags.find((t) => t.id === editingId);
+        const docId = tag?.documentId || editingId;
         await updateTag({
-          documentId: String(editingId),
+          id: docId,
           updatedData: sanitized as any,
         });
       } else {
