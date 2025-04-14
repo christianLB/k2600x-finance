@@ -7,6 +7,8 @@ import { TagsSelector } from "@/components/operation-tags/TagsSelector";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 import { toast } from "sonner";
 import { useState } from "react";
+import { PencilIcon, Trash2Icon } from "lucide-react";
+import useStrapiDelete from "@/hooks/useStrapiDelete";
 
 interface Documento {
   id: number;
@@ -26,6 +28,10 @@ export default function DocumentosTable() {
   const [editingDoc, setEditingDoc] = useState<Documento | null>(null);
 
   const update = useStrapiUpdateMutation<Documento>("documentos");
+
+  const deleteDocumento = useStrapiDelete<Documento>("documentos", () => {
+    toast.success("Documento eliminado");
+  });
 
   const handleEdit = (doc: Documento) => {
     setEditingDoc({
@@ -49,6 +55,15 @@ export default function DocumentosTable() {
       toast.success("Tag actualizado");
     } catch {
       toast.error("Error al actualizar tag");
+    }
+  };
+
+  const handleDelete = async (doc: Documento) => {
+    if (!window.confirm("¿Seguro que quieres eliminar este documento?")) return;
+    try {
+      await deleteDocumento.mutateAsync(doc.documentId);
+    } catch {
+      toast.error("Error al eliminar documento");
     }
   };
 
@@ -90,9 +105,22 @@ export default function DocumentosTable() {
     {
       header: "Acciones",
       cell: (row: Documento) => (
-        <Button size="sm" onClick={() => handleEdit(row)}>
-          Editar
-        </Button>
+        <div className="flex gap-2 justify-center">
+          <button
+            onClick={() => handleEdit(row)}
+            className="text-gray-500 hover:text-blue-600"
+            title="Editar"
+          >
+            <PencilIcon className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(row)}
+            className="text-gray-500 hover:text-red-600"
+            title="Eliminar"
+          >
+            <Trash2Icon className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ];
