@@ -36,7 +36,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
 
   const [treeData, setTreeData] = useState<NodeModel<Tag>[]>([]);
   const { mutateAsync: updateTag } = useStrapiUpdateMutation<Tag>(collection);
-  const confirm = useConfirm();
+  //const confirm = useConfirm();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [tagDraft, setTagDraft] = useState<Partial<Tag>>({});
