@@ -103,7 +103,7 @@ export function StrapiTable<T>({
     renderActions || (onEdit ? defaultRenderActions : null);
 
   function handleDelete(item: T) {
-    const docId = (item as any)?.id || (item as any)?.documentId;
+    const docId = (item as any)?.documentId || (item as any)?.id;
     if (!docId) return;
     confirm({
       title: "¿Eliminar ítem?",
@@ -111,7 +111,7 @@ export function StrapiTable<T>({
       confirmText: "Eliminar",
       cancelText: "Cancelar",
       onConfirm: () => {
-        deleteItem(item as any);
+        deleteItem({ id: docId });
       },
     });
   }

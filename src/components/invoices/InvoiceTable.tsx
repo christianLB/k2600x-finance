@@ -3,6 +3,8 @@
 import { StrapiTable, ColumnDefinition } from "@/components/tables/StrapiTable";
 import InvoiceModal from "./InvoiceModal";
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 
 interface Invoice {
   documentId: string;
@@ -13,11 +15,14 @@ interface Invoice {
   cantidad: number;
   total?: number | null;
   currency?: string;
+  declared?: boolean;
 }
 
 export default function InvoiceTable() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  const updateInvoice = useStrapiUpdateMutation<Invoice>("invoices");
 
   const handleOpenModal = (invoice?: Invoice) => {
     setSelectedInvoice(invoice || null);
@@ -42,6 +47,17 @@ export default function InvoiceTable() {
           (inv.precioUnitario && inv.cantidad ? inv.precioUnitario * inv.cantidad : 0);
         return `$${total.toFixed(2)}`;
       },
+    },
+    {
+      header: "Declarado",
+      cell: (inv) => (
+        <Switch
+          checked={!!inv.declared}
+          onCheckedChange={async (checked) => {
+            await updateInvoice.mutateAsync({ id: inv.documentId, updatedData: { declared: checked } });
+          }}
+        />
+      ),
     },
   ];
 

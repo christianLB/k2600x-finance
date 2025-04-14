@@ -45,7 +45,7 @@ export function OperationsTable() {
   const handleTagChange = async (operation: Operacion, selectedTag: Tag) => {
     try {
       await updateMutation.mutateAsync({
-        documentId: operation.documentId,
+        id: operation.documentId,
         updatedData: { operation_tag: selectedTag.id },
       });
       toast.success("Tag actualizado");
@@ -60,7 +60,7 @@ export function OperationsTable() {
   ) => {
     try {
       await updateMutation.mutateAsync({
-        documentId: operation.documentId,
+        id: operation.documentId,
         updatedData: { posibleDuplicado: value },
       });
       toast.success("Estado de duplicado actualizado");
@@ -72,7 +72,7 @@ export function OperationsTable() {
   const handleEstadoChange = async (operation: Operacion, estado: string) => {
     try {
       await updateMutation.mutateAsync({
-        documentId: operation.documentId,
+        id: operation.documentId,
         updatedData: { estadoConciliacion: estado },
       });
       toast.success("Estado actualizado");

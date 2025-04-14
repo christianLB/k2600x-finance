@@ -51,7 +51,7 @@ export function useClientForm({ client }: UseClientFormparams) {
     };
     if (isEditMode && client?.documentId) {
       updateClient.mutateAsync(
-        { documentId: client.documentId, updatedData: payload },
+        { id: client.documentId, updatedData: payload },
         {
           onSuccess: () => {
             toast.success("Cliente actualizado correctamente");

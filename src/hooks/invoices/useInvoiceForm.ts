@@ -86,7 +86,7 @@ export function useInvoiceForm({ invoice, onInvoiceUpdated, open }: UseInvoiceFo
     };
     if (isEditMode && invoice?.documentId) {
       updateInvoice.mutateAsync(
-        { documentId: invoice.documentId, updatedData: payload },
+        { id: invoice.documentId, updatedData: payload },
         {
           onSuccess: (updated) => {
             toast.success("Invoice actualizado correctamente");
