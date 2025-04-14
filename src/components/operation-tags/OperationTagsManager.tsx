@@ -26,7 +26,7 @@ interface TagsManagerProps {
 export default function TagsManager({ appliesTo }: TagsManagerProps) {
   const collection = "operation-tags";
   const {
-    data: { data: tags = [] } = { data: [] }, // Provide default value
+    data: { data: tags = [] } = { data: [] },
     refetch,
     create,
   } = useStrapiCollection<Tag>(collection, {
@@ -45,30 +45,36 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (tags && Array.isArray(tags)) {
-      const mapped = tags.map((tag: Tag) => ({
-        id: tag.id,
-        parent: (tag.parent_tag as any)?.id || 0, // Adjust parent mapping
-        text: tag.name,
-        droppable: true,
-        data: tag,
-      }));
-      setTreeData(mapped);
-    } else {
-    }
+    const mapped = tags.map((tag: Tag) => ({
+      id: tag.id,
+      parent: tag.parent_tag?.id || 0,
+      text: tag.name,
+      droppable: true,
+      data: tag,
+    }));
+    setTreeData(mapped);
   }, [tags]);
+
+  const sanitizeTagDraft = (draft: Partial<Tag>) => ({
+    ...draft,
+    parent_tag:
+      draft.parent_tag && typeof draft.parent_tag === "object"
+        ? draft.parent_tag.id
+        : draft.parent_tag ?? null,
+  });
 
   const handleDrop = async (
     newTree: NodeModel<Tag>[],
     { dragSourceId, dropTargetId }: any
   ) => {
     setTreeData(newTree);
-    const documentId = String(dragSourceId);
 
     try {
       await updateTag({
-        documentId,
-        updatedData: { parent_tag: dropTargetId !== 0 ? dropTargetId : null },
+        documentId: String(dragSourceId),
+        updatedData: {
+          parent_tag: dropTargetId !== 0 ? dropTargetId : null,
+        },
       });
       refetch();
     } catch (e) {
@@ -77,7 +83,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   };
 
   const handleEdit = (tag: Tag) => {
-    setTagDraft({ name: tag.name, color: tag.color });
+    setTagDraft({ name: tag.name, color: tag.color, parent_tag: tag.parent_tag });
     setEditingId(tag.id);
     setModalOpen(true);
   };
@@ -95,26 +101,25 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
     });
   };
 
-  const handleCreate = (parentId?: number) => {
-    setTagDraft({ name: "", color: "#ccc", parent_tag: parentId });
+  const handleCreate = (parent?: Tag) => {
+    setTagDraft({ name: "", color: "#ccc", parent_tag: parent });
     setEditingId(null);
     setModalOpen(true);
   };
 
   const handleSave = async () => {
     try {
+      const sanitized = sanitizeTagDraft(tagDraft);
       if (editingId) {
-        // Update existing tag
         await updateTag({
           documentId: String(editingId),
-          updatedData: tagDraft, // Send only updated fields
+          updatedData: sanitized as any,
         });
       } else {
-        // Create new tag
         await create({
-          ...tagDraft,
-          appliesTo: appliesTo,
-        } as Tag); // Ensure complete object is sent
+          ...sanitized as any,
+          appliesTo,
+        } as Tag);
       }
       refetch();
       setModalOpen(false);
@@ -138,7 +143,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
           rootId={0}
           onDrop={handleDrop}
           render={(node, { depth, isOpen, onToggle }) => {
-            const tag = node.data as unknown as Tag;
+            const tag = node.data as Tag;
             return (
               <div
                 style={{ marginInlineStart: depth * 16 }}
@@ -174,7 +179,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => handleCreate(tag.id)}
+                    onClick={() => handleCreate(tag)}
                   >
                     <PlusIcon className="w-4 h-4 text-green-600" />
                   </Button>
@@ -193,7 +198,9 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
           <Input
             placeholder="Nombre del tag"
             value={tagDraft.name ?? ""}
-            onChange={(e) => setTagDraft({ ...tagDraft, name: e.target.value })}
+            onChange={(e) =>
+              setTagDraft({ ...tagDraft, name: e.target.value })
+            }
           />
           <Input
             type="color"

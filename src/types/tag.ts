@@ -1,7 +1,7 @@
 export interface Tag {
   id: number;
   name: string;
-  parent_tag?: number;
+  parent_tag: Tag;
   appliesTo: string;
   children_tags?: Tag[];
   color?: string;
