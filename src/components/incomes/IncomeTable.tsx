@@ -11,10 +11,33 @@ import { StrapiTable, ColumnDefinition } from "@/components/tables/StrapiTable";
 interface Income {
   documentId: string;
   id: number;
-  date: string;
-  client: { name: string };
-  amount: number;
-  currency: string;
+  fechaMovimiento: string;
+  fechaValor: string;
+  monto: number;
+  moneda: string;
+  descripcion: string;
+  cuenta: string;
+  titularCuenta: string;
+  concepto: string;
+  observaciones: string;
+  origen: string;
+  posibleDuplicado: any;
+  estadoConciliacion: string;
+  procesadoPorAutomatizacion: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  cuentaDestino: string;
+  referenciaBancaria: any;
+  comision: any;
+  invoices: any[];
+  justificante?: {
+    id: number;
+    documentId: string;
+    name: string;
+    url: string;
+  };
+  operation_tag: any;
 }
 
 export default function IncomeTable() {
@@ -22,87 +45,65 @@ export default function IncomeTable() {
   
   const columns: ColumnDefinition<Income>[] = [
     {
-      header: "Fecha",
-      cell: (income) => (
-        <Popover className="relative">
-          <Popover.Button className="underline text-blue-500">
-            {format(new Date(income.date), "dd/MM/yyyy")}
-          </Popover.Button>
-          <Transition
-            enter="transition ease-out duration-100"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="transition ease-in duration-75"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
-          >
-            <Popover.Panel className="absolute z-50 mt-1 bg-white border rounded-md shadow-lg p-2">
-              <input
-                type="date"
-                className="border p-2 rounded-md"
-                value={
-                  editingDate?.id === income.documentId && editingDate?.date
-                    ? format(editingDate.date, "yyyy-MM-dd")
-                    : income.date
-                }
-                onChange={(e) =>
-                  setEditingDate({
-                    id: income.documentId,
-                    date: new Date(e.target.value),
-                  })
-                }
-              />
-              <div className="flex justify-end space-x-2 mt-2">
-                {/* <Button
-                  size="sm"
-                  onClick={() =>
-                    editingDate && editingDate.id === income.documentId
-                      ? handleUpdateDate(income.documentId, editingDate.date)
-                      : null
-                  }
-                >
-                  <Check className="w-4 h-4" />
-                </Button> */}
-                <Button size="sm" variant="destructive" onClick={() => setEditingDate(null)}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </Popover.Panel>
-          </Transition>
-        </Popover>
-      ),
+      header: "Fecha Movimiento",
+      cell: (income) => income.fechaMovimiento
+        ? format(new Date(income.fechaMovimiento), "dd/MM/yyyy")
+        : "-",
     },
     {
-      header: "Cliente",
-      cell: (income) => income.client?.name || "Sin cliente",
+      header: "Fecha Valor",
+      cell: (income) => income.fechaValor
+        ? format(new Date(income.fechaValor), "dd/MM/yyyy")
+        : "-",
+    },
+    {
+      header: "Descripción",
+      cell: (income) => income.descripcion,
+    },
+    {
+      header: "Cuenta",
+      cell: (income) => income.cuenta,
+    },
+    {
+      header: "Titular",
+      cell: (income) => income.titularCuenta,
+    },
+    {
+      header: "Concepto",
+      cell: (income) => income.concepto,
     },
     {
       header: "Monto",
-      cell: (income) => {
-        return `${income.amount.toFixed(2)} ${income.currency}`;
-      },
+      cell: (income) => `${income.monto.toFixed(2)} ${income.moneda}`,
+    },
+    {
+      header: "Justificante",
+      cell: (income) =>
+        income.justificante?.url ? (
+          <a
+            href={
+              income.justificante.url.startsWith("http")
+                ? income.justificante.url
+                : `${process.env.NEXT_PUBLIC_STRAPI_URL}${income.justificante.url}`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 underline"
+          >
+            {income.justificante.name}
+          </a>
+        ) : (
+          "-"
+        ),
     },
   ];
 
-  // // Función para actualizar la fecha (la misma que en el popover)
-  // const handleUpdateDate = async (documentId: string, date: Date | null) => {
-  //   if (!date) return;
-  //   try {
-  //     // Llamada a la mutación update a través de useStrapiCollection
-  //     await updateIncomeDate(documentId, date);
-  //     toast.success("Fecha actualizada");
-  //     setEditingDate(null);
-  //     refetch();
-  //   } catch {
-  //     toast.error("Error al actualizar la fecha");
-  //   }
-  // };
-
   return (
       <StrapiTable<Income>
-        collection="incomes"
-        title="Listado de Incomes"
+        collection="operations"
+        title="Listado de Ingresos"
         columns={columns}
+        queryOptions={{ filters: { monto: { $gt: 0 } } }}
       />
   );
 }
