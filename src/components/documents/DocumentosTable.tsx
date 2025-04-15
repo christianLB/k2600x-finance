@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import useStrapiDelete from "@/hooks/useStrapiDelete";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface Documento {
   id: number;
@@ -18,6 +19,7 @@ interface Documento {
   archivo?: {
     url: string;
     name: string;
+    id: number;
   };
   content?: string;
   operation_tag?: { id: number; name: string } | null;
@@ -32,6 +34,12 @@ export default function DocumentosTable() {
   const deleteDocumento = useStrapiDelete<Documento>("documentos", () => {
     toast.success("Documento eliminado");
   });
+
+  const deleteArchivo = useStrapiDelete("upload/files", () => {
+    toast.success("Archivo adjunto eliminado");
+  });
+
+  const confirm = useConfirm();
 
   const handleEdit = (doc: Documento) => {
     setEditingDoc({
@@ -58,13 +66,30 @@ export default function DocumentosTable() {
     }
   };
 
-  const handleDelete = async (doc: Documento) => {
-    if (!window.confirm("¿Seguro que quieres eliminar este documento?")) return;
-    try {
-      await deleteDocumento.mutateAsync(doc.documentId);
-    } catch {
-      toast.error("Error al eliminar documento");
-    }
+  const handleDelete = (doc: Documento) => {
+    const hasArchivo = !!doc.archivo?.id;
+    confirm({
+      title: "Eliminar documento",
+      description: `¿Seguro que quieres eliminar el documento '${doc.resumen || doc.archivo?.name || doc.id}'?`,
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      extraContent: hasArchivo ? (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" />
+          También eliminar archivo adjunto
+        </label>
+      ) : undefined,
+      onConfirm: async ({ deleteFile }: { deleteFile?: boolean }) => {
+        try {
+          await deleteDocumento.mutateAsync({ id: doc.documentId });
+          if (deleteFile && hasArchivo) {
+            await deleteArchivo.mutateAsync({ id: doc.archivo!.id });
+          }
+        } catch {
+          toast.error("Error al eliminar documento o archivo");
+        }
+      },
+    });
   };
 
   const columns = [

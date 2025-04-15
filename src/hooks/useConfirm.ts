@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { ReactNode } from "react";
 
 interface ConfirmDialogState {
   open: boolean;
@@ -6,16 +7,20 @@ interface ConfirmDialogState {
   description?: string;
   confirmText?: string;
   cancelText?: string;
-  onConfirm?: () => void;
+  onConfirm?: (options?: any) => void;
   onCancel?: () => void;
+  extraContent?: React.ReactNode;
+  extraState?: any;
 
   show: (options: {
     title: string;
     description: string;
     confirmText?: string;
     cancelText?: string;
-    onConfirm?: () => void;
+    onConfirm?: (options?: any) => void;
     onCancel?: () => void;
+    extraContent?: React.ReactNode;
+    extraState?: any;
   }) => void;
 
   hide: () => void;
@@ -29,11 +34,15 @@ export const useConfirmStore = create<ConfirmDialogState>((set) => ({
   cancelText: "Cancelar",
   onConfirm: undefined,
   onCancel: undefined,
+  extraContent: undefined,
+  extraState: undefined,
 
   show: (options) =>
     set({
       open: true,
       ...options,
+      extraContent: options.extraContent,
+      extraState: options.extraState,
     }),
 
   hide: () =>
@@ -45,6 +54,8 @@ export const useConfirmStore = create<ConfirmDialogState>((set) => ({
       cancelText: "Cancelar",
       onConfirm: undefined,
       onCancel: undefined,
+      extraContent: undefined,
+      extraState: undefined,
     }),
 }));
 

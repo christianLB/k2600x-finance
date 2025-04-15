@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useConfirmStore } from "@/hooks/useConfirm";
+import React from 'react';
 
 export default function ConfirmDialog() {
   const {
@@ -14,10 +15,18 @@ export default function ConfirmDialog() {
     onConfirm,
     onCancel,
     hide,
+    extraContent,
+    extraState,
   } = useConfirmStore();
 
+  // Local state for checkbox (if present)
+  const [deleteFile, setDeleteFile] = React.useState(false);
+  React.useEffect(() => {
+    setDeleteFile(false); // reset on open
+  }, [open]);
+
   const handleConfirm = () => {
-    if (onConfirm) onConfirm();
+    if (onConfirm) onConfirm({ deleteFile });
     hide();
   };
 
@@ -33,6 +42,14 @@ export default function ConfirmDialog() {
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {extraContent && (
+          <div className="mb-2">
+            {React.cloneElement(extraContent as React.ReactElement, {
+              checked: deleteFile,
+              onChange: (e: React.ChangeEvent<HTMLInputElement>) => setDeleteFile(e.target.checked),
+            })}
+          </div>
+        )}
         <DialogFooter className="flex justify-end space-x-2">
           <Button variant="outline" onClick={handleCancel}>
             {cancelText}
