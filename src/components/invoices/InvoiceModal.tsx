@@ -8,6 +8,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Controller } from "react-hook-form";
 import { useInvoiceForm as useInvoiceForm_v2 } from "@/hooks/invoices/useInvoiceForm";
+import { useRef } from "react";
+import { FileIcon } from "lucide-react";
 
 interface InvoiceModalProps {
   open: boolean;
@@ -39,11 +41,22 @@ export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated 
     open,
   });
 
+  const modalTitle = isEditMode ? "Actualizar Invoice" : "Crear Invoice";
+  const saveButtonText = isEditMode ? "Actualizar" : "Crear";
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handler for file input change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Implement logic to upload files and update form state
+    // This will be completed after reviewing the rest of the form logic
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Editar Invoice" : "Crear Invoice"}</DialogTitle>
+          <DialogTitle>{modalTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
           <Controller
@@ -119,6 +132,33 @@ export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated 
             control={control}
             render={({ field }) => <Input placeholder="Año Facturado" type="number" {...field} />}
           />
+          {/* Archivos: file upload and preview */}
+          <div>
+            <label className="block mb-1 font-medium">Archivos</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="block w-full border rounded p-1 mb-2"
+              onChange={handleFileChange}
+            />
+            {invoiceData?.archivos?.length > 0 && (
+              <div className="flex gap-2 flex-wrap mt-1">
+                {invoiceData.archivos.map((file: any) => (
+                  <a
+                    key={file.id}
+                    href={file.url.startsWith("http") ? file.url : `${process.env.NEXT_PUBLIC_STRAPI_URL}${file.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={file.name}
+                    className="inline-block"
+                  >
+                    <FileIcon className="w-5 h-5 text-blue-500 hover:text-blue-700" />
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
           {invoiceData?.archivos?.length > 0 && (
             <div className="mt-2">
               <a
@@ -144,7 +184,7 @@ export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated 
                 Generar Documento
               </Button>
             )}
-            <Button type="submit">{isEditMode ? "Actualizar" : "Crear"}</Button>
+            <Button type="submit">{saveButtonText}</Button>
           </div>
         </form>
       </DialogContent>

@@ -5,6 +5,7 @@ import InvoiceModal from "./InvoiceModal";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
+import { FileIcon } from "lucide-react";
 
 interface Invoice {
   documentId: string;
@@ -16,6 +17,7 @@ interface Invoice {
   total?: number | null;
   currency?: string;
   declared?: boolean;
+  archivos?: any[];
 }
 
 export default function InvoiceTable() {
@@ -29,6 +31,11 @@ export default function InvoiceTable() {
     setModalOpen(true);
   };
 
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedInvoice(null);
+  };
+
   // Definición de columnas.
   const columns: ColumnDefinition<Invoice>[] = [
     {
@@ -38,6 +45,27 @@ export default function InvoiceTable() {
     {
       header: "Cliente",
       cell: (inv) => inv.client?.name || "Sin cliente",
+    },
+    {
+      header: "Archivos",
+      cell: (inv) =>
+        Array.isArray(inv.archivos) && inv.archivos.length > 0 ? (
+          <div className="flex gap-2">
+            {inv.archivos.map((file: any) => (
+              <a
+                key={file.id}
+                href={file.url.startsWith("http") ? file.url : `${process.env.NEXT_PUBLIC_STRAPI_URL}${file.url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={file.name}
+              >
+                <FileIcon className="w-5 h-5 text-blue-500 hover:text-blue-700" />
+              </a>
+            ))}
+          </div>
+        ) : (
+          <span className="text-gray-400">Sin archivos</span>
+        ),
     },
     {
       header: "Total",
@@ -67,14 +95,15 @@ export default function InvoiceTable() {
         collection="invoices"
         title="Listado de Invoices"
         columns={columns}
-        onEdit={() => handleOpenModal()}
+        onEdit={handleOpenModal}
+        onCreate={() => handleOpenModal(undefined)}
         createButtonText="Crear Invoice"
         selectable
       />
       <InvoiceModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        invoice={selectedInvoice}
+        onClose={handleCloseModal}
+        invoice={selectedInvoice ?? undefined}
       />
     </div>
   );

@@ -44,6 +44,23 @@ export function useInvoiceForm({ invoice, onInvoiceUpdated, open }: UseInvoiceFo
   const { create } = useStrapiCollection<any>("invoices", { enabled: false });
   // La data a utilizar: si estamos en edición, la pasada en props
   const invoiceData = invoice;
+  // Reset form values when invoice or open changes
+  useEffect(() => {
+    if (open && invoice) {
+      reset({
+        invoiceNumber: invoice.invoiceNumber?.toString() ?? "",
+        precioUnitario: invoice.precioUnitario?.toString() ?? "",
+        cantidad: invoice.cantidad?.toString() ?? "",
+        concepto: invoice.concepto ?? "",
+        fechaInvoice: invoice.fechaInvoice ? new Date(invoice.fechaInvoice) : null,
+        yearFacturado: invoice.yearFacturado?.toString() ?? "",
+        monthFacturado: invoice.monthFacturado ?? "",
+        selectedClient: invoice.client?.id?.toString() ?? "",
+      });
+    } else if (open && !invoice) {
+      reset(defaultValues);
+    }
+  }, [invoice, open, reset]);
   // Sincronizamos los valores del formulario cuando cambia la data
   useEffect(() => {
     if (invoiceData) {
@@ -95,7 +112,7 @@ export function useInvoiceForm({ invoice, onInvoiceUpdated, open }: UseInvoiceFo
           onError: (err: any) => toast.error(`Error al actualizar: ${err.message}`),
         }
       );
-    } else {
+    } else if (open) { // Only allow create if modal is open and not editing
       create(payload, {
         onSuccess: (created) => {
           toast.success("Invoice creado correctamente");
