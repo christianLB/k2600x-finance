@@ -10,6 +10,7 @@ import { Controller } from "react-hook-form";
 import { useInvoiceForm as useInvoiceForm_v2 } from "@/hooks/invoices/useInvoiceForm";
 import { useRef } from "react";
 import { FileIcon } from "lucide-react";
+import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 
 interface InvoiceModalProps {
   open: boolean;
@@ -40,6 +41,12 @@ export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated 
     onInvoiceUpdated,
     open,
   });
+
+  // Fetch all clients for dropdown
+  const { data: clientsData, isLoading: clientsLoading } = useStrapiCollection("clients");
+  const clients = Array.isArray(clientsData)
+    ? clientsData
+    : clientsData?.data || [];
 
   const modalTitle = isEditMode ? "Actualizar Invoice" : "Crear Invoice";
   const saveButtonText = isEditMode ? "Actualizar" : "Crear";
@@ -95,16 +102,16 @@ export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated 
             name="selectedClient"
             control={control}
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select value={field.value} onValueChange={field.onChange} disabled={clientsLoading}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecciona un cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Aquí deberías mapear la lista de clientes. Por ejemplo:
-                      clients.map(client => (
-                        <SelectItem key={client.id} value={client.id.toString()}>{client.name}</SelectItem>
-                      ))
-                  */}
+                  {clients.map((client: any) => (
+                    <SelectItem key={client.id} value={client.id.toString()}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}
