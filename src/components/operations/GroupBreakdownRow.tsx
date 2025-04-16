@@ -59,10 +59,10 @@ export default function GroupBreakdownRow({
 
   return (
     <tr>
-      <td colSpan={colSpan} className="bg-gray-100 p-4">
+      <td colSpan={colSpan} className="bg-card p-4 transition-colors">
         {loading && <Loader />}
         {error && (
-          <div className="text-red-600">
+          <div className="text-destructive">
             Error al cargar grupos: 
           </div>
         )}
@@ -72,7 +72,7 @@ export default function GroupBreakdownRow({
               Breakdown para {category} / Mes {monthIndex + 1}
             </strong>
             {groupData.length === 0 ? (
-              <div className="mt-1 italic text-gray-600">No hay grupos</div>
+              <div className="mt-1 italic text-muted-foreground">No hay grupos</div>
             ) : (
               <Table className="mt-2">
                 <TableHeader>

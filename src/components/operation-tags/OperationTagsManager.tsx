@@ -133,10 +133,14 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
   };
 
   return (
-    <div className="p-4 border rounded bg-white">
+    <div className="bg-card rounded-lg shadow-sm p-2 md:p-4 transition-colors">
       <div className="flex justify-between mb-2">
         <h2 className="font-semibold">Tags: {appliesTo}</h2>
-        <Button size="sm" onClick={() => handleCreate()}>
+        <Button
+          size="sm"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          onClick={() => handleCreate()}
+        >
           <PlusIcon className="w-4 h-4 mr-1" />
           Nuevo
         </Button>
@@ -146,51 +150,48 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
           tree={treeData}
           rootId={0}
           onDrop={handleDrop}
-          render={(node, { depth, isOpen, onToggle }) => {
-            const tag = node.data as Tag;
-            return (
-              <div
-                style={{ marginInlineStart: depth * 16 }}
-                className="flex justify-between items-center py-1 px-2 hover:bg-gray-100 rounded"
-              >
-                <div className="flex items-center gap-2">
-                  {node.droppable && (
-                    <span onClick={onToggle} className="cursor-pointer">
-                      {isOpen ? "▾" : "▸"}
-                    </span>
-                  )}
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: tag.color || "#ccc" }}
-                  ></span>
-                  <span>{node.text}</span>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleEdit(tag)}
-                  >
-                    <PencilIcon className="w-4 h-4 text-gray-600" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleDelete(tag)}
-                  >
-                    <Trash2Icon className="w-4 h-4 text-red-600" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleCreate(tag)}
-                  >
-                    <PlusIcon className="w-4 h-4 text-green-600" />
-                  </Button>
-                </div>
+          render={(node, { depth, isOpen, onToggle }) => (
+            <div
+              style={{ marginInlineStart: depth * 16 }}
+              className="flex justify-between items-center py-1 px-2 hover:bg-gray-100 rounded bg-background"
+            >
+              <div className="flex items-center gap-2">
+                {node.droppable && (
+                  <span onClick={onToggle} className="cursor-pointer">
+                    {isOpen ? "▾" : "▸"}
+                  </span>
+                )}
+                <span
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: node.data.color || "#ccc" }}
+                ></span>
+                <span>{node.text}</span>
               </div>
-            );
-          }}
+              <div className="flex gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => handleEdit(node.data)}
+                >
+                  <PencilIcon className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => handleDelete(node.data)}
+                >
+                  <Trash2Icon className="w-4 h-4 text-destructive" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => handleCreate(node.data)}
+                >
+                  <PlusIcon className="w-4 h-4 text-green-600" />
+                </Button>
+              </div>
+            </div>
+          )}
         />
       </DndProvider>
 
@@ -213,7 +214,11 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
               setTagDraft({ ...tagDraft, color: e.target.value })
             }
           />
-          <Button onClick={handleSave} disabled={!tagDraft.name}>
+          <Button
+            className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            onClick={handleSave}
+            disabled={!tagDraft.name}
+          >
             Guardar
           </Button>
         </DialogContent>

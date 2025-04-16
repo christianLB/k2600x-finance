@@ -63,88 +63,90 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
       <div className="font-semibold">Yearly Operations Report - {year}</div>
 
       <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Categoría</TableHead>
-              {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((month) => (
-                <TableHead key={month}>{month}</TableHead>
-              ))}
-              <TableHead>Total</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+        <div className="bg-card rounded-lg shadow-sm p-2 md:p-4 transition-colors">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={14} className="text-center">
-                  <Loader />
-                </TableCell>
+                <TableHead>Categoría</TableHead>
+                {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((month) => (
+                  <TableHead key={month}>{month}</TableHead>
+                ))}
+                <TableHead>Total</TableHead>
               </TableRow>
-            ) : error ? (
-              <TableRow>
-                <TableCell colSpan={14} className="text-center text-red-600">
-                  Error: {error}
-                </TableCell>
-              </TableRow>
-            ) : tableData.length > 0 ? (
-              tableData.map(({ category, tag_id, months, total }) => (
-                <Fragment key={`${tag_id}-${category}`}>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      {category ?? "Sin categoría"}
-                    </TableCell>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={14} className="text-center">
+                    <Loader />
+                  </TableCell>
+                </TableRow>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={14} className="text-center text-red-600">
+                    Error: {error}
+                  </TableCell>
+                </TableRow>
+              ) : tableData.length > 0 ? (
+                tableData.map(({ category, tag_id, months, total }) => (
+                  <Fragment key={`${tag_id}-${category}`}>
+                    <TableRow>
+                      <TableCell className="font-semibold">
+                        {category ?? "Sin categoría"}
+                      </TableCell>
+                      {[...Array(12)].map((_, monthIndex) => {
+                        const amount = months[monthIndex] ?? 0;
+                        const cellId = makeCellId(tag_id, monthIndex);
+                        const isExpanded = expandedCells[cellId];
+
+                        return (
+                          <TableCell
+                            key={monthIndex}
+                            onClick={() => toggleExpand(tag_id, monthIndex)}
+                            className="cursor-pointer relative"
+                          >
+                            {amount === 0 ? "-" : amount.toFixed(2)}
+                            {isExpanded && (
+                              <div className="absolute top-0 right-0 bg-gray-200 text-xs px-1">
+                                ▲
+                              </div>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="font-semibold">
+                        {total.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+
                     {[...Array(12)].map((_, monthIndex) => {
-                      const amount = months[monthIndex] ?? 0;
                       const cellId = makeCellId(tag_id, monthIndex);
                       const isExpanded = expandedCells[cellId];
 
                       return (
-                        <TableCell
-                          key={monthIndex}
-                          onClick={() => toggleExpand(tag_id, monthIndex)}
-                          className="cursor-pointer relative"
-                        >
-                          {amount === 0 ? "-" : amount.toFixed(2)}
-                          {isExpanded && (
-                            <div className="absolute top-0 right-0 bg-gray-200 text-xs px-1">
-                              ▲
-                            </div>
-                          )}
-                        </TableCell>
+                        <GroupBreakdownRow
+                          key={`${cellId}-breakdown`}
+                          category={category ?? "Sin categoría"}
+                          parent_tag_id={Number(tag_id)}
+                          monthIndex={monthIndex}
+                          year={year}
+                          isExpanded={isExpanded}
+                          colSpan={14}
+                        />
                       );
                     })}
-                    <TableCell className="font-semibold">
-                      {total.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-
-                  {[...Array(12)].map((_, monthIndex) => {
-                    const cellId = makeCellId(tag_id, monthIndex);
-                    const isExpanded = expandedCells[cellId];
-
-                    return (
-                      <GroupBreakdownRow
-                        key={`${cellId}-breakdown`}
-                        category={category ?? "Sin categoría"}
-                        parent_tag_id={Number(tag_id)}
-                        monthIndex={monthIndex}
-                        year={year}
-                        isExpanded={isExpanded}
-                        colSpan={14}
-                      />
-                    );
-                  })}
-                </Fragment>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={14} className="text-center">
-                  No data available
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                  </Fragment>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={14} className="text-center">
+                    No data available
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

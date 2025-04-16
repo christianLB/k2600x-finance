@@ -163,70 +163,78 @@ export function StrapiTable<T>({
   }, [selected, rows]);
 
   return (
-    <div className="space-y-4 border p-4 rounded-md bg-white">
-      <div className="flex justify-between items-center">
-        {selectable && (
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              checked={rows.length > 0 && selected.size === rows.length}
-              onCheckedChange={() => toggleSelectAll(rows)}
-            />
-            <span>Seleccionar Todos</span>
-          </div>
-        )}
-        <span className="font-semibold">{title || "Listado"}</span>
-        <div className="flex items-center space-x-2">
-          {onCreate && (
-            <Button size="sm" onClick={onCreate}>
-              {createButtonText || "Crear"}
-            </Button>
-          )}
-        </div>
-      </div>
-
+    <div className="w-full">
       <div className="overflow-x-auto">
-        <Table className="w-full text-sm border-collapse border border-gray-200">
-          <TableHeader className="bg-gray-100">
-            <tr>
-              {selectable && <TableHead className="p-2 border" />}
+        <Table className="min-w-full border-separate border-spacing-0">
+          <TableHeader>
+            <tr className="sticky top-0 z-10 bg-surface/95 backdrop-blur border-b border-muted">
+              {selectable && (
+                <TableHead className="p-2 border-b border-muted sticky left-0 bg-surface/95">
+                  <Checkbox
+                    checked={rows.length > 0 && rows.every(isSelected)}
+                    indeterminate={selected.size > 0 && selected.size < rows.length}
+                    onCheckedChange={() => toggleSelectAll(rows)}
+                    aria-label="Seleccionar todos"
+                  />
+                </TableHead>
+              )}
               {columns.map((col, idx) => (
-                <TableHead key={idx} className="p-2 border">
-                  {col.header}
+                <TableHead
+                  key={idx}
+                  className="p-2 border-b border-muted text-left select-none group"
+                  tabIndex={col.sortable ? 0 : -1}
+                  aria-sort={col.sortable ? (queryOptions?.sort?.[0]?.endsWith(':desc') ? 'descending' : 'ascending') : undefined}
+                  role="columnheader"
+                >
+                  <span className="inline-flex items-center gap-1">
+                    {col.header}
+                    {col.sortable && (
+                      <span className="text-xs opacity-60 group-hover:opacity-100 transition-opacity">
+                        {/* TODO: Show actual sort direction if implemented */}
+                        <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M6 8l4-4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M6 12l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                      </span>
+                    )}
+                  </span>
                 </TableHead>
               ))}
-              <TableHead className="p-2 border text-center">
-                Acciones
-              </TableHead>
+              <TableHead className="p-2 border-b border-muted text-center">Acciones</TableHead>
             </tr>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length + extraColumnsCount}
-                  className="text-center py-4"
-                >
-                  <Loader />
-                </TableCell>
-              </TableRow>
+              Array.from({ length: size }).map((_, idx) => (
+                <TableRow key={idx} className="animate-pulse even:bg-muted/40">
+                  {Array(columns.length + extraColumnsCount).fill(0).map((_, cidx) => (
+                    <TableCell key={cidx} className="p-2 border-b border-muted">
+                      <div className="h-4 bg-muted rounded w-3/4 mx-auto" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : rows.length ? (
               rows.map((item, idx) => (
-                <TableRow key={idx}>
+                <TableRow
+                  key={idx}
+                  className="even:bg-muted/40 hover:bg-accent/10 transition-colors group"
+                  tabIndex={0}
+                  aria-rowindex={idx + 2}
+                >
                   {selectable && (
-                    <TableCell className="p-2 border">
+                    <TableCell className="p-2 border-b border-muted sticky left-0 bg-surface/95">
                       <Checkbox
                         checked={isSelected(item)}
                         onCheckedChange={() => toggleSelect(item)}
+                        aria-label="Seleccionar fila"
                       />
                     </TableCell>
                   )}
                   {columns.map((col, colIdx) => (
-                    <TableCell key={colIdx} className="p-2 border">
+                    <TableCell key={colIdx} className="p-2 border-b border-muted">
                       {col.cell(item)}
                     </TableCell>
                   ))}
                   {actionsRenderer && (
-                    <TableCell className="p-2 border text-center">
+                    <TableCell className="p-2 border-b border-muted text-center">
                       {actionsRenderer(item)}
                     </TableCell>
                   )}
@@ -236,20 +244,21 @@ export function StrapiTable<T>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length + extraColumnsCount}
-                  className="text-center py-4"
+                  className="text-center py-8 text-muted-foreground"
                 >
-                  Sin registros
+                  <div className="flex flex-col items-center gap-2">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="var(--color-muted)"/><path d="M7 17h10M7 13h10M7 9h10" stroke="var(--color-muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <span>Sin registros</span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-
-      <div className="flex flex-col md:flex-row justify-between items-center px-2 gap-2">
+      <div className="flex flex-col md:flex-row justify-between items-center px-2 gap-2 mt-2">
         <span className="text-sm text-gray-500">
-          Mostrando {(page - 1) * size + 1} -{" "}
-          {Math.min(page * size, total)} de {total} registros
+          Mostrando {(page - 1) * size + 1} - {Math.min(page * size, total)} de {total} registros
         </span>
         <select
           className="text-sm border rounded px-2 py-1"
@@ -258,6 +267,7 @@ export function StrapiTable<T>({
             setSize(Number(e.target.value));
             setPage(1);
           }}
+          aria-label="Filas por página"
         >
           {[10, 25, 50, 100].map((n) => (
             <option key={n} value={n}>
@@ -271,6 +281,7 @@ export function StrapiTable<T>({
             variant="ghost"
             onClick={() => setPage(1)}
             disabled={page === 1}
+            aria-label="Primera página"
           >
             «
           </Button>
@@ -279,6 +290,7 @@ export function StrapiTable<T>({
             variant="ghost"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
+            aria-label="Página anterior"
           >
             ‹
           </Button>
@@ -293,6 +305,7 @@ export function StrapiTable<T>({
                 size="icon"
                 variant={i === page ? "default" : "ghost"}
                 onClick={() => setPage(i)}
+                aria-label={`Ir a página ${i}`}
               >
                 {i}
               </Button>
@@ -307,6 +320,7 @@ export function StrapiTable<T>({
             variant="ghost"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
+            aria-label="Página siguiente"
           >
             ›
           </Button>
@@ -315,6 +329,7 @@ export function StrapiTable<T>({
             variant="ghost"
             onClick={() => setPage(totalPages)}
             disabled={page >= totalPages}
+            aria-label="Última página"
           >
             »
           </Button>

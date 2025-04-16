@@ -123,13 +123,13 @@ export function FullStrapiTable<T>({
       return formElement;
     }
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-        <div className="bg-white rounded shadow-lg p-6 min-w-[300px] max-w-[90vw]">
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="bg-card rounded shadow-lg p-6 min-w-[300px] max-w-[90vw] transition-colors">
           <h2 className="font-bold mb-4">{editRow ? "Editar" : "Crear"} registro</h2>
-          <pre className="text-xs bg-gray-100 p-2 rounded max-h-64 overflow-auto mb-4">{JSON.stringify(editRow, null, 2)}</pre>
+          <pre className="text-xs bg-muted p-2 rounded max-h-64 overflow-auto mb-4">{JSON.stringify(editRow, null, 2)}</pre>
           <div className="flex gap-2 justify-end">
-            <button className="px-3 py-1 rounded bg-gray-200" onClick={() => setModalOpen(false)}>Cancelar</button>
-            <button className="px-3 py-1 rounded bg-blue-600 text-white" onClick={() => setModalOpen(false)}>Guardar</button>
+            <button className="px-3 py-1 rounded bg-muted text-foreground" onClick={() => setModalOpen(false)}>Cancelar</button>
+            <button className="px-3 py-1 rounded bg-primary text-primary-foreground" onClick={() => setModalOpen(false)}>Guardar</button>
           </div>
         </div>
       </div>
@@ -172,35 +172,47 @@ export function FullStrapiTable<T>({
   const enhancedColumns = columns;
 
   return (
-    <div>
-      {(allowCreate && onCreate) && (
-        <div className="flex justify-end mb-2">
-          <button
-            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-            onClick={onCreate}
-          >
-            {createButtonText || "Crear nuevo"}
-          </button>
+    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-rounded-lg scrollbar-thumb-muted scrollbar-track-card">
+      {/* Only render title if provided, and let the page own the main heading */}
+      {title && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 px-1">
+          <h2 className="text-2xl font-bold tracking-tight text-primary flex items-center gap-2">
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="var(--color-primary)" fillOpacity="0.08"/><path d="M7 17h10M7 13h10M7 9h10" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            {title}
+          </h2>
+          {(allowCreate && onCreate) && (
+            <button
+              className="bg-primary text-primary-foreground font-semibold rounded-md px-4 py-2 shadow-sm hover:bg-primary/80 transition-colors"
+              onClick={onCreate}
+            >
+              {createButtonText || "Crear"}
+            </button>
+          )}
         </div>
       )}
-      {selectable && (
-        <div className="mb-2 flex gap-2">
-          <span className="text-sm text-gray-500">
-            {selectedRows.length} seleccionados
-          </span>
+      {/* Filters and selectable info in a single flex row for better space usage */}
+      {(selectable || columns.some(col => col.filterable)) && (
+        <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2 px-1">
+          {selectable && (
+            <span className="text-sm text-gray-500">
+              {selectedRows.length} seleccionados
+            </span>
+          )}
+          <div className="flex-1">{renderFiltersRow()}</div>
         </div>
       )}
-      {renderFiltersRow()}
+      {/* Table card: single border/shadow, no redundant wrappers */}
+      <div className="overflow-x-auto rounded-lg shadow-lg border border-muted bg-surface">
+        <StrapiTable<T>
+          collection={collection}
+          columns={enhancedColumns}
+          queryOptions={queryOptions}
+          selectable={selectable}
+          onSelectionChange={setSelectedRows}
+          renderActions={renderActions}
+        />
+      </div>
       {renderModal()}
-      <StrapiTable<T>
-        collection={collection}
-        title={title}
-        columns={enhancedColumns}
-        queryOptions={queryOptions}
-        selectable={selectable}
-        onSelectionChange={setSelectedRows}
-        renderActions={renderActions}
-      />
     </div>
   );
 }

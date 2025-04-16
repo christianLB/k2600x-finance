@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./Providers";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { Toaster } from "sonner";
+import { ThemeScript } from "./ThemeScript";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,16 +27,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <Providers>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        suppressHydrationWarning
+      >
+        <ThemeScript />
+        <Providers>
           {children}
           <ConfirmDialog />
           <Toaster position="top-right" richColors />
-        </body>
-      </Providers>
+        </Providers>
+      </body>
     </html>
   );
 }
+// Add ThemeScript component for toggling dark/light mode
+// You will need to create this component next
