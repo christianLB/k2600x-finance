@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDefinition, StrapiTable } from "@/components/tables/StrapiTable";
+import { ColumnDefinition, FullStrapiTable } from "@/components/tables/FullStrapiTable";
 import ClientModal from "./ClientModal";
 import { useState } from "react";
 
@@ -24,17 +24,21 @@ export default function ClientTable() {
     {
       header: "Nombre",
       cell: (client) => client.name,
+      sortable: true,
+      sortKey: "name",
     },
   ];
 
   return (
     <div>
-      <StrapiTable<Client>
+      <FullStrapiTable<Client>
         collection="clients"
         title="Listado de Clientes"
         columns={columns}
-        onEdit={(client) => handleOpenModal(client)}
+        onEdit={handleOpenModal}
+        onCreate={() => handleOpenModal(undefined)}
         createButtonText="Crear Cliente"
+        allowCreate={true}
         selectable
       />
       <ClientModal

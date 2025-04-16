@@ -20,6 +20,11 @@ interface FullStrapiTableProps<T> {
    * Receives { row, onChange, onSubmit, onCancel } as props.
    */
   formElement?: React.ReactNode | ((props: { row: T | null, onChange: (row: T) => void, onSubmit: (row: T) => void, onCancel: () => void }) => React.ReactNode);
+  onEdit?: (row: T) => void;
+  onCreate?: () => void;
+  createButtonText?: string;
+  allowCreate?: boolean;
+  onDelete?: (row: T) => void;
 }
 
 interface SortState {
@@ -43,6 +48,11 @@ export function FullStrapiTable<T>({
   selectable = true,
   onBulkDelete,
   formElement,
+  onEdit,
+  onCreate,
+  createButtonText,
+  allowCreate = true,
+  onDelete,
 }: FullStrapiTableProps<T>) {
   const [selectedRows, setSelectedRows] = useState<T[]>([]);
   const [sort, setSort] = useState<SortState | null>(null);
@@ -86,10 +96,12 @@ export function FullStrapiTable<T>({
 
   // Per-row actions
   const handleEdit = (row: T) => {
+    if (onEdit) return onEdit(row);
     setEditRow(row);
     setModalOpen(true);
   };
   const handleDelete = (row: any) => {
+    if (onDelete) return onDelete(row);
     const id = row.documentId || row.id;
     if (!id) return;
     confirm({
@@ -214,6 +226,16 @@ export function FullStrapiTable<T>({
 
   return (
     <div>
+      {(allowCreate && onCreate) && (
+        <div className="flex justify-end mb-2">
+          <button
+            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            onClick={onCreate}
+          >
+            {createButtonText || "Crear nuevo"}
+          </button>
+        </div>
+      )}
       {selectable && (
         <div className="mb-2 flex gap-2">
           <button

@@ -1,6 +1,6 @@
 "use client";
 
-import { StrapiTable, ColumnDefinition } from "@/components/tables/StrapiTable";
+import { FullStrapiTable, ColumnDefinition } from "@/components/tables/FullStrapiTable";
 import InvoiceModal from "./InvoiceModal";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
@@ -41,10 +41,14 @@ export default function InvoiceTable() {
     {
       header: "Fecha",
       cell: (inv) => new Date(inv.fechaInvoice).toLocaleDateString("es-AR"),
+      sortable: true,
+      sortKey: "fechaInvoice",
     },
     {
       header: "Cliente",
       cell: (inv) => inv.client?.name || "Sin cliente",
+      sortable: true,
+      sortKey: "client.name",
     },
     {
       header: "Archivos",
@@ -75,6 +79,8 @@ export default function InvoiceTable() {
           (inv.precioUnitario && inv.cantidad ? inv.precioUnitario * inv.cantidad : 0);
         return `$${total.toFixed(2)}`;
       },
+      sortable: true,
+      sortKey: "total",
     },
     {
       header: "Declarado",
@@ -91,13 +97,14 @@ export default function InvoiceTable() {
 
   return (
     <div>
-      <StrapiTable<Invoice>
+      <FullStrapiTable<Invoice>
         collection="invoices"
         title="Listado de Invoices"
         columns={columns}
         onEdit={handleOpenModal}
         onCreate={() => handleOpenModal(undefined)}
         createButtonText="Crear Invoice"
+        allowCreate={true}
         selectable
       />
       <InvoiceModal

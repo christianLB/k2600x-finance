@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Popover, Transition } from "@headlessui/react";
 import { format } from "date-fns";
-import { StrapiTable, ColumnDefinition } from "@/components/tables/StrapiTable";
+import { FullStrapiTable, ColumnDefinition } from "@/components/tables/FullStrapiTable";
 
 interface Income {
   documentId: string;
@@ -49,32 +49,46 @@ export default function IncomeTable() {
       cell: (income) => income.fechaMovimiento
         ? format(new Date(income.fechaMovimiento), "dd/MM/yyyy")
         : "-",
+      sortable: true,
+      sortKey: "fechaMovimiento",
     },
     {
       header: "Fecha Valor",
       cell: (income) => income.fechaValor
         ? format(new Date(income.fechaValor), "dd/MM/yyyy")
         : "-",
+      sortable: true,
+      sortKey: "fechaValor",
     },
     {
       header: "Descripción",
       cell: (income) => income.descripcion,
+      sortable: true,
+      sortKey: "descripcion",
     },
     {
       header: "Cuenta",
       cell: (income) => income.cuenta,
+      sortable: true,
+      sortKey: "cuenta",
     },
     {
       header: "Titular",
       cell: (income) => income.titularCuenta,
+      sortable: true,
+      sortKey: "titularCuenta",
     },
     {
       header: "Concepto",
       cell: (income) => income.concepto,
+      sortable: true,
+      sortKey: "concepto",
     },
     {
       header: "Monto",
       cell: (income) => `${income.monto.toFixed(2)} ${income.moneda}`,
+      sortable: true,
+      sortKey: "monto",
     },
     {
       header: "Justificante",
@@ -99,11 +113,12 @@ export default function IncomeTable() {
   ];
 
   return (
-      <StrapiTable<Income>
+      <FullStrapiTable<Income>
         collection="operations"
         title="Listado de Ingresos"
         columns={columns}
-        queryOptions={{ filters: { monto: { $gt: 0 } } }}
+        filters={{ monto: { $gt: 0 } }}
+        allowCreate={false}
       />
   );
 }

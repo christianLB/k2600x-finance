@@ -1,6 +1,6 @@
 "use client";
 
-import { StrapiTable } from "@/components/tables/StrapiTable";
+import { FullStrapiTable } from "@/components/tables/FullStrapiTable";
 import DocumentoModal from "./DocumentoModal";
 import { Button } from "@/components/ui/button";
 import { TagsSelector } from "@/components/operation-tags/TagsSelector";
@@ -108,14 +108,20 @@ export default function DocumentosTable() {
         ) : (
           "Sin archivo"
         ),
+      sortable: true,
+      sortKey: "archivo.name",
     },
     {
       header: "Estado",
       cell: (row: Documento) => row.estado,
+      sortable: true,
+      sortKey: "estado",
     },
     {
       header: "Resumen",
       cell: (row: Documento) => row.resumen?.substring(0, 100) || "",
+      sortable: true,
+      sortKey: "resumen",
     },
     {
       header: "Tag",
@@ -127,41 +133,21 @@ export default function DocumentosTable() {
         />
       ),
     },
-    {
-      header: "Acciones",
-      cell: (row: Documento) => (
-        <div className="flex gap-2 justify-center">
-          <button
-            onClick={() => handleEdit(row)}
-            className="text-gray-500 hover:text-blue-600"
-            title="Editar"
-          >
-            <PencilIcon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => handleDelete(row)}
-            className="text-gray-500 hover:text-red-600"
-            title="Eliminar"
-          >
-            <Trash2Icon className="w-4 h-4" />
-          </button>
-        </div>
-      ),
-    },
   ];
 
   return (
     <div>
-      <div className="flex justify-end mb-2">
-        <Button onClick={handleCreate}>Crear Documento</Button>
-      </div>
-      <StrapiTable<Documento>
+      <FullStrapiTable<Documento>
         collection="documentos"
         columns={columns}
         title="Listado de Documentos"
         pageSize={10}
         selectable={false}
-        //queryOptions={{ populate: ["*"] }}
+        allowCreate={true}
+        onCreate={handleCreate}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        createButtonText="Crear Documento"
       />
       <DocumentoModal
         open={modalOpen}

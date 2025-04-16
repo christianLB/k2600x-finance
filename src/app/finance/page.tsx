@@ -3,10 +3,9 @@ import InvoiceTable from "@/components/invoices/InvoiceTable";
 import YearlyReportTable from "@/components/operations/YearlyExpenseReportTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientTable from "@/components/clients/ClientTable";
-import OperationsTable from "@/components/operations/OperationTable";
+import ExpensesNewTab from "@/components/expenses/ExpensesNewTab";
 import OperationTagsManager from "@/components/operation-tags/OperationTagsManager";
 import DocumentosTable from "@/components/documents/DocumentosTable";
-import ExpensesNewTab from "@/components/expenses/ExpensesNewTab";
 
 export default function FinancePage() {
   return (
@@ -16,7 +15,6 @@ export default function FinancePage() {
         <Tabs defaultValue="expenses">
           <TabsList className="grid grid-cols-8">
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="expenses-new">Expenses (Nuevo)</TabsTrigger>
             <TabsTrigger value="income">Income</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="clients">Clients</TabsTrigger>
@@ -26,10 +24,6 @@ export default function FinancePage() {
           </TabsList>
 
           <TabsContent value="expenses" className="pt-4">
-            <OperationsTable />
-          </TabsContent>
-
-          <TabsContent value="expenses-new" className="pt-4">
             <ExpensesNewTab />
           </TabsContent>
 
