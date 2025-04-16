@@ -8,12 +8,10 @@ import { TagsSelector } from "@/components/operation-tags/TagsSelector";
 import ExpenseForm from "./ExpenseForm";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 import { toast } from "sonner";
-import { useCallback } from "react";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { Switch } from "@/components/ui/switch";
-import { useConfirm } from "@/hooks/useConfirm";
-import useStrapiDelete from "@/hooks/useStrapiDelete";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { Tag } from "@/types/tag";
+import { FileIcon } from "lucide-react";
 
 interface Expense {
   documentId: string;
@@ -26,7 +24,7 @@ interface Expense {
   cuenta: string;
   titularCuenta: string;
   concepto: string;
-  operation_tag: string;
+  operation_tag?: number | Tag | null;
   posibleDuplicado: boolean;
   estadoConciliacion: string;
   justificante?: {
@@ -39,67 +37,29 @@ interface Expense {
 
 const ExpensesNewTab = () => {
   // Fetch all tags for lookup (for appliesTo="operations")
-  const { data: { data: allTags = [] } = { data: [] }, isLoading: tagsLoading, refetch } = useStrapiCollection("operation-tags", {
+  const { data: { data: allTags = [] } = { data: [] }, isLoading: tagsLoading, refetch } = useStrapiCollection<Tag>("operation-tags", {
     filters: { appliesTo: { $contains: "operation" } },
     pagination: { page: 1, pageSize: 500 },
     populate: ["parent_tag"],
   });
 
   // --- Mutations ---
-  const updateTagMutation = useStrapiUpdateMutation("operations");
-  const updateDuplicadoMutation = useStrapiUpdateMutation("operations");
-  const updateEstadoMutation = useStrapiUpdateMutation("operations");
-  const { mutate: deleteExpense } = useStrapiDelete("operations", refetch);
-  const confirm = useConfirm();
+  const updateTagMutation = useStrapiUpdateMutation<Expense>("operations");
+  const updateDuplicadoMutation = useStrapiUpdateMutation<Expense>("operations");
+  const updateEstadoMutation = useStrapiUpdateMutation<Expense>("operations");
 
   // Helper to always return the tag object for a given expense
-  const getTagObject = (expense) => {
+  const getTagObject = (expense: Expense): Tag | undefined => {
     const tagValue = expense.operation_tag;
-    if (typeof tagValue === "object" && tagValue !== null) return tagValue;
+    if (typeof tagValue === "object" && tagValue !== null) return tagValue as Tag;
     if (!tagValue) return undefined;
-    // Try to find the tag object by ID
-    return allTags.find((t) => t.id === tagValue) || undefined;
+    return allTags.find((t: Tag) => t.id === tagValue) || undefined;
   };
-
-  // --- Actions Column ---
-  const renderActions = (expense) => (
-    <div className="flex gap-2 justify-center">
-      <button
-        className="text-gray-500 hover:text-blue-600"
-        title="Editar"
-        onClick={() => {
-          // You may want to trigger edit modal here
-          // For now, just a placeholder
-          toast.info("Funcionalidad de edición no implementada");
-        }}
-      >
-        <PencilIcon className="w-4 h-4" />
-      </button>
-      <button
-        className="text-gray-500 hover:text-red-600"
-        title="Eliminar"
-        onClick={() => {
-          confirm({
-            title: "¿Eliminar gasto?",
-            description: "Esta acción no se puede deshacer. ¿Deseas continuar?",
-            confirmText: "Eliminar",
-            cancelText: "Cancelar",
-            onConfirm: () => {
-              deleteExpense({ id: expense.documentId || expense.id });
-              toast.success("Gasto eliminado");
-            },
-          });
-        }}
-      >
-        <Trash2Icon className="w-4 h-4" />
-      </button>
-    </div>
-  );
 
   const columns: ColumnDefinition<Expense>[] = [
     {
       header: "Fecha Movimiento",
-      cell: (expense) => expense.fechaMovimiento
+      cell: (expense: Expense) => expense.fechaMovimiento
         ? format(new Date(expense.fechaMovimiento), "dd/MM/yyyy")
         : "-",
       sortable: true,
@@ -107,25 +67,31 @@ const ExpensesNewTab = () => {
     },
     {
       header: "Fecha Valor",
-      cell: (expense) => expense.fechaValor
+      cell: (expense: Expense) => expense.fechaValor
         ? format(new Date(expense.fechaValor), "dd/MM/yyyy")
         : "-",
       sortable: true,
       sortKey: "fechaValor",
     },
     {
+      header: "Monto",
+      cell: (expense: Expense) => `${expense.monto.toFixed(2)} ${expense.moneda}`,
+      sortable: true,
+      sortKey: "monto",
+    },
+    {
       header: "Descripción",
-      cell: (expense) => expense.descripcion,
+      cell: (expense: Expense) => expense.descripcion,
       sortable: true,
       sortKey: "descripcion",
     },
     {
       header: "Tag",
-      cell: (expense) => (
+      cell: (expense: Expense) => (
         <TagsSelector
           appliesTo="operation"
-          currentTag={getTagObject(expense)}
-          onSelect={async (selectedTag) => {
+          currentTag={getTagObject(expense) as Tag}
+          onSelect={async (selectedTag: Tag) => {
             try {
               await updateTagMutation.mutateAsync({
                 id: expense.documentId || expense.id,
@@ -144,17 +110,11 @@ const ExpensesNewTab = () => {
       sortKey: "operation_tag",
     },
     {
-      header: "Monto",
-      cell: (expense) => `${expense.monto.toFixed(2)} ${expense.moneda}`,
-      sortable: true,
-      sortKey: "monto",
-    },
-    {
       header: "Duplicado",
-      cell: (expense) => (
+      cell: (expense: Expense) => (
         <Switch
           checked={!!expense.posibleDuplicado}
-          onCheckedChange={async (checked) => {
+          onCheckedChange={async (checked: boolean) => {
             try {
               await updateDuplicadoMutation.mutateAsync({
                 id: expense.documentId || expense.id,
@@ -171,10 +131,10 @@ const ExpensesNewTab = () => {
     },
     {
       header: "Estado",
-      cell: (expense) => (
+      cell: (expense: Expense) => (
         <select
           value={expense.estadoConciliacion || "pendiente"}
-          onChange={async (e) => {
+          onChange={async (e: React.ChangeEvent<HTMLSelectElement>) => {
             try {
               await updateEstadoMutation.mutateAsync({
                 id: expense.documentId || expense.id,
@@ -197,8 +157,8 @@ const ExpensesNewTab = () => {
     },
     {
       header: "Justificante",
-      cell: (expense) =>
-        expense.justificante?.url ? (
+      cell: (expense: Expense) =>
+        expense.justificante && expense.justificante.url ? (
           <a
             href={
               expense.justificante.url.startsWith("http")
@@ -207,22 +167,18 @@ const ExpensesNewTab = () => {
             }
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-500 underline"
+            title={expense.justificante.name}
           >
-            {expense.justificante.name}
+            <FileIcon className="w-5 h-5 text-blue-500 hover:text-blue-700" />
           </a>
         ) : (
-          "-"
+          <span className="text-gray-400">-</span>
         ),
     },
-    // {
-    //   header: "Acciones",
-    //   cell: renderActions,
-    // },
   ];
 
   return (
-    <FullStrapiTable
+    <FullStrapiTable<Expense>
       collection="operations"
       title="Listado de Gastos (Nuevo)"
       columns={columns}
