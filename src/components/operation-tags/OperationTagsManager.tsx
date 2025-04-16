@@ -163,7 +163,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
                 )}
                 <span
                   className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: node.data.color || "#ccc" }}
+                  style={{ backgroundColor: node.data?.color || "#ccc" }}
                 ></span>
                 <span>{node.text}</span>
               </div>
@@ -171,21 +171,33 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => handleEdit(node.data)}
+                  onClick={() => {
+                    if (node.data && 'id' in node.data && 'name' in node.data) {
+                      handleEdit(node.data as Tag);
+                    }
+                  }}
                 >
                   <PencilIcon className="w-4 h-4 text-muted-foreground" />
                 </Button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => handleDelete(node.data)}
+                  onClick={() => {
+                    if (node.data && 'id' in node.data && 'name' in node.data) {
+                      handleDelete(node.data as Tag);
+                    }
+                  }}
                 >
                   <Trash2Icon className="w-4 h-4 text-destructive" />
                 </Button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => handleCreate(node.data)}
+                  onClick={() => {
+                    if (node.data && 'id' in node.data && 'name' in node.data) {
+                      handleCreate(node.data as Tag);
+                    }
+                  }}
                 >
                   <PlusIcon className="w-4 h-4 text-green-600" />
                 </Button>

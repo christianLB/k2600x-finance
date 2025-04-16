@@ -15,7 +15,6 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader } from "@/components/ui/loader";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -48,11 +47,11 @@ export interface StrapiTableProps<T> {
 export function StrapiTable<T>({
   collection,
   columns,
-  title,
+  //title,
   pageSize = 10,
   selectable = false,
-  onCreate,
-  createButtonText,
+  //onCreate,
+  //createButtonText,
   onEdit,
   renderActions,
   queryOptions,
@@ -172,7 +171,7 @@ export function StrapiTable<T>({
                 <TableHead className="p-2 border-b border-muted sticky left-0 bg-surface/95">
                   <Checkbox
                     checked={rows.length > 0 && rows.every(isSelected)}
-                    indeterminate={selected.size > 0 && selected.size < rows.length}
+                    //indeterminate={selected.size > 0 && selected.size < rows.length}
                     onCheckedChange={() => toggleSelectAll(rows)}
                     aria-label="Seleccionar todos"
                   />
