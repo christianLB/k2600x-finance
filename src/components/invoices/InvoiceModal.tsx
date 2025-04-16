@@ -54,7 +54,7 @@ export default function InvoiceModal({ open, onClose, invoice, onInvoiceUpdated 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handler for file input change
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = () => {
     // Implement logic to upload files and update form state
     // This will be completed after reviewing the rest of the form logic
   };

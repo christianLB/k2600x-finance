@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDefinition, FullStrapiTable } from "@/components/tables/FullStrapiTable";
+import FullStrapiTable, { ColumnDefinition } from "@/components/tables/FullStrapiTable";
 import ClientModal from "./ClientModal";
 import { useState } from "react";
 
@@ -23,7 +23,7 @@ export default function ClientTable() {
   const columns: ColumnDefinition<Client>[] = [
     {
       header: "Nombre",
-      cell: (client) => client.name,
+      cell: (client: Client) => client.name,
       sortable: true,
       sortKey: "name",
     },

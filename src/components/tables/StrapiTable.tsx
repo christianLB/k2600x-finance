@@ -40,7 +40,6 @@ export interface StrapiTableProps<T> {
   createButtonText?: string;
   onEdit?: (item: T) => void;
   renderActions?: (item: T) => React.ReactNode;
-  deleteButtonText?: string;
   extraFilters?: Record<string, any>;
   queryOptions?: UseStrapiCollectionOptions;
   onSelectionChange?: (selected: T[]) => void;
@@ -58,7 +57,6 @@ export function StrapiTable<T>({
   renderActions,
   queryOptions,
   onSelectionChange,
-  deleteButtonText,
 }: StrapiTableProps<T>) {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(pageSize);
@@ -196,11 +194,9 @@ export function StrapiTable<T>({
                   {col.header}
                 </TableHead>
               ))}
-              {actionsRenderer && (
-                <TableHead className="p-2 border text-center">
-                  Acciones
-                </TableHead>
-              )}
+              <TableHead className="p-2 border text-center">
+                Acciones
+              </TableHead>
             </tr>
           </TableHeader>
           <TableBody>

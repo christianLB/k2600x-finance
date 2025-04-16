@@ -37,7 +37,7 @@ interface Expense {
 
 const ExpensesNewTab = () => {
   // Fetch all tags for lookup (for appliesTo="operations")
-  const { data: { data: allTags = [] } = { data: [] }, isLoading: tagsLoading, refetch } = useStrapiCollection<Tag>("operation-tags", {
+  const { data: { data: allTags = [] } = { data: [] }, refetch } = useStrapiCollection<Tag>("operation-tags", {
     filters: { appliesTo: { $contains: "operation" } },
     pagination: { page: 1, pageSize: 500 },
     populate: ["parent_tag"],
@@ -91,17 +91,13 @@ const ExpensesNewTab = () => {
         <TagsSelector
           appliesTo="operation"
           currentTag={getTagObject(expense) as Tag}
-          onSelect={async (selectedTag: Tag) => {
-            try {
-              await updateTagMutation.mutateAsync({
-                id: expense.documentId || expense.id,
-                updatedData: { operation_tag: selectedTag.id },
-              });
-              toast.success("Tag actualizado");
-              refetch();
-            } catch {
-              toast.error("Error al actualizar tag");
-            }
+          onSelect={(selectedTag: Tag) => {
+            updateTagMutation.mutate({
+              id: (expense.documentId || expense.id).toString(),
+              updatedData: { operation_tag: selectedTag.id },
+            });
+            toast.success("Tag actualizado");
+            refetch();
           }}
           placeholder="Seleccionar tag"
         />
@@ -114,17 +110,13 @@ const ExpensesNewTab = () => {
       cell: (expense: Expense) => (
         <Switch
           checked={!!expense.posibleDuplicado}
-          onCheckedChange={async (checked: boolean) => {
-            try {
-              await updateDuplicadoMutation.mutateAsync({
-                id: expense.documentId || expense.id,
-                updatedData: { posibleDuplicado: checked },
-              });
-              toast.success("Estado de duplicado actualizado");
-              refetch();
-            } catch {
-              toast.error("Error al actualizar duplicado");
-            }
+          onCheckedChange={(checked: boolean) => {
+            updateDuplicadoMutation.mutate({
+              id: (expense.documentId || expense.id).toString(),
+              updatedData: { posibleDuplicado: checked },
+            });
+            toast.success("Estado de duplicado actualizado");
+            refetch();
           }}
         />
       ),
@@ -134,17 +126,13 @@ const ExpensesNewTab = () => {
       cell: (expense: Expense) => (
         <select
           value={expense.estadoConciliacion || "pendiente"}
-          onChange={async (e: React.ChangeEvent<HTMLSelectElement>) => {
-            try {
-              await updateEstadoMutation.mutateAsync({
-                id: expense.documentId || expense.id,
-                updatedData: { estadoConciliacion: e.target.value },
-              });
-              toast.success("Estado actualizado");
-              refetch();
-            } catch {
-              toast.error("Error al actualizar estado");
-            }
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+            updateEstadoMutation.mutate({
+              id: (expense.documentId || expense.id).toString(),
+              updatedData: { estadoConciliacion: e.target.value },
+            });
+            toast.success("Estado actualizado");
+            refetch();
           }}
           className="border rounded px-2 py-1 text-sm"
         >

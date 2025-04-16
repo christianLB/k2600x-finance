@@ -2,12 +2,11 @@
 
 import { FullStrapiTable } from "@/components/tables/FullStrapiTable";
 import DocumentoModal from "./DocumentoModal";
-import { Button } from "@/components/ui/button";
 import { TagsSelector } from "@/components/operation-tags/TagsSelector";
+import type { Tag } from "@/components/operation-tags/TagsSelector";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 import { toast } from "sonner";
 import { useState } from "react";
-import { PencilIcon, Trash2Icon } from "lucide-react";
 import useStrapiDelete from "@/hooks/useStrapiDelete";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -58,7 +57,7 @@ export default function DocumentosTable() {
     try {
       await update.mutateAsync({
         id: doc.documentId,
-        updatedData: { operation_tag: tagId },
+        updatedData: { operation_tag: { id: tagId, name: '' } }, // name can be filled if known
       });
       toast.success("Tag actualizado");
     } catch {
@@ -128,8 +127,8 @@ export default function DocumentosTable() {
       cell: (row: Documento) => (
         <TagsSelector
           appliesTo="documento"
-          currentTag={row.operation_tag?.id || null}
-          onSelect={(tagId) => handleTagChange(row, tagId)}
+          currentTag={row.operation_tag as Tag | null}
+          onSelect={(tag: Tag) => handleTagChange(row, tag.id)}
         />
       ),
     },
@@ -141,7 +140,6 @@ export default function DocumentosTable() {
         collection="documentos"
         columns={columns}
         title="Listado de Documentos"
-        pageSize={10}
         selectable={false}
         allowCreate={true}
         onCreate={handleCreate}

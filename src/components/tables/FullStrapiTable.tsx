@@ -14,11 +14,6 @@ interface FullStrapiTableProps<T> {
   title?: string;
   filters?: object;
   selectable?: boolean;
-  onBulkDelete?: (selected: T[]) => void;
-  /**
-   * Custom form element to render inside the create/edit modal.
-   * Receives { row, onChange, onSubmit, onCancel } as props.
-   */
   formElement?: React.ReactNode | ((props: { row: T | null, onChange: (row: T) => void, onSubmit: (row: T) => void, onCancel: () => void }) => React.ReactNode);
   onEdit?: (row: T) => void;
   onCreate?: () => void;
@@ -46,7 +41,6 @@ export function FullStrapiTable<T>({
   title,
   filters,
   selectable = true,
-  onBulkDelete,
   formElement,
   onEdit,
   onCreate,
@@ -55,10 +49,9 @@ export function FullStrapiTable<T>({
   onDelete,
 }: FullStrapiTableProps<T>) {
   const [selectedRows, setSelectedRows] = useState<T[]>([]);
-  const [sort, setSort] = useState<SortState | null>(null);
+  const [sort] = useState<SortState | null>(null);
   const [filtersState, setFiltersState] = useState<FilterState>({});
 
-  // Bulk delete integration
   const { mutate: deleteItem } = useStrapiDelete(collection, () => {
     toast.success("Eliminación masiva completada");
     setSelectedRows([]);
@@ -66,40 +59,6 @@ export function FullStrapiTable<T>({
 
   const confirm = useConfirm();
 
-  const handleBulkDelete = () => {
-    if (selectedRows.length === 0) return;
-    confirm({
-      title: `¿Eliminar ${selectedRows.length} registros seleccionados?`,
-      description: `Esta acción eliminará ${selectedRows.length} registros. ¿Deseas continuar?`,
-      confirmText: "Eliminar",
-      cancelText: "Cancelar",
-      onConfirm: () => {
-        selectedRows.forEach((row: any) => {
-          const id = row.documentId || row.id;
-          if (id) deleteItem({ id });
-        });
-      },
-    });
-  };
-
-  // Compose query options with sorting and filtering
-  const queryOptions = {
-    ...(filters ? { filters } : {}),
-    sort: sort ? [`${sort.field}:${sort.direction}`] : undefined,
-    filters: {
-      ...(filters || {}),
-      ...Object.fromEntries(
-        Object.entries(filtersState).filter(([_, v]) => v !== "")
-      ),
-    },
-  };
-
-  // Per-row actions
-  const handleEdit = (row: T) => {
-    if (onEdit) return onEdit(row);
-    setEditRow(row);
-    setModalOpen(true);
-  };
   const handleDelete = (row: any) => {
     if (onDelete) return onDelete(row);
     const id = row.documentId || row.id;
@@ -114,6 +73,13 @@ export function FullStrapiTable<T>({
       },
     });
   };
+
+  const handleEdit = (row: T) => {
+    if (onEdit) return onEdit(row);
+    setEditRow(row);
+    setModalOpen(true);
+  };
+
   const renderActions = (row: T) => (
     <div className="flex gap-2 justify-center">
       <button
@@ -133,13 +99,10 @@ export function FullStrapiTable<T>({
     </div>
   );
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editRow, setEditRow] = useState<T | null>(null);
 
-  // Modal form logic
-  function handleModalSubmit(row: T) {
-    // TODO: Wire up create/edit logic
+  function handleModalSubmit(/*row: T*/) {
     setModalOpen(false);
   }
   function handleModalChange(row: T) {
@@ -173,11 +136,21 @@ export function FullStrapiTable<T>({
     );
   }
 
-  // --- Render filter inputs above table ---
+  const queryOptions = {
+    ...(filters ? { filters } : {}),
+    sort: sort ? [`${sort.field}:${sort.direction}`] : undefined,
+    filters: {
+      ...(filters || {}),
+      ...Object.fromEntries(
+        Object.entries(filtersState).filter(([, v]) => v !== "")
+      ),
+    },
+  };
+
   function renderFiltersRow() {
     return (
       <div className="flex gap-2 mb-2">
-        {columns.map((col, idx) =>
+        {columns.map((col) =>
           col.filterable ? (
             <input
               key={col.filterKey ?? col.header}
@@ -196,33 +169,7 @@ export function FullStrapiTable<T>({
     );
   }
 
-  // --- Render sortable column headers ---
-  function renderSortableHeader(col: ColumnDefinition<T>, idx: number) {
-    if (!col.sortable) return col.header;
-    const key = col.sortKey ?? col.header;
-    return (
-      <button
-        type="button"
-        className="font-semibold flex items-center gap-1"
-        onClick={() =>
-          setSort(s =>
-            s && s.field === key && s.direction === "asc"
-              ? { field: key, direction: "desc" }
-              : { field: key, direction: "asc" }
-          )
-        }
-      >
-        {col.header}
-        {sort?.field === key ? (sort.direction === "asc" ? "▲" : "▼") : null}
-      </button>
-    );
-  }
-
-  // --- Enhanced columns for StrapiTable ---
-  const enhancedColumns = columns.map((col, idx) => ({
-    ...col,
-    header: renderSortableHeader(col, idx),
-  }));
+  const enhancedColumns = columns;
 
   return (
     <div>
@@ -238,13 +185,6 @@ export function FullStrapiTable<T>({
       )}
       {selectable && (
         <div className="mb-2 flex gap-2">
-          <button
-            className="bg-red-500 text-white px-3 py-1 rounded disabled:opacity-50"
-            disabled={selectedRows.length === 0}
-            onClick={handleBulkDelete}
-          >
-            Eliminar seleccionados
-          </button>
           <span className="text-sm text-gray-500">
             {selectedRows.length} seleccionados
           </span>
@@ -264,3 +204,6 @@ export function FullStrapiTable<T>({
     </div>
   );
 }
+
+export default FullStrapiTable;
+export type { ColumnDefinition } from "@/components/tables/StrapiTable";

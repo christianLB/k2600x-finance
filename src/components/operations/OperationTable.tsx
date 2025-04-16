@@ -107,8 +107,13 @@ export function OperationsTable() {
         let currentTag: Tag | null = null;
         if (typeof row.operation_tag === "number") {
           currentTag = tagList.find((t) => t.id === row.operation_tag) || null;
-        } else if (row.operation_tag && typeof row.operation_tag === "object") {
-          currentTag = tagList.find((t) => t.id === row.operation_tag.id) || row.operation_tag;
+        } else if (
+          row.operation_tag &&
+          typeof row.operation_tag === "object" &&
+          "id" in row.operation_tag &&
+          typeof (row.operation_tag as any).id === "number"
+        ) {
+          currentTag = tagList.find((t) => t.id === (row.operation_tag as any).id) || (row.operation_tag as Tag);
         }
         return (
           <TagsSelector

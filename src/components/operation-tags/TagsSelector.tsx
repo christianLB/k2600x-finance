@@ -7,14 +7,25 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Tag, TagTreeNode } from "@/types/tag";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
+
+export interface Tag {
+  id: number;
+  name: string;
+  documentId?: string;
+  parent_tag?: Tag | null;
+  appliesTo?: string;
+}
 
 interface TagsSelectorProps {
   appliesTo: string;
   currentTag?: Tag | null;
   placeholder?: string;
   onSelect: (tag: Tag) => void;
+}
+
+interface TagTreeNode extends Tag {
+  children?: TagTreeNode[];
 }
 
 // Función para construir árbol desde lista plana

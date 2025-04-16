@@ -16,7 +16,6 @@ export default function ConfirmDialog() {
     onCancel,
     hide,
     extraContent,
-    extraState,
   } = useConfirmStore();
 
   // Local state for checkbox (if present)
@@ -45,8 +44,7 @@ export default function ConfirmDialog() {
         {extraContent && (
           <div className="mb-2">
             {React.cloneElement(extraContent as React.ReactElement, {
-              checked: deleteFile,
-              onChange: (e: React.ChangeEvent<HTMLInputElement>) => setDeleteFile(e.target.checked),
+              // onChange: (e: React.ChangeEvent<HTMLInputElement>) => setDeleteFile(e.target.checked),
             })}
           </div>
         )}

@@ -1,12 +1,8 @@
 // IncomeTable.tsx
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
-import { Popover, Transition } from "@headlessui/react";
 import { format } from "date-fns";
-import { FullStrapiTable, ColumnDefinition } from "@/components/tables/FullStrapiTable";
+import FullStrapiTable, { ColumnDefinition } from "@/components/tables/FullStrapiTable";
 
 interface Income {
   documentId: string;
@@ -41,12 +37,11 @@ interface Income {
 }
 
 export default function IncomeTable() {
-  const [editingDate, setEditingDate] = useState<{ id: string; date: Date | null } | null>(null);
   
   const columns: ColumnDefinition<Income>[] = [
     {
       header: "Fecha Movimiento",
-      cell: (income) => income.fechaMovimiento
+      cell: (income: Income) => income.fechaMovimiento
         ? format(new Date(income.fechaMovimiento), "dd/MM/yyyy")
         : "-",
       sortable: true,
@@ -54,7 +49,7 @@ export default function IncomeTable() {
     },
     {
       header: "Fecha Valor",
-      cell: (income) => income.fechaValor
+      cell: (income: Income) => income.fechaValor
         ? format(new Date(income.fechaValor), "dd/MM/yyyy")
         : "-",
       sortable: true,
@@ -62,37 +57,37 @@ export default function IncomeTable() {
     },
     {
       header: "Descripción",
-      cell: (income) => income.descripcion,
+      cell: (income: Income) => income.descripcion,
       sortable: true,
       sortKey: "descripcion",
     },
     {
       header: "Cuenta",
-      cell: (income) => income.cuenta,
+      cell: (income: Income) => income.cuenta,
       sortable: true,
       sortKey: "cuenta",
     },
     {
       header: "Titular",
-      cell: (income) => income.titularCuenta,
+      cell: (income: Income) => income.titularCuenta,
       sortable: true,
       sortKey: "titularCuenta",
     },
     {
       header: "Concepto",
-      cell: (income) => income.concepto,
+      cell: (income: Income) => income.concepto,
       sortable: true,
       sortKey: "concepto",
     },
     {
       header: "Monto",
-      cell: (income) => `${income.monto.toFixed(2)} ${income.moneda}`,
+      cell: (income: Income) => `${income.monto.toFixed(2)} ${income.moneda}`,
       sortable: true,
       sortKey: "monto",
     },
     {
       header: "Justificante",
-      cell: (income) =>
+      cell: (income: Income) =>
         income.justificante?.url ? (
           <a
             href={

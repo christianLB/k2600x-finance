@@ -1,6 +1,6 @@
 "use client";
 
-import { FullStrapiTable, ColumnDefinition } from "@/components/tables/FullStrapiTable";
+import FullStrapiTable, { ColumnDefinition } from "@/components/tables/FullStrapiTable";
 import InvoiceModal from "./InvoiceModal";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
@@ -40,19 +40,19 @@ export default function InvoiceTable() {
   const columns: ColumnDefinition<Invoice>[] = [
     {
       header: "Fecha",
-      cell: (inv) => new Date(inv.fechaInvoice).toLocaleDateString("es-AR"),
+      cell: (inv: Invoice) => new Date(inv.fechaInvoice).toLocaleDateString("es-AR"),
       sortable: true,
       sortKey: "fechaInvoice",
     },
     {
       header: "Cliente",
-      cell: (inv) => inv.client?.name || "Sin cliente",
+      cell: (inv: Invoice) => inv.client?.name || "Sin cliente",
       sortable: true,
       sortKey: "client.name",
     },
     {
       header: "Archivos",
-      cell: (inv) =>
+      cell: (inv: Invoice) =>
         Array.isArray(inv.archivos) && inv.archivos.length > 0 ? (
           <div className="flex gap-2">
             {inv.archivos.map((file: any) => (
@@ -73,7 +73,7 @@ export default function InvoiceTable() {
     },
     {
       header: "Total",
-      cell: (inv) => {
+      cell: (inv: Invoice) => {
         const total =
           inv.total ??
           (inv.precioUnitario && inv.cantidad ? inv.precioUnitario * inv.cantidad : 0);
@@ -84,7 +84,7 @@ export default function InvoiceTable() {
     },
     {
       header: "Declarado",
-      cell: (inv) => (
+      cell: (inv: Invoice) => (
         <Switch
           checked={!!inv.declared}
           onCheckedChange={async (checked) => {

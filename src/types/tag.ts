@@ -1,9 +1,9 @@
 export interface Tag {
   id: number;
-  documentId: string;
   name: string;
-  parent_tag: Tag;
-  appliesTo: string;
+  documentId?: string;
+  parent_tag?: Tag | null;
+  appliesTo?: string;
   children_tags?: Tag[];
   color?: string;
 }

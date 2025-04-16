@@ -73,7 +73,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
       const tag = tags.find((t) => t.id === dragSourceId);
       const docId = tag?.documentId || dragSourceId;
       await updateTag({
-        id: docId,
+        id: docId.toString(),
         updatedData: {
           parent_tag: dropTargetId !== 0 ? dropTargetId : null,
         },
@@ -116,7 +116,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
         const tag = tags.find((t) => t.id === editingId);
         const docId = tag?.documentId || editingId;
         await updateTag({
-          id: docId,
+          id: docId.toString(),
           updatedData: sanitized as any,
         });
       } else {
