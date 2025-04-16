@@ -5,6 +5,8 @@ import { useState } from "react";
 import { StrapiTable, ColumnDefinition } from "@/components/tables/StrapiTable";
 import { toast } from "sonner";
 import useStrapiDelete from "@/hooks/useStrapiDelete";
+import { useConfirm } from "@/hooks/useConfirm";
+import { PencilIcon, Trash2Icon } from "lucide-react";
 
 interface FullStrapiTableProps<T> {
   collection: string;
@@ -13,6 +15,11 @@ interface FullStrapiTableProps<T> {
   filters?: object;
   selectable?: boolean;
   onBulkDelete?: (selected: T[]) => void;
+  /**
+   * Custom form element to render inside the create/edit modal.
+   * Receives { row, onChange, onSubmit, onCancel } as props.
+   */
+  formElement?: React.ReactNode | ((props: { row: T | null, onChange: (row: T) => void, onSubmit: (row: T) => void, onCancel: () => void }) => React.ReactNode);
 }
 
 interface SortState {
@@ -35,6 +42,7 @@ export function FullStrapiTable<T>({
   filters,
   selectable = true,
   onBulkDelete,
+  formElement,
 }: FullStrapiTableProps<T>) {
   const [selectedRows, setSelectedRows] = useState<T[]>([]);
   const [sort, setSort] = useState<SortState | null>(null);
@@ -46,14 +54,22 @@ export function FullStrapiTable<T>({
     setSelectedRows([]);
   });
 
+  const confirm = useConfirm();
+
   const handleBulkDelete = () => {
     if (selectedRows.length === 0) return;
-    if (window.confirm(`¿Eliminar ${selectedRows.length} registros seleccionados?`)) {
-      selectedRows.forEach((row: any) => {
-        const id = row.documentId || row.id;
-        if (id) deleteItem({ id });
-      });
-    }
+    confirm({
+      title: `¿Eliminar ${selectedRows.length} registros seleccionados?`,
+      description: `Esta acción eliminará ${selectedRows.length} registros. ¿Deseas continuar?`,
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      onConfirm: () => {
+        selectedRows.forEach((row: any) => {
+          const id = row.documentId || row.id;
+          if (id) deleteItem({ id });
+        });
+      },
+    });
   };
 
   // Compose query options with sorting and filtering
@@ -70,33 +86,80 @@ export function FullStrapiTable<T>({
 
   // Per-row actions
   const handleEdit = (row: T) => {
-    toast("Editar (demo): " + JSON.stringify(row));
+    setEditRow(row);
+    setModalOpen(true);
   };
   const handleDelete = (row: any) => {
     const id = row.documentId || row.id;
     if (!id) return;
-    if (window.confirm("¿Eliminar este registro?")) {
-      deleteItem({ id });
-    }
+    confirm({
+      title: "¿Eliminar este registro?",
+      description: "Esta acción no se puede deshacer. ¿Deseas continuar?",
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      onConfirm: () => {
+        deleteItem({ id });
+      },
+    });
   };
   const renderActions = (row: T) => (
     <div className="flex gap-2 justify-center">
       <button
-        className="text-blue-600 hover:underline"
+        className="text-gray-500 hover:text-blue-600"
         title="Editar"
         onClick={() => handleEdit(row)}
       >
-        Editar
+        <PencilIcon className="w-4 h-4" />
       </button>
       <button
-        className="text-red-600 hover:underline"
+        className="text-gray-500 hover:text-red-600"
         title="Eliminar"
         onClick={() => handleDelete(row)}
       >
-        Eliminar
+        <Trash2Icon className="w-4 h-4" />
       </button>
     </div>
   );
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editRow, setEditRow] = useState<T | null>(null);
+
+  // Modal form logic
+  function handleModalSubmit(row: T) {
+    // TODO: Wire up create/edit logic
+    setModalOpen(false);
+  }
+  function handleModalChange(row: T) {
+    setEditRow(row);
+  }
+
+  function renderModal() {
+    if (!modalOpen) return null;
+    if (typeof formElement === 'function') {
+      return formElement({
+        row: editRow,
+        onChange: handleModalChange,
+        onSubmit: handleModalSubmit,
+        onCancel: () => setModalOpen(false),
+      });
+    }
+    if (formElement) {
+      return formElement;
+    }
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+        <div className="bg-white rounded shadow-lg p-6 min-w-[300px] max-w-[90vw]">
+          <h2 className="font-bold mb-4">{editRow ? "Editar" : "Crear"} registro</h2>
+          <pre className="text-xs bg-gray-100 p-2 rounded max-h-64 overflow-auto mb-4">{JSON.stringify(editRow, null, 2)}</pre>
+          <div className="flex gap-2 justify-end">
+            <button className="px-3 py-1 rounded bg-gray-200" onClick={() => setModalOpen(false)}>Cancelar</button>
+            <button className="px-3 py-1 rounded bg-blue-600 text-white" onClick={() => setModalOpen(false)}>Guardar</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // --- Render filter inputs above table ---
   function renderFiltersRow() {
@@ -166,6 +229,7 @@ export function FullStrapiTable<T>({
         </div>
       )}
       {renderFiltersRow()}
+      {renderModal()}
       <StrapiTable<T>
         collection={collection}
         title={title}

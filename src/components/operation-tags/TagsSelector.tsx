@@ -66,13 +66,19 @@ export const TagsSelector: React.FC<TagsSelectorProps> = ({
   const [, setIsOpen] = useState(false);
 
   const {
-    data: { data: tags = [] },
+    data: { data: tags = [] } = { data: [] },
     isLoading,
   } = useStrapiCollection<Tag>("operation-tags", {
     filters: { appliesTo: { $contains: appliesTo } },
     pagination: { page: 1, pageSize: 500 },
     populate: ["parent_tag"],
   });
+
+  // DEBUG LOGGING
+  if (typeof window !== 'undefined') {
+    console.log("TagsSelector fetched tags:", tags);
+    console.log("TagsSelector currentTag:", currentTag);
+  }
 
   const treeData = buildTagTree(tags);
 
