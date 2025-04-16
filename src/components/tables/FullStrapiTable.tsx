@@ -1,0 +1,180 @@
+// FullStrapiTable.tsx
+"use client";
+
+import { useState } from "react";
+import { StrapiTable, ColumnDefinition } from "@/components/tables/StrapiTable";
+import { toast } from "sonner";
+import useStrapiDelete from "@/hooks/useStrapiDelete";
+
+interface FullStrapiTableProps<T> {
+  collection: string;
+  columns: ColumnDefinition<T>[];
+  title?: string;
+  filters?: object;
+  selectable?: boolean;
+  onBulkDelete?: (selected: T[]) => void;
+}
+
+interface SortState {
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
+interface FilterState {
+  [field: string]: string;
+}
+
+/**
+ * Experimental generic Strapi table for iterative testing.
+ * Usage: <FullStrapiTable collection="operations" columns={columns} />
+ */
+export function FullStrapiTable<T>({
+  collection,
+  columns,
+  title,
+  filters,
+  selectable = true,
+  onBulkDelete,
+}: FullStrapiTableProps<T>) {
+  const [selectedRows, setSelectedRows] = useState<T[]>([]);
+  const [sort, setSort] = useState<SortState | null>(null);
+  const [filtersState, setFiltersState] = useState<FilterState>({});
+
+  // Bulk delete integration
+  const { mutate: deleteItem } = useStrapiDelete(collection, () => {
+    toast.success("Eliminación masiva completada");
+    setSelectedRows([]);
+  });
+
+  const handleBulkDelete = () => {
+    if (selectedRows.length === 0) return;
+    if (window.confirm(`¿Eliminar ${selectedRows.length} registros seleccionados?`)) {
+      selectedRows.forEach((row: any) => {
+        const id = row.documentId || row.id;
+        if (id) deleteItem({ id });
+      });
+    }
+  };
+
+  // Compose query options with sorting and filtering
+  const queryOptions = {
+    ...(filters ? { filters } : {}),
+    sort: sort ? [`${sort.field}:${sort.direction}`] : undefined,
+    filters: {
+      ...(filters || {}),
+      ...Object.fromEntries(
+        Object.entries(filtersState).filter(([_, v]) => v !== "")
+      ),
+    },
+  };
+
+  // Per-row actions
+  const handleEdit = (row: T) => {
+    toast("Editar (demo): " + JSON.stringify(row));
+  };
+  const handleDelete = (row: any) => {
+    const id = row.documentId || row.id;
+    if (!id) return;
+    if (window.confirm("¿Eliminar este registro?")) {
+      deleteItem({ id });
+    }
+  };
+  const renderActions = (row: T) => (
+    <div className="flex gap-2 justify-center">
+      <button
+        className="text-blue-600 hover:underline"
+        title="Editar"
+        onClick={() => handleEdit(row)}
+      >
+        Editar
+      </button>
+      <button
+        className="text-red-600 hover:underline"
+        title="Eliminar"
+        onClick={() => handleDelete(row)}
+      >
+        Eliminar
+      </button>
+    </div>
+  );
+
+  // --- Render filter inputs above table ---
+  function renderFiltersRow() {
+    return (
+      <div className="flex gap-2 mb-2">
+        {columns.map((col, idx) =>
+          col.filterable ? (
+            <input
+              key={col.filterKey ?? col.header}
+              type="text"
+              value={filtersState[col.filterKey ?? col.header] ?? ""}
+              placeholder={`Filtrar ${col.header}`}
+              className="border rounded px-2 py-1 text-xs w-full"
+              onChange={e => setFiltersState(f => ({ ...f, [col.filterKey ?? col.header]: e.target.value }))}
+              style={{ minWidth: 100 }}
+            />
+          ) : (
+            <div key={col.header} style={{ minWidth: 100 }} />
+          )
+        )}
+      </div>
+    );
+  }
+
+  // --- Render sortable column headers ---
+  function renderSortableHeader(col: ColumnDefinition<T>, idx: number) {
+    if (!col.sortable) return col.header;
+    const key = col.sortKey ?? col.header;
+    return (
+      <button
+        type="button"
+        className="font-semibold flex items-center gap-1"
+        onClick={() =>
+          setSort(s =>
+            s && s.field === key && s.direction === "asc"
+              ? { field: key, direction: "desc" }
+              : { field: key, direction: "asc" }
+          )
+        }
+      >
+        {col.header}
+        {sort?.field === key ? (sort.direction === "asc" ? "▲" : "▼") : null}
+      </button>
+    );
+  }
+
+  // --- Enhanced columns for StrapiTable ---
+  const enhancedColumns = columns.map((col, idx) => ({
+    ...col,
+    header: renderSortableHeader(col, idx),
+  }));
+
+  return (
+    <div>
+      {selectable && (
+        <div className="mb-2 flex gap-2">
+          <button
+            className="bg-red-500 text-white px-3 py-1 rounded disabled:opacity-50"
+            disabled={selectedRows.length === 0}
+            onClick={handleBulkDelete}
+          >
+            Eliminar seleccionados
+          </button>
+          <span className="text-sm text-gray-500">
+            {selectedRows.length} seleccionados
+          </span>
+        </div>
+      )}
+      {renderFiltersRow()}
+      <StrapiTable<T>
+        collection={collection}
+        title={title}
+        columns={enhancedColumns}
+        queryOptions={queryOptions}
+        selectable={selectable}
+        onSelectionChange={setSelectedRows}
+        renderActions={renderActions}
+      />
+    </div>
+  );
+}

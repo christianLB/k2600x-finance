@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   useStrapiCollection,
   UseStrapiCollectionOptions,
@@ -23,6 +23,11 @@ import { useConfirm } from "@/hooks/useConfirm";
 export interface ColumnDefinition<T> {
   header: string;
   cell: (item: T) => React.ReactNode;
+  sortable?: boolean;
+  sortKey?: string;
+  filterable?: boolean;
+  filterKey?: string;
+  filterInput?: React.ReactNode | null;
 }
 
 export interface StrapiTableProps<T> {
@@ -38,6 +43,7 @@ export interface StrapiTableProps<T> {
   deleteButtonText?: string;
   extraFilters?: Record<string, any>;
   queryOptions?: UseStrapiCollectionOptions;
+  onSelectionChange?: (selected: T[]) => void;
 }
 
 export function StrapiTable<T>({
@@ -51,6 +57,8 @@ export function StrapiTable<T>({
   onEdit,
   renderActions,
   queryOptions,
+  onSelectionChange,
+  deleteButtonText,
 }: StrapiTableProps<T>) {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(pageSize);
@@ -100,7 +108,7 @@ export function StrapiTable<T>({
   );
 
   const actionsRenderer =
-    renderActions || (onEdit ? defaultRenderActions : null);
+    renderActions || (onEdit ? defaultRenderActions : defaultRenderActions);
 
   function handleDelete(item: T) {
     const docId = (item as any)?.documentId || (item as any)?.id;
@@ -138,6 +146,23 @@ export function StrapiTable<T>({
       prev.size === allRows.length ? new Set() : new Set(allRows.map(getId))
     );
   }
+
+  // Track previous selectedRows to avoid infinite loops
+  const prevSelectedRowsRef = useRef<T[]>([]);
+
+  // Effect: Notify parent of selection changes
+  useEffect(() => {
+    if (onSelectionChange) {
+      // Only update if the selection actually changed
+      const selectedRows = rows.filter((item) => selected.has(getId(item)));
+      // Use JSON.stringify to compare arrays shallowly
+      if (JSON.stringify(selectedRows.map(getId)) !== JSON.stringify((prevSelectedRowsRef.current ?? []).map(getId))) {
+        onSelectionChange(selectedRows);
+        prevSelectedRowsRef.current = selectedRows;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, rows]);
 
   return (
     <div className="space-y-4 border p-4 rounded-md bg-white">
