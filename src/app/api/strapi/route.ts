@@ -7,9 +7,44 @@ const strapiConfig = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { method, collection, id, ids, data, query } = await req.json();
+    // Añadimos schemaUid para pedir el esquema
+    const { method, collection, id, ids, data, query, schemaUid } = await req.json();
 
-    if (!collection) {
+    /***********************************************************
+     * 0) SCHEMA: obtener estructura de un content-type
+     ***********************************************************/
+    if (method === 'SCHEMA') {
+      // Intentamos dos veces por si hay que refrescar JWT
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const headers = await getAuthHeaders(); // lleva tu Full Access token
+        // Si schemaUid está definido, filtramos por uid, si no devolvemos todos
+        const url = `${strapiConfig.baseUrl}/api/content-type-builder/content-types` +
+          (schemaUid
+            ? `?filters[uid][$eq]=${encodeURIComponent(schemaUid)}`
+            : ''
+          );
+
+        const response = await fetch(url, { method: 'GET', headers });
+        // Si 401 en el primer intento, forzamos clearJWT() y reintentamos
+        if (response.status === 401 && attempt === 0) {
+          clearJWT();
+          continue;
+        }
+        if (!response.ok) {
+          const err = await response.json().catch(() => null);
+          return NextResponse.json(
+            { error: true, message: err?.error?.message || 'Error fetching schema' },
+            { status: response.status }
+          );
+        }
+        const result = await response.json();
+        // Devolvemos directamente el JSON con la/s definiciones
+        return NextResponse.json(result, { status: 200 });
+      }
+      throw new Error('Authentication failed after retry (SCHEMA)');
+    }
+
+    if (!collection && method !== 'SCHEMA') {
       return NextResponse.json(
         { error: true, message: "Collection is required" },
         { status: 400 }
@@ -259,7 +294,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-
 // Helper que convierte objetos anidados en query strings compatibles con Strapi
 function objectToQueryString(obj: any, prefix = ''): string {
   return Object.entries(obj)
@@ -272,4 +306,3 @@ function objectToQueryString(obj: any, prefix = ''): string {
     })
     .join('&');
 }
-
