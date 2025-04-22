@@ -86,7 +86,7 @@ export default function AdminPage() {
       {schemasError && <div className="text-red-500">Error loading schemas: {schemasError}</div>}
       <div className="flex items-center">
         <label className="flex items-center gap-2">
-          Select collection:
+          Select collection:          
           <select className="border rounded px-2 py-1"
             value={selectedCollection || ""}
             onChange={(e) => {
@@ -111,8 +111,8 @@ export default function AdminPage() {
           </Button>
         )}
       </div>      {tableError && <div className="text-red-500">{tableError}</div>}
-      {selectedCollection && !showForm && (<div className="w-full">
-        <table className="w-full border border-gray-300 rounded-md">
+      {selectedCollection && !showForm && (<div className="w-full">      
+        <table className="w-full border border-gray-300 rounded-md">        
           <thead>
             <tr>
               <th className="p-4 font-semibold text-sm">ID</th>
@@ -134,7 +134,7 @@ export default function AdminPage() {
                     ))
                   : <td className="p-4" colSpan={1}>-</td>
                 }
-                <td style={{ padding: 8 }}>
+                <td className="p-4">
                   <Button
                     variant="outline"
                     size="sm"
@@ -163,25 +163,26 @@ export default function AdminPage() {
                       }
                     }}
                   >
-                    Edit
-                    </Button>
+                    Edit                    
+                  </Button>
                   <div className="flex gap-2">
                     <Button variant="destructive" size="sm" onClick={() => handleDelete(rec)}>
                       Delete
                     </Button>
-                  </div>                </td>
+                  </div>                
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>)}
-      {selectedCollection && showForm && (
-        <div className="mt-6"></div>
+      </div>
       )}
-              {loading && <div>Loading record for editing...</div>}
+      {selectedCollection && showForm && (
+        <div className="mt-6">
+          {loading && <div>Loading record for editing...</div>}
               {!loading && selectedRecord && (
                 <DynamicStrapiForm
-                  collection={selectedCollection}
+                  collection={selectedCollection}                  
                   document={selectedRecord}
                   onSuccess={handleFormSubmit}
                   onError={(err) => alert(err?.message || String(err))}
@@ -189,10 +190,9 @@ export default function AdminPage() {
               )}
               <Button className="ml-4 mt-4" variant="outline" onClick={() => setShowForm(false)}>
                 Cancel
-              </Button>
-            </div>
-      )}
-    </div>
+              </Button>        
+        </div>
+      )}        
+    </div>    
   );
 }
-
