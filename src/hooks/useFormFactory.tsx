@@ -223,7 +223,67 @@ export function useFormFactory<T extends FieldValues = any>(
 
       if (cfg.type === "relation" && cfg.props?.target) {
 
-        const relOptions = relationOptionsMap?.[cfg.name] || [];
+        const { Select, SelectTrigger, SelectContent, SelectItem } = require("@/components/ui/select");
+
+        // Try to use MultiSelect if available and isMulti
+
+        let MultiSelect: any = null;
+
+        try {
+
+          MultiSelect = require("@/components/ui/multi-select").default;
+
+        } catch {}
+
+        const options = relationOptionsMap?.[cfg.name] || [];
+
+        if (cfg.props.isMulti && MultiSelect) {
+
+          return (
+
+            <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+
+              <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
+
+                {cfg.label}
+
+                {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
+
+              </label>
+
+              <MultiSelect
+
+                options={options}
+
+                defaultValue={watch(cfg.name) ?? []}
+
+                placeholder={cfg.placeholder}
+
+                onChange={vals => setValue(cfg.name, vals)}
+
+                disabled={cfg.disabled}
+
+              />
+
+              {cfg.description && (
+
+                <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
+
+              )}
+
+              {errorMsg && (
+
+                <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
+
+              )}
+
+            </div>
+
+          );
+
+        }
+
+        // Single relation fallback
 
         return (
 
@@ -237,29 +297,35 @@ export function useFormFactory<T extends FieldValues = any>(
 
             </label>
 
-            <Comp
+            <Select
 
-              id={cfg.name}
+              value={watch(cfg.name) ?? ""}
 
-              name={cfg.name}
-
-              options={relOptions}
-
-              placeholder={cfg.placeholder}
+              onValueChange={val => setValue(cfg.name, val)}
 
               required={cfg.required}
 
               disabled={cfg.disabled}
 
-              variant={cfg.variant}
+            >
 
-              isMulti={cfg.props.isMulti}
+              <SelectTrigger id={cfg.name} name={cfg.name} placeholder={cfg.placeholder} />
 
-              {...register(cfg.name)}
+              <SelectContent>
 
-              control={control}
+                {options.map((opt: any) => (
 
-            />
+                  <SelectItem key={opt.value} value={opt.value}>
+
+                    {opt.label}
+
+                  </SelectItem>
+
+                ))}
+
+              </SelectContent>
+
+            </Select>
 
             {cfg.description && (
 

@@ -134,7 +134,10 @@ export const useStrapiCollection = <T>(
     isLoading,
     refetch,
     create: createMutation.mutate,
+    createAsync: createMutation.mutateAsync,
     update: updateMutation.mutate,
+    updateAsync: updateMutation.mutateAsync,
     delete: deleteMutation.mutate,
+    deleteAsync: deleteMutation.mutateAsync,
   };
 };
