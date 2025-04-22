@@ -80,14 +80,14 @@ export default function AdminPage() {
   const collectionOptions = Object.keys(schemas).sort();
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Strapi Admin</h1>
-      {schemasLoading && <div>Loading schemas...</div>}
-      {schemasError && <div style={{ color: "red" }}>Error loading schemas: {schemasError}</div>}
-      <div style={{ marginBottom: 16 }}>
-        <label>
+    <div className="p-8 flex flex-col gap-4">
+      <h1 className="text-2xl font-bold">Strapi Admin</h1>
+      {schemasLoading && <div className="text-gray-500 mb-4">Loading schemas...</div>}
+      {schemasError && <div className="text-red-500">Error loading schemas: {schemasError}</div>}
+      <div className="flex items-center">
+        <label className="flex items-center gap-2">
           Select collection:
-          <select
+          <select className="border rounded px-2 py-1"
             value={selectedCollection || ""}
             onChange={(e) => {
               setSelectedCollection(e.target.value);
@@ -106,34 +106,33 @@ export default function AdminPage() {
           </select>
         </label>
         {selectedCollection && (
-          <Button style={{ marginLeft: 16 }} onClick={() => { setSelectedRecord(null); setShowForm(true); }}>
+          <Button onClick={() => { setSelectedRecord(null); setShowForm(true); }}>
             New
           </Button>
         )}
-      </div>
-      {tableError && <div style={{ color: "red" }}>{tableError}</div>}
-      {selectedCollection && !showForm && (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      </div>      {tableError && <div className="text-red-500">{tableError}</div>}
+      {selectedCollection && !showForm && (<div className="w-full">
+        <table className="w-full border border-gray-300 rounded-md">
           <thead>
             <tr>
-              <th style={{ borderBottom: "1px solid #ddd", padding: 8 }}>ID</th>
+              <th className="p-4 font-semibold text-sm">ID</th>
               {/* Render dynamic headers */}
               {records[0] && typeof records[0].attributes === 'object' && records[0].attributes !== null &&
                 Object.keys(records[0].attributes).map((key) => (
-                  <th key={key} style={{ borderBottom: "1px solid #ddd", padding: 8 }}>{key}</th>
+                  <th className="p-4 font-semibold text-sm" key={key}>{key}</th>
                 ))}
-              <th style={{ borderBottom: "1px solid #ddd", padding: 8 }}>Actions</th>
+              <th className="p-4 font-semibold text-sm">Actions</th>
             </tr>
           </thead>
           <tbody>
             {records.map((rec: any) => (
               <tr key={rec.id}>
-                <td style={{ padding: 8 }}>{rec.id}</td>
+                <td className="p-4">{rec.id}</td>
                 {typeof rec.attributes === 'object' && rec.attributes !== null
                   ? Object.keys(rec.attributes).map((key) => (
-                      <td key={key} style={{ padding: 8 }}>{JSON.stringify(rec.attributes[key])}</td>
+                      <td className="p-4" key={key} >{JSON.stringify(rec.attributes[key])}</td>
                     ))
-                  : <td style={{ padding: 8 }} colSpan={1}>-</td>
+                  : <td className="p-4" colSpan={1}>-</td>
                 }
                 <td style={{ padding: 8 }}>
                   <Button
@@ -165,32 +164,35 @@ export default function AdminPage() {
                     }}
                   >
                     Edit
-                  </Button>
-                  <Button variant="destructive" size="sm" style={{ marginLeft: 8 }} onClick={() => handleDelete(rec)}>
-                    Delete
-                  </Button>
-                </td>
+                    </Button>
+                  <div className="flex gap-2">
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(rec)}>
+                      Delete
+                    </Button>
+                  </div>                </td>
               </tr>
             ))}
           </tbody>
         </table>
-      )}
+      </div>)}
       {selectedCollection && showForm && (
-        <div style={{ marginTop: 24 }}>
-          {loading && <div>Loading record for editing...</div>}
-          {!loading && selectedRecord && (
-            <DynamicStrapiForm
-              collection={selectedCollection}
-              document={selectedRecord}
-              onSuccess={handleFormSubmit}
-              onError={(err) => alert(err?.message || String(err))}
-            />
-          )}
-          <Button style={{ marginTop: 16 }} variant="outline" onClick={() => setShowForm(false)}>
-            Cancel
-          </Button>
-        </div>
+        <div className="mt-6"></div>
+      )}
+              {loading && <div>Loading record for editing...</div>}
+              {!loading && selectedRecord && (
+                <DynamicStrapiForm
+                  collection={selectedCollection}
+                  document={selectedRecord}
+                  onSuccess={handleFormSubmit}
+                  onError={(err) => alert(err?.message || String(err))}
+                />
+              )}
+              <Button className="ml-4 mt-4" variant="outline" onClick={() => setShowForm(false)}>
+                Cancel
+              </Button>
+            </div>
       )}
     </div>
   );
 }
+

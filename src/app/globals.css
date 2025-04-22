@@ -11,7 +11,7 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
@@ -47,8 +47,8 @@
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
+  --background: oklch(0.141 0.005 285.823) ;
+  --foreground: oklch(0.985 0 0) ;
   --card: oklch(0.141 0.005 285.823);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.141 0.005 285.823);
@@ -122,6 +122,7 @@
 
 @layer base {
   * {
+    box-sizing: border-box;
     @apply border-border outline-ring/50;
     scrollbar-width: thin;
     scrollbar-color: var(--color-muted) var(--color-background);
@@ -147,8 +148,8 @@
   }
 }
 
-.bg-white { background-color: var(--color-card) !important; color: var(--color-card-foreground) !important; }
-.bg-blue-600 { background-color: var(--color-primary) !important; color: var(--color-primary-foreground) !important; }
-.text-blue-500, .hover\:text-blue-700:hover { color: var(--color-primary) !important; }
-.text-gray-600 { color: var(--color-muted-foreground) !important; }
-.text-red-600 { color: var(--color-destructive) !important; }
+.bg-white { background-color: var(--color-card) ; color: var(--color-card-foreground) ; }
+.bg-blue-600 { background-color: var(--color-primary) ; color: var(--color-primary-foreground) ; }
+.text-blue-500, .hover\:text-blue-700:hover { color: var(--color-primary) ; }
+.text-gray-600 { color: var(--color-muted-foreground) ; }
+.text-red-600 { color: var(--color-destructive) ; }

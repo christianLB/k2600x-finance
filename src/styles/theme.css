@@ -1,13 +1,11 @@
 :root {
-  --color-primary: #2563eb;
-  --color-success: #22c55e;
-  --color-danger: #ef4444;
-  --color-accent: #f59e42;
-  --color-background: #f8fafc;
-  --color-surface: #fff;
-  --color-muted: #e5e7eb;
-  --color-muted-foreground: #6b7280;
+  --body-background-color: #f6f8fa;
+  --body-text-color: #24292f;
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --radius-md: 8px;
-  --radius-lg: 16px;
+  --radius-md: 6px;
+}
+
+body {
+  background-color: var(--body-background-color);
+  color: var(--body-text-color);
 }
