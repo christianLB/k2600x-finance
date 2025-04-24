@@ -255,71 +255,32 @@ export function useFormFactory<T extends FieldValues = any>(
 
       if (cfg.type === "relation" && cfg.props?.target) {
 
-        const { Select, SelectTrigger, SelectContent, SelectItem } = require("@/components/ui/select");
+        const StrapiRelationField = require("@/components/admin/StrapiRelationField").default;
 
-        // Try to use MultiSelect if available and isMulti
+        // Normalize value for single/multi
 
-        let MultiSelect: any = null;
+        let value = watch(cfg.name);
 
-        try {
+        // For multi, always ensure array
 
-          MultiSelect = require("@/components/ui/multi-select").default;
+        if (cfg.props.isMulti) {
 
-        } catch {}
+          value = Array.isArray(value) ? value : [];
 
-        const options = relationOptionsMap?.[cfg.name] || [];
+        } else {
 
-        if (cfg.props.isMulti && MultiSelect) {
+          if (value && typeof value === 'object' && 'value' in value) value = value.value;
 
-          // Ensure value is always an array
+          if (Array.isArray(value)) value = value.length ? value[0] : undefined;
 
-          const value = Array.isArray(watch(cfg.name)) ? watch(cfg.name) : [];
-
-          return (
-
-            <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
-
-              <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
-
-                {cfg.label}
-
-                {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
-
-              </label>
-
-              <MultiSelect
-
-                options={options}
-
-                defaultValue={value}
-
-                placeholder={cfg.placeholder || "(Selecciona...)"}
-
-                onChange={val => setValue(cfg.name, val)}
-
-                disabled={cfg.disabled}
-
-              />
-
-              {cfg.description && (
-
-                <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
-
-              )}
-
-              {errorMsg && (
-
-                <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
-
-              )}
-
-            </div>
-
-          );
+          if (
+            value === undefined ||
+            value === null ||
+            value === "" ||
+            (Array.isArray(value) && value.length === 0)
+          ) value = undefined;
 
         }
-
-        // Single relation fallback
 
         return (
 
@@ -333,37 +294,25 @@ export function useFormFactory<T extends FieldValues = any>(
 
             </label>
 
-            <Select
-
-              id={cfg.name}
+            <StrapiRelationField
 
               name={cfg.name}
 
-              value={watch(cfg.name) || ""}
+              value={value}
 
-              onValueChange={val => setValue(cfg.name, val)}
+              onChange={val => setValue(cfg.name, val)}
+
+              target={cfg.props.target}
+
+              isMulti={cfg.props.isMulti}
 
               disabled={cfg.disabled}
 
-            >
+              placeholder={cfg.placeholder || "(Selecciona...)"}
 
-              <SelectTrigger id={cfg.name} name={cfg.name} placeholder={cfg.placeholder || "(Selecciona...)"} />
+              displayField={cfg.props.displayField || "displayName"}
 
-              <SelectContent>
-
-                {options.map((opt: any) => (
-
-                  <SelectItem key={opt.value} value={opt.value}>
-
-                    {opt.label}
-
-                  </SelectItem>
-
-                ))}
-
-              </SelectContent>
-
-            </Select>
+            />
 
             {cfg.description && (
 

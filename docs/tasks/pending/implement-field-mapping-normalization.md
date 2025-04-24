@@ -10,10 +10,7 @@ See completed analysis: `tasks/pending/field-mapping-normalization-analysis.md` 
 
 ## Subtasks
 - [x] **Enums Handling:** Refactor enum normalization to provide consistent `{ label, value }` options and ensure robust placeholder handling. (Completed 2025-04-24)
-- **StrapiRelationField Component Placeholder:**
-  - Design and scaffold a placeholder component (`StrapiRelationField`) for handling relation fields, with future extensibility in mind.
-  - Ensure current normalization logic is compatible with this placeholder.
-  - Document requirements for future implementation (async loading, id-to-label resolution, etc.).
+- [x] **StrapiRelationField Component Placeholder:** Implemented a fully custom relation field component with modal dialog, async fetch on open, and robust placeholder/selected value display. (Completed 2025-04-24)
 
 ## Action Items
 - For relations, implement a utility to resolve id to label for display, supporting both pre-fetched and async options.
