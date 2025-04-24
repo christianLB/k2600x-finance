@@ -5,6 +5,8 @@ import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import strapi from "@/services/strapi";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
 import { Button } from "@k2600x/design-system";
+import { Table } from "@k2600x/design-system";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -27,7 +29,9 @@ export default function AdminPage() {
     setTableError(null);
     strapi
       .post({ method: "GET", collection: apiCollection })
-      .then((res) => setRecords(res.data))
+      .then((res) => {
+        setRecords(res.data)
+      })
       .catch((err) => setTableError(err.message || "Failed to fetch records"))
       .finally(() => setLoading(false));
   }, [apiCollection]);
@@ -111,6 +115,54 @@ export default function AdminPage() {
     setLoading(false);
   }
 
+  // Helper to generate columns for Table
+  function getTableColumns(schema: any, onEdit: (row: any) => void, onDelete: (row: any) => void): ColumnDef<any>[] {
+    const columns: ColumnDef<any>[] = [
+      {
+        accessorKey: "id",
+        header: "ID",
+        cell: info => info.getValue(),
+      },
+    ];
+    if (schema && schema.schema && schema.schema.attributes) {
+      Object.keys(schema.schema.attributes).forEach((key) => {
+        columns.push({
+          header: key,
+          accessorFn: row => row[key],
+          cell: info => {
+            const value = info.getValue();
+            return typeof value === "object" ? JSON.stringify(value) : String(value ?? "-");
+          },
+        });
+      });
+    }
+    columns.push({
+      id: "actions",
+      header: "Actions",
+      cell: info => (
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(info.row.original)}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => onDelete(info.row.original)}
+          >
+            Delete
+          </Button>
+        </div>
+      ),
+      enableSorting: false,
+      enableColumnFilter: false,
+    });
+    return columns;
+  }
+
   // Helper to filter out internal/system collections
   const collectionOptions = Object.keys(schemas || {})
     .filter(
@@ -145,67 +197,36 @@ export default function AdminPage() {
         </div>
         {tableError && <div style={{ color: "red" }}>{tableError}</div>}
         {selectedCollection && !showForm && (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={{ borderBottom: "1px solid #ddd", padding: 8 }}>ID</th>
-                {/* Render dynamic headers */}
-                {records[0] && typeof records[0].attributes === 'object' && records[0].attributes !== null &&
-                  Object.keys(records[0].attributes).map((key) => (
-                    <th key={key} style={{ borderBottom: "1px solid #ddd", padding: 8 }}>{key}</th>
-                  ))}
-                <th style={{ borderBottom: "1px solid #ddd", padding: 8 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((rec: any) => (
-                <tr key={rec.id}>
-                  <td style={{ padding: 8 }}>{rec.id}</td>
-                  {typeof rec.attributes === 'object' && rec.attributes !== null
-                    ? Object.keys(rec.attributes).map((key) => (
-                        <td key={key} style={{ padding: 8 }}>{JSON.stringify(rec.attributes[key])}</td>
-                      ))
-                    : <td style={{ padding: 8 }} colSpan={1}>-</td>
-                  }
-                  <td style={{ padding: 8 }}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={async () => {
-                        const documentId = rec.documentId;
-                        if (!documentId) {
-                          alert("This record is missing a documentId and cannot be edited.");
-                          return;
-                        }
-                        setLoading(true);
-                        setSelectedRecord(null);
-                        try {
-                          // Always fetch the latest entity by documentId with populate: '*'
-                          const res = await strapi.post({
-                            method: "GET",
-                            collection: apiCollection!,
-                            id: documentId,
-                            query: { populate: "*" },
-                          });
-                          setSelectedRecord({ ...res.data });
-                          setShowForm(true);
-                        } catch (err: any) {
-                          alert("Failed to fetch record for editing: " + err.message);
-                        } finally {
-                          setLoading(false);
-                        }
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button variant="destructive" size="sm" style={{ marginLeft: 8 }} onClick={() => handleDelete(rec)}>
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            <Table
+              data={records}
+              columns={getTableColumns(schemas[selectedCollection], async (rec) => {
+                const documentId = rec.documentId;
+                if (!documentId) {
+                  alert("This record is missing a documentId and cannot be edited.");
+                  return;
+                }
+                setLoading(true);
+                setSelectedRecord(null);
+                try {
+                  const res = await strapi.post({
+                    method: "GET",
+                    collection: apiCollection!,
+                    id: documentId,
+                    query: { populate: "*" },
+                  });
+                  setSelectedRecord({ ...res.data });
+                  setShowForm(true);
+                } catch (err: any) {
+                  alert("Failed to fetch record for editing: " + err.message);
+                } finally {
+                  setLoading(false);
+                }
+              }, handleDelete)}
+              emptyMessage={tableError || "No data found."}
+              className="mt-2"
+            />
+          </>
         )}
         {/* Modal for Create/Edit Form */}
         <Dialog open={showForm} onOpenChange={setShowForm}>
