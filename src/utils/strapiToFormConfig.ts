@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
+import { StrapiRelationField } from "@/components/admin/StrapiRelationField";
 
 // Helper for allowedTypes to accept string for accept attribute
 function mapMediaAccept(allowedTypes: string[] = []) {
@@ -80,7 +81,7 @@ const typeMap: Record<string, any> = {
   relation: {
     type: "relation",
     zod: z.any(),
-    component: Select,
+    component: StrapiRelationField,
     placeholder: "Select related...",
   },
   media: {
@@ -168,10 +169,11 @@ export function strapiToFormConfig(strapiSchema: any) {
       }
     }
 
-    // RELATION: Mark for async options (handled at page level)
+    // RELATION: Use StrapiRelationField for relation fields
     if (attr.type === 'relation') {
       fieldProps.target = attr.target;
       fieldProps.isMulti = attr.relationType?.includes('Many');
+      fieldComponent = StrapiRelationField;
     }
 
     // MEDIA: File input specifics

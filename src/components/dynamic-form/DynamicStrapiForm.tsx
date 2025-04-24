@@ -32,9 +32,16 @@ export function DynamicStrapiForm({
     () => strapiToFormConfig(schema),
     [schema]
   );
+
+  // PATCH: If document is present (edit mode), override defaultValues with document
+  const mergedDefaultValues = React.useMemo(() => {
+    if (!document) return defaultValues;
+    return { ...defaultValues, ...document };
+  }, [defaultValues, document]);
+
   const formFactory = useFormFactory(
     zodSchema,
-    defaultValues,
+    mergedDefaultValues,
     fieldsConfig,
     //relationOptionsMap
   );
