@@ -127,10 +127,14 @@ export function strapiToFormConfig(strapiSchema: any) {
 
     // ENUMERATION: Provide options for select
     if (attr.type === 'enumeration' && Array.isArray(attr.enum)) {
-      options = attr.enum.map((v) => ({ label: v, value: v }));
+      const enumValues = attr.enum.length > 0 ? attr.enum : ["NO_ENUM"];
+      options = enumValues.map((v) => ({ label: v, value: v }));
       fieldProps.options = options;
       fieldComponent = Select; // Force Select for enum fields
-      zodField = z.enum([...attr.enum]);
+      zodField = attr.required === true
+        ? z.enum(enumValues as [string, ...string[]])
+        : z.enum(enumValues as [string, ...string[]]).optional();
+      placeholder = attr.placeholder || "(Select one...)"; // Always provide a placeholder for enums
       // PATCH: Add debug if options is empty
       if (!options || options.length === 0) {
         console.warn('Enum field', name, 'has no options!', attr);
@@ -154,6 +158,10 @@ export function strapiToFormConfig(strapiSchema: any) {
       if (typeof attr.min === 'number') fieldProps.min = attr.min;
       if (typeof attr.max === 'number') fieldProps.max = attr.max;
       if (typeof attr.step === 'number') fieldProps.step = attr.step;
+      zodField = z.number();
+      if (typeof attr.min === 'number') zodField = zodField.min(attr.min);
+      if (typeof attr.max === 'number') zodField = zodField.max(attr.max);
+      zodField = attr.required === true ? zodField : zodField.optional();
     }
 
     // DATE/DATETIME: use correct input type
@@ -165,17 +173,14 @@ export function strapiToFormConfig(strapiSchema: any) {
     if (!zodField) {
       zodField = z.any();
     }
-    if (attr.required) {
-      zodField = zodField.min ? zodField.min(1) : zodField;
-    }
-    zodShape[name] = attr.required ? zodField : zodField.optional();
+    zodShape[name] = zodField;
     defaultValues[name] = attr.default ?? '';
 
     fieldsConfig.push({
       name,
       label: attr.displayName || name.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()),
-      type: attr.type === 'enumeration' ? 'enum' : mapping.type, // PATCH: force type to enum for enum fields
-      required: !!attr.required,
+      type: attr.type === 'enumeration' ? 'enum' : mapping.type, 
+      required: attr.required === true, 
       disabled: !!attr.disabled,
       placeholder,
       description: attr.description || '',

@@ -26,11 +26,6 @@ export function DynamicStrapiForm({
   const { schemas, loading: schemasLoading, error: schemasError } = useStrapiSchemas();
   const schema = schemas[collection];
 
-  // Defensive: Log schema for debugging
-  React.useEffect(() => {
-    console.log("[DynamicStrapiForm] schema from context:", schema);
-  }, [schema]);
-
   // Defensive: handle loading/errors from context
   if (schemasLoading) {
     return <div>Loading schema...</div>;

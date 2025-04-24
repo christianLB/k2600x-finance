@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import strapi from "@/services/strapi";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
-import { Button } from "@/components/ui/button";
+import { Button } from "@k2600x/design-system";
 
 export default function AdminPage() {
   const { schemas, loading: schemasLoading, error: schemasError } = useStrapiSchemas();
@@ -30,24 +30,54 @@ export default function AdminPage() {
       .finally(() => setLoading(false));
   }, [apiCollection]);
 
+  // Normalize relations for update: convert relation objects to their DB id or null
+  function normalizeRelationsForUpdate(data: any, schema: any) {
+    if (!data || !schema) return data;
+    const normalized = { ...data };
+    for (const [key, field] of Object.entries(schema.schema?.attributes ?? {})) {
+      if (field.type === 'relation' || field.type === 'media') {
+        if (Array.isArray(normalized[key])) {
+          // For many relations and media: map to array of ids, keep [] if empty
+          normalized[key] = normalized[key]
+            .map((item: any) => {
+              if (!item) return null;
+              if (typeof item === 'object' && typeof item.id !== 'undefined') return item.id;
+              return item;
+            })
+            .filter((v: any) => v !== null && v !== undefined); // Remove nulls
+          // If still empty, keep as []
+        } else if (normalized[key] && typeof normalized[key] === 'object') {
+          normalized[key] = typeof normalized[key].id !== 'undefined' ? normalized[key].id : null;
+        } else if (normalized[key] === undefined || normalized[key] === "") {
+          // For single relation/media, set to null if empty string or undefined
+          normalized[key] = null;
+        }
+      }
+    }
+    return normalized;
+  }
+
   // Handle create/update
   async function handleFormSubmit(values: any) {
     setLoading(true);
     try {
+      let payload = values;
       if (selectedRecord) {
-        // Update: use documentId for PUT
+        // Update: use documentId for PUT, normalize relations
+        payload = normalizeRelationsForUpdate(values, schemas[selectedCollection]);
         await strapi.post({
           method: "PUT",
           collection: apiCollection!,
           id: selectedRecord.documentId,
-          data: values,
+          data: payload,
         });
       } else {
-        // Create
+        // Create: normalize relations
+        payload = normalizeRelationsForUpdate(values, schemas[selectedCollection]);
         await strapi.post({
           method: "POST",
           collection: apiCollection!,
-          data: values,
+          data: payload,
         });
       }
       // Refresh list

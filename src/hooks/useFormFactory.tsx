@@ -157,6 +157,27 @@ export function useFormFactory<T extends FieldValues = any>(
 
         const { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } = require("@/components/ui/select");
 
+        // Do NOT add placeholder as an option; use placeholder prop only
+
+        const options = cfg.props.options;
+
+        // Ensure value is always a scalar (string/number/null/undefined) for single select
+
+        let value = watch(cfg.name);
+
+        if (value && typeof value === 'object' && 'value' in value) value = value.value;
+
+        if (Array.isArray(value)) value = value.length ? value[0] : undefined;
+
+        if (
+          value === undefined ||
+          value === null ||
+          value === "" ||
+          (Array.isArray(value) && value.length === 0)
+        ) value = undefined;
+
+        console.log(`[useFormFactory] Field: ${cfg.name}, value:`, value, 'type:', typeof value, 'options:', options);
+
         return (
 
           <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
@@ -171,21 +192,23 @@ export function useFormFactory<T extends FieldValues = any>(
 
             <Select
 
-              value={watch(cfg.name) ?? ""}
+              id={cfg.name}
+
+              name={cfg.name}
+
+              value={value}
 
               onValueChange={val => setValue(cfg.name, val)}
-
-              required={cfg.required}
 
               disabled={cfg.disabled}
 
             >
 
-              <SelectTrigger id={cfg.name} name={cfg.name} placeholder={cfg.placeholder} />
+              <SelectTrigger id={cfg.name} name={cfg.name} placeholder={cfg.placeholder || "(Selecciona...)"} />
 
               <SelectContent>
 
-                {cfg.props.options.map((opt: any) => (
+                {options.map((opt: any) => (
 
                   <SelectItem key={opt.value} value={opt.value}>
 
@@ -239,6 +262,10 @@ export function useFormFactory<T extends FieldValues = any>(
 
         if (cfg.props.isMulti && MultiSelect) {
 
+          // Ensure value is always an array
+
+          const value = Array.isArray(watch(cfg.name)) ? watch(cfg.name) : [];
+
           return (
 
             <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
@@ -255,11 +282,11 @@ export function useFormFactory<T extends FieldValues = any>(
 
                 options={options}
 
-                defaultValue={watch(cfg.name) ?? []}
+                defaultValue={value}
 
-                placeholder={cfg.placeholder}
+                placeholder={cfg.placeholder || "(Selecciona...)"}
 
-                onChange={vals => setValue(cfg.name, vals)}
+                onChange={val => setValue(cfg.name, val)}
 
                 disabled={cfg.disabled}
 
@@ -299,17 +326,19 @@ export function useFormFactory<T extends FieldValues = any>(
 
             <Select
 
-              value={watch(cfg.name) ?? ""}
+              id={cfg.name}
+
+              name={cfg.name}
+
+              value={watch(cfg.name) || ""}
 
               onValueChange={val => setValue(cfg.name, val)}
-
-              required={cfg.required}
 
               disabled={cfg.disabled}
 
             >
 
-              <SelectTrigger id={cfg.name} name={cfg.name} placeholder={cfg.placeholder} />
+              <SelectTrigger id={cfg.name} name={cfg.name} placeholder={cfg.placeholder || "(Selecciona...)"} />
 
               <SelectContent>
 
@@ -326,6 +355,62 @@ export function useFormFactory<T extends FieldValues = any>(
               </SelectContent>
 
             </Select>
+
+            {cfg.description && (
+
+              <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
+
+            )}
+
+            {errorMsg && (
+
+              <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
+
+            )}
+
+          </div>
+
+        );
+
+      }
+
+ 
+
+      // --- MULTI-SELECT FIELDS ---
+
+      if (cfg.type === "multi-select" && cfg.props?.options) {
+
+        const MultiSelect = require("@/components/ui/multi-select").default;
+
+        // Ensure value is always an array
+
+        const value = Array.isArray(watch(cfg.name)) ? watch(cfg.name) : [];
+
+        return (
+
+          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+
+            <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
+
+              {cfg.label}
+
+              {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
+
+            </label>
+
+            <MultiSelect
+
+              options={cfg.props.options}
+
+              defaultValue={value}
+
+              placeholder={cfg.placeholder || "(Selecciona...)"}
+
+              onChange={val => setValue(cfg.name, val)}
+
+              disabled={cfg.disabled}
+
+            />
 
             {cfg.description && (
 
@@ -421,31 +506,23 @@ export function useFormFactory<T extends FieldValues = any>(
 
             </label>
 
-            <Comp
+            <input
+
+              type="number"
 
               id={cfg.name}
 
               name={cfg.name}
 
-              type="number"
+              value={watch(cfg.name)}
 
-              min={cfg.props?.min}
-
-              max={cfg.props?.max}
-
-              step={cfg.props?.step}
+              onChange={e => setValue(cfg.name, e.target.value === "" ? undefined : Number(e.target.value))}
 
               placeholder={cfg.placeholder}
 
-              required={cfg.required}
-
               disabled={cfg.disabled}
 
-              variant={cfg.variant}
-
-              {...register(cfg.name, { valueAsNumber: true })}
-
-              control={control}
+              step="any"
 
             />
 

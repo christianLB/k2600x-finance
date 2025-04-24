@@ -7,9 +7,22 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function Select({
+  value,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+  // Defensive: Only allow string/number or undefined/null, never "", []
+  let normalizedValue = value;
+  if (
+    normalizedValue === "" ||
+    normalizedValue === null ||
+    normalizedValue === undefined ||
+    (Array.isArray(normalizedValue) && normalizedValue.length === 0)
+  ) {
+    normalizedValue = undefined;
+  }
+  // Optionally, keep debug log for now
+  console.log('[Select] normalizedValue:', normalizedValue, 'type:', typeof normalizedValue);
+  return <SelectPrimitive.Root data-slot="select" value={normalizedValue} {...props} />
 }
 
 function SelectGroup({
