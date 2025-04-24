@@ -7,7 +7,7 @@ import { useFormFactory } from "@/hooks/useFormFactory";
 import { strapiToFormConfig } from "@/utils/strapiToFormConfig";
 import { FormProvider } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { useRelationOptions } from "@/hooks/useRelationOptions";
+//import { useRelationOptions } from "@/hooks/useRelationOptions";
 
 export interface DynamicStrapiFormProps {
   collection: string;
@@ -26,6 +26,19 @@ export function DynamicStrapiForm({
   const { schemas, loading: schemasLoading, error: schemasError } = useStrapiSchemas();
   const schema = schemas[collection];
 
+  // Move all hooks to the top level, before any early returns
+  //const relationOptionsMap = useRelationOptions([], schemas);
+  const { schema: zodSchema, defaultValues, fieldsConfig } = React.useMemo(
+    () => strapiToFormConfig(schema),
+    [schema]
+  );
+  const formFactory = useFormFactory(
+    zodSchema,
+    defaultValues,
+    fieldsConfig,
+    //relationOptionsMap
+  );
+
   // Defensive: handle loading/errors from context
   if (schemasLoading) {
     return <div>Loading schema...</div>;
@@ -36,39 +49,6 @@ export function DynamicStrapiForm({
   if (!schema || !schema.schema || !schema.schema.attributes || Object.keys(schema.schema.attributes).length === 0) {
     return <div style={{ color: "red" }}>Error: schema not found or empty for {collection}</div>;
   }
-
-  // Prepare form config & hooks
-  const rawSchema = schema;
-  const { schema: zodSchema, defaultValues, fieldsConfig } = React.useMemo(
-    () => strapiToFormConfig(rawSchema),
-    [rawSchema]
-  );
-  // Normalize relation fields in document for form compatibility
-  function normalizeRelations(data: any, schema: any) {
-    if (!data || !schema) return data;
-    const normalized = { ...data };
-    for (const [key, field] of Object.entries(schema.schema?.attributes ?? {})) {
-      if (field.type === 'relation') {
-        if (Array.isArray(normalized[key])) {
-          normalized[key] = normalized[key].map((item: any) => item?.id ?? item);
-        } else if (normalized[key] && typeof normalized[key] === 'object') {
-          normalized[key] = normalized[key].id ?? normalized[key];
-        }
-      }
-    }
-    return normalized;
-  }
-  const initialValues = document
-    ? normalizeRelations({ ...defaultValues, ...document }, schema)
-    : defaultValues;
-  // Pass schemas to useRelationOptions for correct pluralName resolution
-  const relationOptionsMap = fieldsConfig.length > 0 ? useRelationOptions(fieldsConfig, schemas) : {};
-  const formFactory = useFormFactory(
-    zodSchema,
-    initialValues,
-    fieldsConfig,
-    relationOptionsMap
-  );
 
   // Submission handler (create or update logic should be handled outside this form)
   const handleSubmit = async (values: any) => {

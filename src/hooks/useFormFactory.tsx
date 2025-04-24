@@ -12,16 +12,14 @@
 
  
 
-import { useForm, FieldValues, FormProvider as RHFFormProvider } from "react-hook-form";
-
-import { z, ZodSchema } from "zod";
+import { useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import React from "react";
  
 
-export type FieldConfig<T> = {
+export type FieldConfig = {
 
   name: string;
 
@@ -47,69 +45,17 @@ export type FieldConfig<T> = {
 
  
 
-function useRelationOptions(target: string) {
+export function useFormFactory(
 
-  // Fetches options from /api/{target} endpoint
-
-  const [options, setOptions] = React.useState<{ label: string; value: any }[]>([]);
-
-  React.useEffect(() => {
-
-    if (!target) return;
-
-    // Extract collection name from target (e.g., api::invoice.invoice -> invoice)
-
-    const match = target.match(/([^.]+)$/);
-
-    const collection = match ? match[1] : target;
-
-    fetch(`/api/${collection}`)
-
-      .then(res => res.json())
-
-      .then(data => {
-
-        if (Array.isArray(data.data)) {
-
-          setOptions(
-
-            data.data.map((item: any) => ({
-
-              label: item.attributes?.displayName || item.attributes?.name || item.id || "(no label)",
-
-              value: item.id,
-
-            }))
-
-          );
-
-        }
-
-      })
-
-      .catch(() => setOptions([]));
-
-  }, [target]);
-
-  return options;
-
-}
-
- 
-
-export function useFormFactory<T extends FieldValues = any>(
-
-  schema: ZodSchema<T>,
+  schema: any,
 
   defaultValues: Record<string, any>,
 
-  fieldsConfig: FieldConfig<T>[],
-
-  relationOptionsMap?: Record<string, { label: string; value: any }[]>
+  fieldsConfig: FieldConfig[],
 
 ) {
 
-  const form = useForm<T>({ resolver: zodResolver(schema), defaultValues });
+  const form = useForm({ resolver: zodResolver(schema), defaultValues });
 
   const {
 
@@ -155,119 +101,15 @@ export function useFormFactory<T extends FieldValues = any>(
 
       if (cfg.type === "enum" && cfg.props?.options) {
 
-        const { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } = require("@/components/ui/select");
+        import("@/components/ui/select").then(({ Select, SelectTrigger, SelectContent, SelectItem }) => {
 
-        // Do NOT add placeholder as an option; use placeholder prop only
+          // Do NOT add placeholder as an option; use placeholder prop only
 
-        const options = cfg.props.options;
+          const options = cfg.props?.options;
 
-        // Ensure value is always a scalar (string/number/null/undefined) for single select
+          // Ensure value is always a scalar (string/number/null/undefined) for single select
 
-        let value = watch(cfg.name);
-
-        if (value && typeof value === 'object' && 'value' in value) value = value.value;
-
-        if (Array.isArray(value)) value = value.length ? value[0] : undefined;
-
-        if (
-          value === undefined ||
-          value === null ||
-          value === "" ||
-          (Array.isArray(value) && value.length === 0)
-        ) value = undefined;
-
-        // Find the selected option label for display
-
-        const selectedOption = options.find((opt: any) => opt.value === value);
-
-        return (
-
-          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
-
-            <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
-
-              {cfg.label}
-
-              {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
-
-            </label>
-
-            <Select
-
-              id={cfg.name}
-
-              name={cfg.name}
-
-              value={value}
-
-              onValueChange={val => setValue(cfg.name, val)}
-
-              disabled={cfg.disabled}
-
-            >
-
-              <SelectTrigger
-                id={cfg.name}
-                name={cfg.name}
-                placeholder={cfg.placeholder || "(Selecciona...)"}
-              >
-                {/* Show selected label or placeholder */}
-                {selectedOption ? selectedOption.label : (cfg.placeholder || "(Selecciona...)")}
-              </SelectTrigger>
-
-              <SelectContent>
-
-                {options.map((opt: any) => (
-
-                  <SelectItem key={opt.value} value={opt.value}>
-
-                    {opt.label}
-
-                  </SelectItem>
-
-                ))}
-
-              </SelectContent>
-
-            </Select>
-
-            {cfg.description && (
-
-              <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
-
-            )}
-
-            {errorMsg && (
-
-              <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
-
-            )}
-
-          </div>
-
-        );
-
-      }
-
- 
-
-      // --- RELATION FIELDS ---
-
-      if (cfg.type === "relation" && cfg.props?.target) {
-
-        const StrapiRelationField = require("@/components/admin/StrapiRelationField").default;
-
-        // Normalize value for single/multi
-
-        let value = watch(cfg.name);
-
-        // For multi, always ensure array
-
-        if (cfg.props.isMulti) {
-
-          value = Array.isArray(value) ? value : [];
-
-        } else {
+          let value = watch(cfg.name);
 
           if (value && typeof value === 'object' && 'value' in value) value = value.value;
 
@@ -280,55 +122,154 @@ export function useFormFactory<T extends FieldValues = any>(
             (Array.isArray(value) && value.length === 0)
           ) value = undefined;
 
-        }
+          // Find the selected option label for display
 
-        return (
+          const selectedOption = options?.find((opt: any) => opt.value === value);
 
-          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+          return (
 
-            <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
+            <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
 
-              {cfg.label}
+              <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 
-              {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
+                {cfg.label}
 
-            </label>
+                {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
 
-            <StrapiRelationField
+              </label>
 
-              name={cfg.name}
+              <Select
 
-              value={value}
+                value={value}
 
-              onChange={val => setValue(cfg.name, val)}
+                onValueChange={(e: any) => setValue(cfg.name, e)}
 
-              target={cfg.props.target}
+              >
 
-              isMulti={cfg.props.isMulti}
+                <SelectTrigger>
 
-              disabled={cfg.disabled}
+                  {/* Show selected label or placeholder */}
 
-              placeholder={cfg.placeholder || "(Selecciona...)"}
+                  {selectedOption ? selectedOption.label : (cfg.placeholder || "(Selecciona...)")}
 
-              displayField={cfg.props.displayField || "displayName"}
+                </SelectTrigger>
 
-            />
+                <SelectContent>
 
-            {cfg.description && (
+                  {options?.map((opt: any) => (
 
-              <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
+                    <SelectItem key={opt.value} value={opt.value}>
 
-            )}
+                      {opt.label}
 
-            {errorMsg && (
+                    </SelectItem>
 
-              <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
+                  ))}
 
-            )}
+                </SelectContent>
 
-          </div>
+              </Select>
 
-        );
+              {cfg.description && (
+
+                <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
+
+              )}
+
+              {errorMsg && (
+
+                <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
+
+              )}
+
+            </div>
+
+          );
+
+        });
+
+      }
+
+ 
+
+      // --- RELATION FIELDS ---
+
+      if (cfg.type === "relation" && cfg.props?.target) {
+
+        import("@/components/admin/StrapiRelationField").then(({ default: StrapiRelationField }) => {
+
+          // Normalize value for single/multi
+
+          let value = watch(cfg.name);
+
+          // For multi, always ensure array
+
+          if (cfg.props?.isMulti) {
+
+            value = Array.isArray(value) ? value : [];
+
+          } else {
+
+            if (value && typeof value === 'object' && 'value' in value) value = value.value;
+
+            if (Array.isArray(value)) value = value.length ? value[0] : undefined;
+
+            if (
+              value === undefined ||
+              value === null ||
+              value === "" ||
+              (Array.isArray(value) && value.length === 0)
+            ) value = undefined;
+
+          }
+
+          return (
+
+            <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+
+              <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
+
+                {cfg.label}
+
+                {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
+
+              </label>
+
+              <StrapiRelationField
+
+                name={cfg.name}
+
+                value={value}
+
+                onChange={(e: any) => setValue(cfg.name, e)}
+
+                target={cfg.props?.target}
+
+                isMulti={cfg.props?.isMulti}
+
+                disabled={cfg.disabled}
+
+                displayField={cfg.props?.displayField || "displayName"}
+
+              />
+
+              {cfg.description && (
+
+                <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
+
+              )}
+
+              {errorMsg && (
+
+                <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
+
+              )}
+
+            </div>
+
+          );
+
+        });
 
       }
 
@@ -338,53 +279,51 @@ export function useFormFactory<T extends FieldValues = any>(
 
       if (cfg.type === "multi-select" && cfg.props?.options) {
 
-        const MultiSelect = require("@/components/ui/multi-select").default;
+        import("@/components/ui/multi-select").then(({ default: MultiSelect }) => {
 
-        // Ensure value is always an array
+          // Ensure value is always an array
 
-        const value = Array.isArray(watch(cfg.name)) ? watch(cfg.name) : [];
+          const value = Array.isArray(watch(cfg.name)) ? watch(cfg.name) : [];
 
-        return (
+          return (
 
-          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+            <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
 
-            <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
+              <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 
-              {cfg.label}
+                {cfg.label}
 
-              {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
+                {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
 
-            </label>
+              </label>
 
-            <MultiSelect
+              <MultiSelect
 
-              options={cfg.props.options}
+                options={cfg.props?.options}
 
-              defaultValue={value}
+                defaultValue={value}
 
-              placeholder={cfg.placeholder || "(Selecciona...)"}
+                onChange={(e: any) => setValue(cfg.name, e)}
 
-              onChange={val => setValue(cfg.name, val)}
+              />
 
-              disabled={cfg.disabled}
+              {cfg.description && (
 
-            />
+                <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
 
-            {cfg.description && (
+              )}
 
-              <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
+              {errorMsg && (
 
-            )}
+                <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
 
-            {errorMsg && (
+              )}
 
-              <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
+            </div>
 
-            )}
+          );
 
-          </div>
-
-        );
+        });
 
       }
 
@@ -410,13 +349,11 @@ export function useFormFactory<T extends FieldValues = any>(
 
               id={cfg.name}
 
-              name={cfg.name}
-
               type="file"
 
-              multiple={cfg.props.multiple}
+              multiple={cfg.props?.multiple}
 
-              accept={cfg.props.accept}
+              accept={cfg.props?.accept}
 
               required={cfg.required}
 
@@ -424,7 +361,10 @@ export function useFormFactory<T extends FieldValues = any>(
 
               variant={cfg.variant}
 
-              onChange={e => setValue(cfg.name, cfg.props.multiple ? Array.from(e.target.files) : e.target.files?.[0])}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const files = e.target.files;
+                setValue(cfg.name, cfg.props?.multiple ? (files ? Array.from(files) : []) : files?.[0] ?? null);
+              }}
 
             />
 
@@ -470,15 +410,9 @@ export function useFormFactory<T extends FieldValues = any>(
 
               id={cfg.name}
 
-              name={cfg.name}
-
               value={watch(cfg.name)}
 
-              onChange={e => setValue(cfg.name, e.target.value === "" ? undefined : Number(e.target.value))}
-
-              placeholder={cfg.placeholder}
-
-              disabled={cfg.disabled}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(cfg.name, e.target.value === "" ? undefined : Number(e.target.value))}
 
               step="any"
 
@@ -524,11 +458,7 @@ export function useFormFactory<T extends FieldValues = any>(
 
               id={cfg.name}
 
-              name={cfg.name}
-
               type={cfg.props?.type}
-
-              placeholder={cfg.placeholder}
 
               required={cfg.required}
 
@@ -579,10 +509,6 @@ export function useFormFactory<T extends FieldValues = any>(
           <Comp
 
             id={cfg.name}
-
-            name={cfg.name}
-
-            placeholder={cfg.placeholder}
 
             required={cfg.required}
 

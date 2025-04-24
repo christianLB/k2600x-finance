@@ -9,7 +9,7 @@ import { Sidebar } from "@/components/admin/Sidebar";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function AdminPage() {
-  const { schemas, loading: schemasLoading, error: schemasError } = useStrapiSchemas();
+  const { schemas } = useStrapiSchemas();
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,8 @@ export default function AdminPage() {
     if (!data || !schema) return data;
     const normalized = { ...data };
     for (const [key, field] of Object.entries(schema.schema?.attributes ?? {})) {
-      if (field.type === 'relation' || field.type === 'media') {
+      const typedField = field as { type?: string; [key: string]: any };
+      if (typedField.type === 'relation' || typedField.type === 'media') {
         if (Array.isArray(normalized[key])) {
           // For many relations and media: map to array of ids, keep [] if empty
           normalized[key] = normalized[key]
@@ -65,6 +66,7 @@ export default function AdminPage() {
     try {
       let payload = values;
       if (selectedRecord) {
+        if (!selectedCollection) throw new Error("No collection selected");
         // Update: use documentId for PUT, normalize relations
         payload = normalizeRelationsForUpdate(values, schemas[selectedCollection]);
         await strapi.post({
@@ -74,6 +76,7 @@ export default function AdminPage() {
           data: payload,
         });
       } else {
+        if (!selectedCollection) throw new Error("No collection selected");
         // Create: normalize relations
         payload = normalizeRelationsForUpdate(values, schemas[selectedCollection]);
         await strapi.post({
@@ -186,8 +189,8 @@ export default function AdminPage() {
                           });
                           setSelectedRecord({ ...res.data });
                           setShowForm(true);
-                        } catch (err) {
-                          alert("Failed to fetch record for editing");
+                        } catch (err: any) {
+                          alert("Failed to fetch record for editing: " + err.message);
                         } finally {
                           setLoading(false);
                         }
@@ -214,7 +217,7 @@ export default function AdminPage() {
                   collection={selectedCollection}
                   document={selectedRecord}
                   onSuccess={handleFormSubmit}
-                  onError={(err) => alert(err?.message || String(err))}
+                  onError={() => alert("An error occurred")}
                 />
               )}
               <Button style={{ marginTop: 16 }} variant="outline" onClick={() => setShowForm(false)}>

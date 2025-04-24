@@ -44,7 +44,7 @@ export default function TestStrapiSchemaPage() {
   }, [selectedSchema]);
 
   // --- Fetch all relation options in a single effect, robust for all schema changes ---
-  const [relationOptionsMap, setRelationOptionsMap] = React.useState<Record<string, { label: string; value: any }[]>>({});
+  //const [relationOptionsMap, setRelationOptionsMap] = React.useState<Record<string, { label: string; value: any }[]>>({});
   const [relationsLoading, setRelationsLoading] = React.useState(false);
 
   React.useEffect(() => {
@@ -100,15 +100,15 @@ export default function TestStrapiSchemaPage() {
         fieldMap[f.name] = map[collection] || [];
       });
       if (!cancelled) {
-        setRelationOptionsMap(fieldMap);
+        //setRelationOptionsMap(fieldMap);
         setRelationsLoading(false);
       }
     };
     fetchAll();
     return () => { cancelled = true; };
-  }, [fieldsConfig, selectedSchema]);
+  }, [fieldsConfig, selectedSchema, data, data.data]);
 
-  const formFactory = useFormFactory(schema, defaultValues, fieldsConfig, relationOptionsMap);
+  const formFactory = useFormFactory(schema, defaultValues, fieldsConfig);
 
   return (
     <div style={{ maxWidth: 700, margin: "2rem auto", fontFamily: "sans-serif" }}>

@@ -92,6 +92,25 @@ const typeMap: Record<string, any> = {
   },
 };
 
+type StrapiAttr = {
+  type?: string;
+  enum?: string[];
+  required?: boolean;
+  placeholder?: string;
+  default?: any;
+  displayName?: string;
+  disabled?: boolean;
+  description?: string;
+  variant?: string;
+  target?: string;
+  relationType?: string;
+  multiple?: boolean;
+  allowedTypes?: string[];
+  min?: number;
+  max?: number;
+  step?: number;
+};
+
 export function strapiToFormConfig(strapiSchema: any) {
   const attributes = strapiSchema?.schema?.attributes || {};
   // ENHANCEMENT: Defensive - ensure attributes is a non-empty object
@@ -102,9 +121,10 @@ export function strapiToFormConfig(strapiSchema: any) {
   console.log("strapiToFormConfig: attributes:", attributes);
   const zodShape: Record<string, ZodTypeAny> = {};
   const defaultValues: Record<string, any> = {};
-  const fieldsConfig: FieldConfig<any>[] = [];
+  const fieldsConfig: FieldConfig[] = [];
 
-  for (const [name, attr] of Object.entries<any>(attributes)) {
+  for (const [name, attrRaw] of Object.entries(attributes)) {
+    const attr = attrRaw as StrapiAttr;
     // ENHANCEMENT: Only process fields that are actually in the schema
     if (!attr || !attr.type) {
       console.warn(`Skipping field '${name}' due to missing type in schema`, attr);
@@ -118,19 +138,17 @@ export function strapiToFormConfig(strapiSchema: any) {
       continue;
     }
 
-    let mapping = typeMap[attr.type] || typeMap['string'];
+    const mapping = typeMap[attr.type] || typeMap['string'];
     let zodField = mapping.zod;
     let fieldComponent = mapping.component;
-    let fieldProps: Record<string, any> = { ...(mapping.props || {}) };
+    const fieldProps: Record<string, any> = { ...(mapping.props || {}) };
     let placeholder = attr.placeholder || mapping.placeholder || '';
-    let options;
-
+    
     // ENUMERATION: Provide options for select
     if (attr.type === 'enumeration' && Array.isArray(attr.enum)) {
       // Defensive: Always provide non-empty options array
       const enumValues = attr.enum.length > 0 ? attr.enum : ["NO_ENUM"];
-      const options = enumValues.map((v) => ({ label: v, value: v }));
-      fieldProps.options = options;
+      fieldProps.options = enumValues.map((v: string) => ({ label: v, value: v }));
       fieldComponent = Select; // Force Select for enum fields
       // Defensive: Ensure zod enum is correct and optional if not required
       zodField = attr.required === true
@@ -145,7 +163,7 @@ export function strapiToFormConfig(strapiSchema: any) {
         defaultValues[name] = attr.default ?? enumValues[0];
       }
       // PATCH: Add debug if options is empty
-      if (!options || options.length === 0) {
+      if (!fieldProps.options || fieldProps.options.length === 0) {
         console.warn('Enum field', name, 'has no options!', attr);
       }
     }

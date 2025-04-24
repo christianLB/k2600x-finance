@@ -23,7 +23,6 @@ interface StrapiRelationFieldProps {
 }
 
 export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
-  name,
   value,
   onChange,
   target,
@@ -70,33 +69,19 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
     return () => { ignore = true; };
   }, [open, collection, apiUrl, displayField]);
 
-  // Single value normalization
-  const normalizedValue = isMulti
-    ? Array.isArray(value) ? value : []
-    : value === null || value === undefined ? undefined : value;
-
-  // Find selected option(s)
+  // Ensure normalizedValue is always an array for multi-select
+  const normalizedArray = Array.isArray(value) ? value : typeof value === 'undefined' ? [] : [value];
   const selectedOptions = isMulti
-    ? options.filter(opt => normalizedValue?.includes(opt.value))
-    : options.find(opt => opt.value === normalizedValue);
+    ? options.filter(opt => normalizedArray.includes(opt.value))
+    : options.find(opt => opt.value === value);
 
-  // Render selected label as link (or placeholder as link)
-  const renderSelected = () => {
-    if (loading) return <span><Loader /> Cargando...</span>;
-    if (isMulti) {
-      if (!selectedOptions || selectedOptions.length === 0) {
-        return <a href="#" style={{ color: '#888', textDecoration: 'underline' }}>{placeholder}</a>;
-      }
-      return selectedOptions.map(opt => (
-        <a key={opt.value} href={opt.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', marginRight: 6 }}>{opt.label}</a>
-      ));
-    } else {
-      if (!selectedOptions) {
-        return <a href="#" style={{ color: '#888', textDecoration: 'underline' }}>{placeholder}</a>;
-      }
-      return <a href={selectedOptions.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline' }}>{selectedOptions.label}</a>;
-    }
-  };
+  // For MultiSelect: options must have id:number, defaultValue:number[]
+  // Map options to required shape for MultiSelect
+  const multiSelectOptions = options.map(opt => ({ ...opt, id: typeof opt.value === 'number' ? opt.value : Number(opt.value) }));
+  const multiSelectDefaultValue = normalizedArray.filter((v) => typeof v === 'number') as number[];
+
+  // For Select: value must be string or undefined
+  const selectValue = typeof value === 'string' ? value : (typeof value === 'number' ? String(value) : undefined);
 
   if (error) {
     return <div style={{ color: '#d32f2f' }}>Error: {error}</div>;
@@ -106,7 +91,27 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button type="button" disabled={disabled} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
-          {renderSelected()}
+          {loading ? (
+            <span><Loader /> Cargando...</span>
+          ) : (
+            isMulti ? (
+              !selectedOptions || (Array.isArray(selectedOptions) && selectedOptions.length === 0) ? (
+                <span style={{ color: '#888' }}>{placeholder}</span>
+              ) : (
+                Array.isArray(selectedOptions) ? (
+                  selectedOptions.map((opt: any) => (
+                    <a key={opt.value} href={opt.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', marginRight: 6 }}>{opt.label}</a>
+                  ))
+                ) : null
+              )
+            ) : (
+              !selectedOptions || Array.isArray(selectedOptions) ? (
+                <span style={{ color: '#888' }}>{placeholder}</span>
+              ) : (
+                <a href={selectedOptions.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline' }}>{selectedOptions.label}</a>
+              )
+            )
+          )}
         </button>
       </DialogTrigger>
       <DialogContent>
@@ -118,24 +123,19 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
         ) : (
           isMulti ? (
             <MultiSelect
-              options={options}
-              defaultValue={normalizedValue}
-              placeholder={placeholder}
+              options={multiSelectOptions}
+              defaultValue={multiSelectDefaultValue}
               onChange={onChange}
-              disabled={disabled}
             />
           ) : (
             <Select
-              id={name}
-              name={name}
-              value={normalizedValue}
+              value={selectValue}
               onValueChange={onChange}
-              disabled={disabled}
             >
-              <SelectTrigger id={name} name={name} placeholder={placeholder} />
+              <SelectTrigger>{/* placeholder handled above */}</SelectTrigger>
               <SelectContent>
                 {options.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>
+                  <SelectItem key={opt.value} value={String(opt.value)}>
                     {opt.label}
                   </SelectItem>
                 ))}

@@ -3,20 +3,12 @@ import { useState, useEffect } from "react";
 import strapi from "@/services/strapi";
 import type { FieldConfig } from "@/hooks/useFormFactory";
 
-// Helper to choose a display label from entity attributes
-function getDisplayLabel(attrs: any, displayField?: string): string {
-  if (displayField && attrs[displayField]) return String(attrs[displayField]);
-  return (
-    attrs.displayName || attrs.name || attrs.title || attrs.email || attrs.id || "(no label)"
-  );
-}
-
 /**
  * Fetches and caches options for all relation fields in a form.
  * Returns a map: fieldName -> options[]
  */
 export function useRelationOptions(
-  fieldsConfig: FieldConfig<any>[],
+  fieldsConfig: FieldConfig[],
   schemas: any // Add schemas as a parameter
 ): Record<string, { label: string; value: any }[]> {
   const [optionsMap, setOptionsMap] = useState<
@@ -37,7 +29,7 @@ export function useRelationOptions(
 
       await Promise.all(
         relFields.map(async (f) => {
-          const uid: string = f.props.target;
+          const uid: string = f.props?.target || "";
           // ENHANCEMENT: Defensive - skip if target is missing or not a string
           if (!uid || typeof uid !== 'string') {
             console.warn(`useRelationOptions: Skipping field '${f.name}' due to invalid target`, f);
@@ -62,7 +54,7 @@ export function useRelationOptions(
               label: item.attributes?.displayName || item.attributes?.name || item.id,
               value: item.id,
             }));
-          } catch (err) {
+          } catch {
             map[f.name] = [];
           }
         })

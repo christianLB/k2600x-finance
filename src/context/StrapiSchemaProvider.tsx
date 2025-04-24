@@ -42,7 +42,6 @@ export const StrapiSchemaProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   useEffect(() => {
     fetchSchemas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

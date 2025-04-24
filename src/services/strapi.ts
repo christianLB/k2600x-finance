@@ -21,6 +21,8 @@ export async function strapiRequest<T = any>(body: StrapiRequestBody): Promise<T
   return json;
 }
 
-export default {
+// Assign object to a variable before exporting as default
+const strapi = {
   post: strapiRequest,
 };
+export default strapi;
