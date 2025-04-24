@@ -1,6 +1,7 @@
 # Bug: Relationship and Enum Selects Not Rendering in Admin Forms
 
-**Status:** Pending
+**Status:** Completed
+**Completion Date:** 2025-04-24
 **Priority:** High
 
 ## Summary
