@@ -127,14 +127,23 @@ export function strapiToFormConfig(strapiSchema: any) {
 
     // ENUMERATION: Provide options for select
     if (attr.type === 'enumeration' && Array.isArray(attr.enum)) {
+      // Defensive: Always provide non-empty options array
       const enumValues = attr.enum.length > 0 ? attr.enum : ["NO_ENUM"];
-      options = enumValues.map((v) => ({ label: v, value: v }));
+      const options = enumValues.map((v) => ({ label: v, value: v }));
       fieldProps.options = options;
       fieldComponent = Select; // Force Select for enum fields
+      // Defensive: Ensure zod enum is correct and optional if not required
       zodField = attr.required === true
         ? z.enum(enumValues as [string, ...string[]])
         : z.enum(enumValues as [string, ...string[]]).optional();
-      placeholder = attr.placeholder || "(Select one...)"; // Always provide a placeholder for enums
+      // Defensive: Always provide a placeholder for enums
+      placeholder = attr.placeholder || "(Select one...)";
+      // Defensive: Default value is undefined if not required and no default is provided
+      if (attr.required !== true && (attr.default === undefined || attr.default === null)) {
+        defaultValues[name] = undefined;
+      } else {
+        defaultValues[name] = attr.default ?? enumValues[0];
+      }
       // PATCH: Add debug if options is empty
       if (!options || options.length === 0) {
         console.warn('Enum field', name, 'has no options!', attr);

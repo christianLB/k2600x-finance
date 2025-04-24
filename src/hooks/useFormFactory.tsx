@@ -176,7 +176,9 @@ export function useFormFactory<T extends FieldValues = any>(
           (Array.isArray(value) && value.length === 0)
         ) value = undefined;
 
-        console.log(`[useFormFactory] Field: ${cfg.name}, value:`, value, 'type:', typeof value, 'options:', options);
+        // Find the selected option label for display
+
+        const selectedOption = options.find((opt: any) => opt.value === value);
 
         return (
 
@@ -204,7 +206,14 @@ export function useFormFactory<T extends FieldValues = any>(
 
             >
 
-              <SelectTrigger id={cfg.name} name={cfg.name} placeholder={cfg.placeholder || "(Selecciona...)"} />
+              <SelectTrigger
+                id={cfg.name}
+                name={cfg.name}
+                placeholder={cfg.placeholder || "(Selecciona...)"}
+              >
+                {/* Show selected label or placeholder */}
+                {selectedOption ? selectedOption.label : (cfg.placeholder || "(Selecciona...)")}
+              </SelectTrigger>
 
               <SelectContent>
 
