@@ -5,6 +5,8 @@ import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import strapi from "@/services/strapi";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
 import { Button } from "@k2600x/design-system";
+import { Sidebar } from "@/components/admin/Sidebar";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function AdminPage() {
   const { schemas, loading: schemasLoading, error: schemasError } = useStrapiSchemas();
@@ -106,121 +108,122 @@ export default function AdminPage() {
     setLoading(false);
   }
 
-  // Render collection selector
-  const collectionOptions = Object.keys(schemas).sort();
+  // Helper to filter out internal/system collections
+  const collectionOptions = Object.keys(schemas || {})
+    .filter(
+      (col) => !col.startsWith("strapi::") && !col.startsWith("admin::") && !col.startsWith("plugin::")
+    );
+  const sidebarCollections = collectionOptions.map((col) => ({
+    key: col,
+    label: schemas[col]?.schema?.displayName || col,
+  }));
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Strapi Admin</h1>
-      {schemasLoading && <div>Loading schemas...</div>}
-      {schemasError && <div style={{ color: "red" }}>Error loading schemas: {schemasError}</div>}
-      <div style={{ marginBottom: 16 }}>
-        <label>
-          Select collection:
-          <select
-            value={selectedCollection || ""}
-            onChange={(e) => {
-              setSelectedCollection(e.target.value);
-              setSelectedRecord(null);
-              setShowForm(false);
-            }}
-          >
-            <option value="" disabled>
-              -- Choose --
-            </option>
-            {collectionOptions.map((col) => (
-              <option key={col} value={col}>
-                {schemas[col]?.schema?.displayName || col}
-              </option>
-            ))}
-          </select>
-        </label>
-        {selectedCollection && (
-          <Button style={{ marginLeft: 16 }} onClick={() => { setSelectedRecord(null); setShowForm(true); }}>
-            New
-          </Button>
-        )}
-      </div>
-      {tableError && <div style={{ color: "red" }}>{tableError}</div>}
-      {selectedCollection && !showForm && (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th style={{ borderBottom: "1px solid #ddd", padding: 8 }}>ID</th>
-              {/* Render dynamic headers */}
-              {records[0] && typeof records[0].attributes === 'object' && records[0].attributes !== null &&
-                Object.keys(records[0].attributes).map((key) => (
-                  <th key={key} style={{ borderBottom: "1px solid #ddd", padding: 8 }}>{key}</th>
-                ))}
-              <th style={{ borderBottom: "1px solid #ddd", padding: 8 }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {records.map((rec: any) => (
-              <tr key={rec.id}>
-                <td style={{ padding: 8 }}>{rec.id}</td>
-                {typeof rec.attributes === 'object' && rec.attributes !== null
-                  ? Object.keys(rec.attributes).map((key) => (
-                      <td key={key} style={{ padding: 8 }}>{JSON.stringify(rec.attributes[key])}</td>
-                    ))
-                  : <td style={{ padding: 8 }} colSpan={1}>-</td>
-                }
-                <td style={{ padding: 8 }}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      const documentId = rec.documentId;
-                      if (!documentId) {
-                        alert("This record is missing a documentId and cannot be edited.");
-                        return;
-                      }
-                      setLoading(true);
-                      setSelectedRecord(null);
-                      try {
-                        // Always fetch the latest entity by documentId with populate: '*'
-                        const res = await strapi.post({
-                          method: "GET",
-                          collection: apiCollection!,
-                          id: documentId,
-                          query: { populate: "*" },
-                        });
-                        setSelectedRecord({ ...res.data });
-                        setShowForm(true);
-                      } catch (err) {
-                        alert("Failed to fetch record for editing");
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Button variant="destructive" size="sm" style={{ marginLeft: 8 }} onClick={() => handleDelete(rec)}>
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {selectedCollection && showForm && (
-        <div style={{ marginTop: 24 }}>
-          {loading && <div>Loading record for editing...</div>}
-          {!loading && selectedRecord && (
-            <DynamicStrapiForm
-              collection={selectedCollection}
-              document={selectedRecord}
-              onSuccess={handleFormSubmit}
-              onError={(err) => alert(err?.message || String(err))}
-            />
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+      <Sidebar
+        collections={sidebarCollections}
+        selectedCollection={selectedCollection}
+        onSelectCollection={(col) => {
+          setSelectedCollection(col);
+          setSelectedRecord(null);
+          setShowForm(false);
+        }}
+      />
+      <div style={{ flex: 1, padding: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, marginRight: 16 }}>
+            {selectedCollection ? schemas[selectedCollection]?.schema?.displayName || selectedCollection : "Select a Collection"}
+          </h2>
+          {selectedCollection && (
+            <Button style={{ marginLeft: 16 }} onClick={() => { setSelectedRecord(null); setShowForm(true); }}>
+              New
+            </Button>
           )}
-          <Button style={{ marginTop: 16 }} variant="outline" onClick={() => setShowForm(false)}>
-            Cancel
-          </Button>
         </div>
-      )}
+        {tableError && <div style={{ color: "red" }}>{tableError}</div>}
+        {selectedCollection && !showForm && (
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={{ borderBottom: "1px solid #ddd", padding: 8 }}>ID</th>
+                {/* Render dynamic headers */}
+                {records[0] && typeof records[0].attributes === 'object' && records[0].attributes !== null &&
+                  Object.keys(records[0].attributes).map((key) => (
+                    <th key={key} style={{ borderBottom: "1px solid #ddd", padding: 8 }}>{key}</th>
+                  ))}
+                <th style={{ borderBottom: "1px solid #ddd", padding: 8 }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.map((rec: any) => (
+                <tr key={rec.id}>
+                  <td style={{ padding: 8 }}>{rec.id}</td>
+                  {typeof rec.attributes === 'object' && rec.attributes !== null
+                    ? Object.keys(rec.attributes).map((key) => (
+                        <td key={key} style={{ padding: 8 }}>{JSON.stringify(rec.attributes[key])}</td>
+                      ))
+                    : <td style={{ padding: 8 }} colSpan={1}>-</td>
+                  }
+                  <td style={{ padding: 8 }}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        const documentId = rec.documentId;
+                        if (!documentId) {
+                          alert("This record is missing a documentId and cannot be edited.");
+                          return;
+                        }
+                        setLoading(true);
+                        setSelectedRecord(null);
+                        try {
+                          // Always fetch the latest entity by documentId with populate: '*'
+                          const res = await strapi.post({
+                            method: "GET",
+                            collection: apiCollection!,
+                            id: documentId,
+                            query: { populate: "*" },
+                          });
+                          setSelectedRecord({ ...res.data });
+                          setShowForm(true);
+                        } catch (err) {
+                          alert("Failed to fetch record for editing");
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button variant="destructive" size="sm" style={{ marginLeft: 8 }} onClick={() => handleDelete(rec)}>
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {/* Modal for Create/Edit Form */}
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent>
+            <div style={{ minWidth: 320, maxWidth: 500 }}>
+              {loading && <div>Loading record for editing...</div>}
+              {!loading && selectedCollection && (
+                <DynamicStrapiForm
+                  collection={selectedCollection}
+                  document={selectedRecord}
+                  onSuccess={handleFormSubmit}
+                  onError={(err) => alert(err?.message || String(err))}
+                />
+              )}
+              <Button style={{ marginTop: 16 }} variant="outline" onClick={() => setShowForm(false)}>
+                Cancel
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }
