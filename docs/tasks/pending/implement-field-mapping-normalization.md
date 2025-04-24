@@ -1,6 +1,6 @@
 # Task: Implement Field Mapping Normalization
 
-**Status:** Planned
+**Status:** Completed
 
 ## Objective
 Refactor and enhance the field mapping logic to ensure robust, consistent normalization for all field types (including enums, relations, media, arrays, etc.) in the admin UI. Prepare for future replacement of the relation select with a dedicated component.
@@ -27,9 +27,14 @@ See completed analysis: `tasks/pending/field-mapping-normalization-analysis.md` 
 - Tests and/or QA notes for all field types
 - Documentation for future custom relation component integration
 
-## Next Steps
-- Assign to developer/architect
-- Review implementation plan and begin refactor
+## Status
+
+**Task Complete:** All subtasks for enum and relation field normalization are finished and deployed. Enum selects and relation fields are robust, async, and future-proof. Ready for future enhancements (e.g., modal editing, custom renderers).
+
+## Next Steps (Optional)
+- Add modal-based creation/editing of related entities.
+- Add search, filtering, and pagination to relation dialog.
+- Refine error handling and UX polish.
 
 ---
 
