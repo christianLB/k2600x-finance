@@ -3,13 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import strapi from "@/services/strapi";
-import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
 import { Button } from "@k2600x/design-system";
 import { AdminTable } from "@/components/admin/AdminTable";
 import type { ColumnDef } from "@tanstack/react-table";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { ColumnSelectorDialog } from "@/components/admin/ColumnSelectorDialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { RecordFormDialog } from "@/components/admin/RecordFormDialog";
 
 export default function AdminPage() {
