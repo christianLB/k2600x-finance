@@ -20,6 +20,7 @@ export default function AdminPage() {
   const [tableError, setTableError] = useState<string | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<string[] | null>(null);
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
+  const [columnPrefId, setColumnPrefId] = useState<string | null>(null);
 
   // Compute correct collection name for API calls from schema
   const apiCollection = selectedCollection && schemas[selectedCollection]?.schema?.pluralName;
@@ -117,38 +118,89 @@ export default function AdminPage() {
     setLoading(false);
   }
 
-  // When collection changes, set visibleColumns from schema.displayColumns (or all columns)
+  // Fetch column preferences for the selected collection
   useEffect(() => {
-    if (!selectedCollection) {
+    if (!selectedCollection || !schemas[selectedCollection]) {
       setVisibleColumns(null);
+      setColumnPrefId(null);
       return;
     }
-    const schema = schemas[selectedCollection];
-    let displayColumns: string[] | null = null;
-    if (schema && schema.schema && typeof schema.schema.displayColumns === 'string' && schema.schema.displayColumns.trim()) {
-      displayColumns = schema.schema.displayColumns.split(',').map((col: string) => col.trim()).filter(Boolean);
+    const shortCollection = schemas[selectedCollection]?.schema?.pluralName || selectedCollection;
+    async function fetchColumnPref() {
+      setLoading(true);
+      try {
+        const res = await strapi.post({
+          method: "GET",
+          collection: "column-preferences",
+          query: { filters: { collection: { $eq: shortCollection } } },
+        });
+        const pref = Array.isArray(res?.data) ? res.data[0] : null;
+        let schemaAttrs: string[] = [];
+        if (selectedCollection && schemas[selectedCollection]) {
+          schemaAttrs = Object.keys(schemas[selectedCollection]?.schema?.attributes || {});
+        }
+        if (pref && typeof pref.columns === 'string' && pref.columns.trim()) {
+          // Filter out columns not in schema
+          const filteredCols = pref.columns.split(',').map((col: string) => col.trim()).filter((col: string) => schemaAttrs.includes(col));
+          setVisibleColumns(filteredCols);
+          setColumnPrefId(pref.documentId ?? pref.id?.toString() ?? null);
+        } else {
+          // No preference found, fallback to all columns
+          setVisibleColumns(schemaAttrs);
+          setColumnPrefId(null);
+        }
+      } catch (err: unknown) {
+        // On error, fallback to all columns
+        let schemaAttrs: string[] = [];
+        if (selectedCollection && schemas[selectedCollection]) {
+          schemaAttrs = Object.keys(schemas[selectedCollection]?.schema?.attributes || {});
+        }
+        setVisibleColumns(schemaAttrs);
+        setColumnPrefId(null);
+      } finally {
+        setLoading(false);
+      }
     }
-    // If not set, show all columns (except id and actions)
-    if (!displayColumns) {
-      displayColumns = Object.keys(schema?.schema?.attributes || {});
-    }
-    setVisibleColumns(displayColumns);
+    fetchColumnPref();
   }, [selectedCollection, schemas]);
 
-  // Persist visibleColumns to schema.displayColumns
+  // Persist visibleColumns to column-preferences collection
   async function persistDisplayColumns(newColumns: string[]) {
-    if (!selectedCollection) return;
-    // Save to Strapi schema (PATCH or PUT)
-    await strapi.post({
-      method: "PUT",
-      collection: 'content-type-schemas', // Adjust if needed for your backend
-      id: selectedCollection,
-      data: { displayColumns: newColumns.join(",") },
-      schemaUid: selectedCollection,
-    });
-    // Update UI state
-    setVisibleColumns(newColumns);
-    // Optionally, trigger schema reload here if needed
+    if (!selectedCollection || !schemas[selectedCollection]) return;
+    setLoading(true);
+    const shortCollection = schemas[selectedCollection]?.schema?.pluralName || selectedCollection;
+    // Only persist columns that exist in the schema
+    const schemaAttrs = Object.keys(schemas[selectedCollection]?.schema?.attributes || {});
+    const filteredColumns = newColumns.filter((col: string) => schemaAttrs.includes(col));
+    try {
+      if (columnPrefId) {
+        await strapi.post({
+          method: "PUT",
+          collection: "column-preferences",
+          id: columnPrefId,
+          data: { columns: filteredColumns.join(","), collection: shortCollection },
+        });
+      } else {
+        const res = await strapi.post({
+          method: "POST",
+          collection: "column-preferences",
+          data: { collection: shortCollection, columns: filteredColumns.join(",") },
+        });
+        setColumnPrefId(res?.data?.documentId ?? res?.data?.id?.toString() ?? null);
+      }
+      setVisibleColumns(filteredColumns);
+      if (typeof window !== 'undefined' && window.location) {
+        //window.location.reload();
+      }
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "message" in err) {
+        alert("Failed to save column preference: " + (err as any).message);
+      } else {
+        alert("Failed to save column preference: " + String(err));
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Helper to generate columns for Table
@@ -203,9 +255,9 @@ export default function AdminPage() {
   // Helper to filter out internal/system collections
   const collectionOptions = Object.keys(schemas || {})
     .filter(
-      (col) => !col.startsWith("strapi::") && !col.startsWith("admin::") && !col.startsWith("plugin::")
+      (col: string) => !col.startsWith("strapi::") && !col.startsWith("admin::") && !col.startsWith("plugin::")
     );
-  const sidebarCollections = collectionOptions.map((col) => ({
+  const sidebarCollections = collectionOptions.map((col: string) => ({
     key: col,
     label: schemas[col]?.schema?.displayName || col,
   }));
@@ -264,8 +316,8 @@ export default function AdminPage() {
                   });
                   setSelectedRecord({ ...res.data });
                   setShowForm(true);
-                } catch (err: any) {
-                  alert("Failed to fetch record for editing: " + err.message);
+                } catch (err: unknown) {
+                  alert("Failed to fetch record for editing: " + (err && typeof err === "object" && "message" in err ? (err as any).message : String(err)));
                 } finally {
                   setLoading(false);
                 }
@@ -280,7 +332,7 @@ export default function AdminPage() {
                   <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Select Columns to Display</h3>
                   {schemas[selectedCollection]?.schema?.attributes && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
-                      {Object.keys(schemas[selectedCollection].schema.attributes).map((attr) => (
+                      {Object.keys(schemas[selectedCollection].schema.attributes).map((attr: string) => (
                         <label key={attr} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <input
                             type="checkbox"
@@ -309,9 +361,9 @@ export default function AdminPage() {
                         }
                         setColumnSelectorOpen(false);
                       }}
-                      disabled={!visibleColumns || visibleColumns.length === 0}
+                      disabled={!visibleColumns || visibleColumns.length === 0 || loading}
                     >
-                      Save
+                      {loading ? "Saving..." : "Save"}
                     </Button>
                   </div>
                 </div>
