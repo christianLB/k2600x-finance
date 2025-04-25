@@ -5,10 +5,12 @@ import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import strapi from "@/services/strapi";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
 import { Button } from "@k2600x/design-system";
-import { Table } from "@k2600x/design-system";
+import { AdminTable } from "@/components/admin/AdminTable";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Sidebar } from "@/components/admin/Sidebar";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { ColumnSelectorDialog } from "@/components/admin/ColumnSelectorDialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { RecordFormDialog } from "@/components/admin/RecordFormDialog";
 
 export default function AdminPage() {
   const { schemas } = useStrapiSchemas();
@@ -265,14 +267,10 @@ export default function AdminPage() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
-      <Sidebar
+      <AdminSidebar
         collections={sidebarCollections}
         selectedCollection={selectedCollection}
-        onSelectCollection={(col) => {
-          setSelectedCollection(col);
-          setSelectedRecord(null);
-          setShowForm(false);
-        }}
+        onSelect={setSelectedCollection}
       />
       <div style={{ flex: 1, padding: 32 }}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
@@ -298,7 +296,7 @@ export default function AdminPage() {
                 </span>
               )}
             </div>
-            <Table
+            <AdminTable
               data={records}
               columns={getTableColumns(schemas[selectedCollection], async (rec) => {
                 const documentId = rec.documentId;
@@ -323,74 +321,31 @@ export default function AdminPage() {
                   setLoading(false);
                 }
               }, handleDelete, visibleColumns)}
-              emptyMessage={tableError || "No data found."}
-              className="mt-2"
+              loading={loading}
+              error={tableError || undefined}
+              emptyMessage="No data found."
             />
-            {/* Column Selector Modal */}
-            <Dialog open={columnSelectorOpen} onOpenChange={setColumnSelectorOpen}>
-              <DialogContent>
-                <div style={{ minWidth: 320 }}>
-                  <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Select Columns to Display</h3>
-                  {schemas[selectedCollection]?.schema?.attributes && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
-                      {Object.keys(schemas[selectedCollection].schema.attributes).map((attr: string) => (
-                        <label key={attr} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <input
-                            type="checkbox"
-                            checked={visibleColumns?.includes(attr) || false}
-                            onChange={e => {
-                              let next = visibleColumns ? [...visibleColumns] : [];
-                              if (e.target.checked) {
-                                if (!next.includes(attr)) next.push(attr);
-                              } else {
-                                next = next.filter((c) => c !== attr);
-                              }
-                              setVisibleColumns(next);
-                            }}
-                          />
-                          {attr}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                    <Button variant="outline" onClick={() => setColumnSelectorOpen(false)}>Cancel</Button>
-                    <Button
-                      onClick={async () => {
-                        if (visibleColumns) {
-                          await persistDisplayColumns(visibleColumns);
-                        }
-                        setColumnSelectorOpen(false);
-                      }}
-                      disabled={!visibleColumns || visibleColumns.length === 0 || loading}
-                    >
-                      {loading ? "Saving..." : "Save"}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            {/* Column Selector Dialog */}
+            <ColumnSelectorDialog
+              open={columnSelectorOpen}
+              columns={Object.keys(selectedCollection && schemas[selectedCollection]?.schema?.attributes || {})}
+              selected={visibleColumns || []}
+              onChange={persistDisplayColumns}
+              onClose={() => setColumnSelectorOpen(false)}
+              loading={loading}
+            />
           </>
         )}
         {/* Modal for Create/Edit Form */}
-        <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent>
-            <div style={{ minWidth: 320, maxWidth: 500 }}>
-              {loading && <div>Loading record for editing...</div>}
-              {!loading && selectedCollection && (
-                <DynamicStrapiForm
-                  collection={selectedCollection}
-                  document={selectedRecord}
-                  onSuccess={handleFormSubmit}
-                  onError={() => alert("An error occurred")}
-                />
-              )}
-              <Button style={{ marginTop: 16 }} variant="outline" onClick={() => setShowForm(false)}>
-                Cancel
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <RecordFormDialog
+          open={showForm}
+          collection={selectedCollection!}
+          record={selectedRecord}
+          onSave={handleFormSubmit}
+          onClose={() => setShowForm(false)}
+          loading={loading}
+          title={selectedRecord ? "Edit Record" : "Create Record"}
+        />
       </div>
     </div>
   );
