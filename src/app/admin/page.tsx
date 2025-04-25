@@ -150,6 +150,7 @@ export default function AdminPage() {
           setColumnPrefId(null);
         }
       } catch (err: unknown) {
+        console.log(err);
         // On error, fallback to all columns
         let schemaAttrs: string[] = [];
         if (selectedCollection && schemas[selectedCollection]) {
