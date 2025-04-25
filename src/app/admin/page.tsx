@@ -18,6 +18,8 @@ export default function AdminPage() {
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [tableError, setTableError] = useState<string | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState<string[] | null>(null);
+  const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
 
   // Compute correct collection name for API calls from schema
   const apiCollection = selectedCollection && schemas[selectedCollection]?.schema?.pluralName;
@@ -115,8 +117,42 @@ export default function AdminPage() {
     setLoading(false);
   }
 
+  // When collection changes, set visibleColumns from schema.displayColumns (or all columns)
+  useEffect(() => {
+    if (!selectedCollection) {
+      setVisibleColumns(null);
+      return;
+    }
+    const schema = schemas[selectedCollection];
+    let displayColumns: string[] | null = null;
+    if (schema && schema.schema && typeof schema.schema.displayColumns === 'string' && schema.schema.displayColumns.trim()) {
+      displayColumns = schema.schema.displayColumns.split(',').map((col: string) => col.trim()).filter(Boolean);
+    }
+    // If not set, show all columns (except id and actions)
+    if (!displayColumns) {
+      displayColumns = Object.keys(schema?.schema?.attributes || {});
+    }
+    setVisibleColumns(displayColumns);
+  }, [selectedCollection, schemas]);
+
+  // Persist visibleColumns to schema.displayColumns
+  async function persistDisplayColumns(newColumns: string[]) {
+    if (!selectedCollection) return;
+    // Save to Strapi schema (PATCH or PUT)
+    await strapi.post({
+      method: "PUT",
+      collection: 'content-type-schemas', // Adjust if needed for your backend
+      id: selectedCollection,
+      data: { displayColumns: newColumns.join(",") },
+      schemaUid: selectedCollection,
+    });
+    // Update UI state
+    setVisibleColumns(newColumns);
+    // Optionally, trigger schema reload here if needed
+  }
+
   // Helper to generate columns for Table
-  function getTableColumns(schema: any, onEdit: (row: any) => void, onDelete: (row: any) => void): ColumnDef<any>[] {
+  function getTableColumns(schema: any, onEdit: (row: any) => void, onDelete: (row: any) => void, visibleCols: string[] | null): ColumnDef<any>[] {
     const columns: ColumnDef<any>[] = [
       {
         accessorKey: "id",
@@ -124,8 +160,9 @@ export default function AdminPage() {
         cell: info => info.getValue(),
       },
     ];
-    if (schema && schema.schema && schema.schema.attributes) {
-      Object.keys(schema.schema.attributes).forEach((key) => {
+    if (schema && schema.schema && schema.schema.attributes && visibleCols) {
+      visibleCols.forEach((key) => {
+        if (!schema.schema.attributes[key]) return;
         columns.push({
           header: key,
           accessorFn: row => row[key],
@@ -198,6 +235,16 @@ export default function AdminPage() {
         {tableError && <div style={{ color: "red" }}>{tableError}</div>}
         {selectedCollection && !showForm && (
           <>
+            <div style={{ marginBottom: 16 }}>
+              <Button variant="outline" size="sm" onClick={() => setColumnSelectorOpen(true)}>
+                Select Columns
+              </Button>
+              {visibleColumns && (
+                <span style={{ marginLeft: 12, fontSize: 12, color: '#888' }}>
+                  Visible: {visibleColumns.join(", ")}
+                </span>
+              )}
+            </div>
             <Table
               data={records}
               columns={getTableColumns(schemas[selectedCollection], async (rec) => {
@@ -222,10 +269,54 @@ export default function AdminPage() {
                 } finally {
                   setLoading(false);
                 }
-              }, handleDelete)}
+              }, handleDelete, visibleColumns)}
               emptyMessage={tableError || "No data found."}
               className="mt-2"
             />
+            {/* Column Selector Modal */}
+            <Dialog open={columnSelectorOpen} onOpenChange={setColumnSelectorOpen}>
+              <DialogContent>
+                <div style={{ minWidth: 320 }}>
+                  <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Select Columns to Display</h3>
+                  {schemas[selectedCollection]?.schema?.attributes && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+                      {Object.keys(schemas[selectedCollection].schema.attributes).map((attr) => (
+                        <label key={attr} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            checked={visibleColumns?.includes(attr) || false}
+                            onChange={e => {
+                              let next = visibleColumns ? [...visibleColumns] : [];
+                              if (e.target.checked) {
+                                if (!next.includes(attr)) next.push(attr);
+                              } else {
+                                next = next.filter((c) => c !== attr);
+                              }
+                              setVisibleColumns(next);
+                            }}
+                          />
+                          {attr}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                    <Button variant="outline" onClick={() => setColumnSelectorOpen(false)}>Cancel</Button>
+                    <Button
+                      onClick={async () => {
+                        if (visibleColumns) {
+                          await persistDisplayColumns(visibleColumns);
+                        }
+                        setColumnSelectorOpen(false);
+                      }}
+                      disabled={!visibleColumns || visibleColumns.length === 0}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </>
         )}
         {/* Modal for Create/Edit Form */}
