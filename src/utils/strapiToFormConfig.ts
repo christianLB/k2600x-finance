@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
 import { StrapiRelationField } from "@/components/admin/StrapiRelationField";
-import { StrapiMediaUpload } from "@/components/StrapiMediaUpload";
+import { StrapiMediaUpload } from "@/components/admin/StrapiMediaUpload";
 
 // Helper for allowedTypes to accept string for accept attribute
 function mapMediaAccept(allowedTypes: string[] = []) {

@@ -97,6 +97,18 @@ export default function AdminPage() {
     setLoading(false);
   }
 
+  // Inline tags update handler
+  async function handleTagsUpdate(rowId: any, key: string, value: any) {
+    if (!selectedCollection) return;
+    // Only send the tag id for the tag field, not the full object
+    const tagId = value && typeof value === 'object' && 'id' in value ? value.id : value;
+    // Only send the tag field in the payload
+    const payload = normalizeRelationsForUpdate({ [key]: tagId }, schemas[selectedCollection]);
+    const record = records.find((r: any) => r.id === rowId);
+    if (!record) return;
+    await updateRecord(record.documentId, payload);
+  }
+
   // Use custom hook for column preferences
   const { visibleColumns, setVisibleColumns, loading: columnsLoading } = useColumnPreferences(
     selectedCollection,
@@ -173,7 +185,8 @@ export default function AdminPage() {
                   }
                 },
                 (rec: any) => handleDelete(rec),
-                visibleColumns
+                visibleColumns,
+                handleTagsUpdate
               )}
               loading={recordsLoading}
               error={recordsError || undefined}

@@ -19,6 +19,7 @@ export interface Tag {
 
 interface TagsSelectorProps {
   appliesTo: string;
+  fetchCollection: string;
   currentTag?: Tag | null;
   placeholder?: string;
   onSelect: (tag: Tag) => void;
@@ -70,20 +71,21 @@ const TagTreeItem: React.FC<{
 
 export const TagsSelector: React.FC<TagsSelectorProps> = ({
   appliesTo,
+  fetchCollection,
   currentTag,
   placeholder = "Seleccionar tag",
   onSelect,
 }) => {
-  const [, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const {
     data: { data: tags = [] } = { data: [] },
     isLoading,
-  } = useStrapiCollection<Tag>("operation-tags", {
+  } = useStrapiCollection<Tag>(fetchCollection, isOpen ? {
     filters: { appliesTo: { $contains: appliesTo } },
     pagination: { page: 1, pageSize: 500 },
     populate: ["parent_tag"],
-  });
+  } : undefined);
 
   // DEBUG LOGGING
   if (typeof window !== 'undefined') {
@@ -94,7 +96,7 @@ export const TagsSelector: React.FC<TagsSelectorProps> = ({
   const treeData = buildTagTree(tags);
 
   return (
-    <Popover onOpenChange={setIsOpen}>
+    <Popover onOpenChange={setIsOpen} open={isOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline">
           {currentTag ? currentTag.name : placeholder}

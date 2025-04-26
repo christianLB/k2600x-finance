@@ -20,7 +20,7 @@ import React from "react";
 
 import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 
-import { StrapiMediaUpload } from "@/components/StrapiMediaUpload";
+import { StrapiMediaUpload } from "@/components/admin/StrapiMediaUpload";
 
  
 

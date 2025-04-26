@@ -20,7 +20,7 @@ export function useAdminRecords(selectedCollection: string | null, schema?: any)
     setLoading(true);
     setError(null);
     try {
-      const res = await strapi.post({ method: "GET", collection: apiCollection });
+      const res = await strapi.post({ method: "GET", collection: apiCollection, query: { populate: "*" } });
       setRecords(res.data);
     } catch (err: any) {
       setError(err?.message || "Failed to fetch records");
