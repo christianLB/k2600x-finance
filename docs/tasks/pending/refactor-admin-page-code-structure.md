@@ -62,9 +62,11 @@ The current implementation of `src/app/admin/page.tsx` has grown in complexity, 
 <!-- All major UI sections extracted and working, TypeScript checks pass. -->
 
 ### 2. Hooks & State Management
-- [ ] Create useColumnPreferences hook
-- [ ] Create useAdminRecords hook
+- [x] Create useColumnPreferences hook
+- [x] Create useAdminRecords hook
 - [ ] (Optional) Provide context for schema/collection state
+
+<!-- useColumnPreferences and useAdminRecords hooks implemented and integrated; admin/page.tsx refactored to use them. All logic for column preferences and record CRUD is now modular and reusable. -->
 
 ### 3. Helpers & Utilities
 - [ ] Move Strapi API helpers to src/lib/strapi/

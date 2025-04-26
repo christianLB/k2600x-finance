@@ -9,35 +9,33 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { ColumnSelectorDialog } from "@/components/admin/ColumnSelectorDialog";
 import { RecordFormDialog } from "@/components/admin/RecordFormDialog";
+import { useColumnPreferences } from "@/hooks/useColumnPreferences";
+import { useAdminRecords } from "@/hooks/useAdminRecords";
 
 export default function AdminPage() {
   const { schemas } = useStrapiSchemas();
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
-  const [records, setRecords] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [tableError, setTableError] = useState<string | null>(null);
-  const [visibleColumns, setVisibleColumns] = useState<string[] | null>(null);
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
-  const [columnPrefId, setColumnPrefId] = useState<string | null>(null);
 
   // Compute correct collection name for API calls from schema
   const apiCollection = selectedCollection && schemas[selectedCollection]?.schema?.pluralName;
 
-  // Fetch records when collection changes
-  useEffect(() => {
-    if (!apiCollection) return;
-    setLoading(true);
-    setTableError(null);
-    strapi
-      .post({ method: "GET", collection: apiCollection })
-      .then((res) => {
-        setRecords(res.data)
-      })
-      .catch((err) => setTableError(err.message || "Failed to fetch records"))
-      .finally(() => setLoading(false));
-  }, [apiCollection]);
+  // Use custom hook for records CRUD
+  const {
+    records,
+    loading: recordsLoading,
+    error: recordsError,
+    fetchRecords,
+    createRecord,
+    updateRecord,
+    deleteRecord,
+  } = useAdminRecords(
+    selectedCollection,
+    selectedCollection ? schemas[selectedCollection] : null
+  );
 
   // Normalize relations for update: convert relation objects to their DB id or null
   function normalizeRelationsForUpdate(data: any, schema: any) {
@@ -69,32 +67,19 @@ export default function AdminPage() {
 
   // Handle create/update
   async function handleFormSubmit(values: any) {
+    if (!selectedCollection) return;
     setLoading(true);
     try {
       let payload = values;
       if (selectedRecord) {
-        if (!selectedCollection) throw new Error("No collection selected");
         // Update: use documentId for PUT, normalize relations
         payload = normalizeRelationsForUpdate(values, schemas[selectedCollection]);
-        await strapi.post({
-          method: "PUT",
-          collection: apiCollection!,
-          id: selectedRecord.documentId,
-          data: payload,
-        });
+        await updateRecord(selectedRecord.documentId, payload);
       } else {
-        if (!selectedCollection) throw new Error("No collection selected");
         // Create: normalize relations
         payload = normalizeRelationsForUpdate(values, schemas[selectedCollection]);
-        await strapi.post({
-          method: "POST",
-          collection: apiCollection!,
-          data: payload,
-        });
+        await createRecord(payload);
       }
-      // Refresh list
-      const res = await strapi.post({ method: "GET", collection: apiCollection! });
-      setRecords(res.data);
       setShowForm(false);
       setSelectedRecord(null);
     } finally {
@@ -104,105 +89,19 @@ export default function AdminPage() {
 
   // Handle delete
   async function handleDelete(record: any) {
+    if (!selectedCollection) return;
     setLoading(true);
-    await strapi.post({
-      method: "DELETE",
-      collection: apiCollection!,
-      id: record.documentId,
-    });
-    // Refresh list
-    const res = await strapi.post({ method: "GET", collection: apiCollection! });
-    setRecords(res.data);
+    await deleteRecord(record.documentId);
     setSelectedRecord(null);
     setShowForm(false);
     setLoading(false);
   }
 
-  // Fetch column preferences for the selected collection
-  useEffect(() => {
-    if (!selectedCollection || !schemas[selectedCollection]) {
-      setVisibleColumns(null);
-      setColumnPrefId(null);
-      return;
-    }
-    const shortCollection = schemas[selectedCollection]?.schema?.pluralName || selectedCollection;
-    async function fetchColumnPref() {
-      setLoading(true);
-      try {
-        const res = await strapi.post({
-          method: "GET",
-          collection: "column-preferences",
-          query: { filters: { collection: { $eq: shortCollection } } },
-        });
-        const pref = Array.isArray(res?.data) ? res.data[0] : null;
-        let schemaAttrs: string[] = [];
-        if (selectedCollection && schemas[selectedCollection]) {
-          schemaAttrs = Object.keys(schemas[selectedCollection]?.schema?.attributes || {});
-        }
-        if (pref && typeof pref.columns === 'string' && pref.columns.trim()) {
-          // Filter out columns not in schema
-          const filteredCols = pref.columns.split(',').map((col: string) => col.trim()).filter((col: string) => schemaAttrs.includes(col));
-          setVisibleColumns(filteredCols);
-          setColumnPrefId(pref.documentId ?? pref.id?.toString() ?? null);
-        } else {
-          // No preference found, fallback to all columns
-          setVisibleColumns(schemaAttrs);
-          setColumnPrefId(null);
-        }
-      } catch (err: unknown) {
-        console.log(err);
-        // On error, fallback to all columns
-        let schemaAttrs: string[] = [];
-        if (selectedCollection && schemas[selectedCollection]) {
-          schemaAttrs = Object.keys(schemas[selectedCollection]?.schema?.attributes || {});
-        }
-        setVisibleColumns(schemaAttrs);
-        setColumnPrefId(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchColumnPref();
-  }, [selectedCollection, schemas]);
-
-  // Persist visibleColumns to column-preferences collection
-  async function persistDisplayColumns(newColumns: string[]) {
-    if (!selectedCollection || !schemas[selectedCollection]) return;
-    setLoading(true);
-    const shortCollection = schemas[selectedCollection]?.schema?.pluralName || selectedCollection;
-    // Only persist columns that exist in the schema
-    const schemaAttrs = Object.keys(schemas[selectedCollection]?.schema?.attributes || {});
-    const filteredColumns = newColumns.filter((col: string) => schemaAttrs.includes(col));
-    try {
-      if (columnPrefId) {
-        await strapi.post({
-          method: "PUT",
-          collection: "column-preferences",
-          id: columnPrefId,
-          data: { columns: filteredColumns.join(","), collection: shortCollection },
-        });
-      } else {
-        const res = await strapi.post({
-          method: "POST",
-          collection: "column-preferences",
-          data: { collection: shortCollection, columns: filteredColumns.join(",") },
-        });
-        setColumnPrefId(res?.data?.documentId ?? res?.data?.id?.toString() ?? null);
-      }
-      setVisibleColumns(filteredColumns);
-      if (typeof window !== 'undefined' && window.location) {
-        //window.location.reload();
-      }
-    } catch (err: unknown) {
-      if (err && typeof err === "object" && "message" in err) {
-        alert("Failed to save column preference: " + (err as any).message);
-      } else {
-        alert("Failed to save column preference: " + String(err));
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Use custom hook for column preferences
+  const { visibleColumns, setVisibleColumns, loading: columnsLoading, error: columnsError } = useColumnPreferences(
+    selectedCollection,
+    selectedCollection ? schemas[selectedCollection] : null
+  );
 
   // Helper to generate columns for Table
   function getTableColumns(schema: any, onEdit: (row: any) => void, onDelete: (row: any) => void, visibleCols: string[] | null): ColumnDef<any>[] {
@@ -263,6 +162,8 @@ export default function AdminPage() {
     label: schemas[col]?.schema?.displayName || col,
   }));
 
+  const [loading, setLoading] = useState(false);
+
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <AdminSidebar
@@ -319,8 +220,8 @@ export default function AdminPage() {
                   setLoading(false);
                 }
               }, handleDelete, visibleColumns)}
-              loading={loading}
-              error={tableError || undefined}
+              loading={recordsLoading}
+              error={recordsError || undefined}
               emptyMessage="No data found."
             />
             {/* Column Selector Dialog */}
@@ -328,9 +229,9 @@ export default function AdminPage() {
               open={columnSelectorOpen}
               columns={Object.keys(selectedCollection && schemas[selectedCollection]?.schema?.attributes || {})}
               selected={visibleColumns || []}
-              onChange={persistDisplayColumns}
+              onChange={setVisibleColumns}
               onClose={() => setColumnSelectorOpen(false)}
-              loading={loading}
+              loading={columnsLoading}
             />
           </>
         )}
