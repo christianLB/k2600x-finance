@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import strapi from "@/lib/strapi";
 import { Button } from "@k2600x/design-system";
 import { AdminTable } from "@/components/admin/AdminTable";
-import type { ColumnDef } from "@tanstack/react-table";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { ColumnSelectorDialog } from "@/components/admin/ColumnSelectorDialog";
 import { RecordFormDialog } from "@/components/admin/RecordFormDialog";
@@ -19,7 +18,7 @@ export default function AdminPage() {
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [tableError, setTableError] = useState<string | null>(null);
+  const [tableError] = useState<string | null>(null);
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
 
   // Compute correct collection name for API calls from schema
@@ -30,7 +29,6 @@ export default function AdminPage() {
     records,
     loading: recordsLoading,
     error: recordsError,
-    fetchRecords,
     createRecord,
     updateRecord,
     deleteRecord,
@@ -100,7 +98,7 @@ export default function AdminPage() {
   }
 
   // Use custom hook for column preferences
-  const { visibleColumns, setVisibleColumns, loading: columnsLoading, error: columnsError } = useColumnPreferences(
+  const { visibleColumns, setVisibleColumns, loading: columnsLoading } = useColumnPreferences(
     selectedCollection,
     selectedCollection ? schemas[selectedCollection] : null
   );

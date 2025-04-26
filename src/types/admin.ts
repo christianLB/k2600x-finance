@@ -1,7 +1,5 @@
 // Types for admin page, table, and schema utilities
 
-import type { ColumnDef } from "@tanstack/react-table";
-
 /**
  * Represents a user's saved column preferences for a collection.
  */

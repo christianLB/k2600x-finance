@@ -68,7 +68,7 @@ export function useColumnPreferences(selectedCollection: string | null, schema: 
     const schemaAttrs = Object.keys(schema?.schema?.attributes || {});
     const filteredColumns = newColumns.filter((col: string) => schemaAttrs.includes(col));
     try {
-      let prefId = columnPrefId;
+      const prefId = columnPrefId;
       let res;
       if (prefId) {
         res = await strapi.post({
