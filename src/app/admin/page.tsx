@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
-import strapi from "@/services/strapi";
+import strapi from "@/lib/strapi";
 import { Button } from "@k2600x/design-system";
 import { AdminTable } from "@/components/admin/AdminTable";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -11,6 +11,8 @@ import { ColumnSelectorDialog } from "@/components/admin/ColumnSelectorDialog";
 import { RecordFormDialog } from "@/components/admin/RecordFormDialog";
 import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 import { useAdminRecords } from "@/hooks/useAdminRecords";
+import { getTableColumns } from "@/lib/admin-table";
+import { getSchemaAttributeKeys, getSchemaDisplayName } from "@/lib/schema-utils";
 
 export default function AdminPage() {
   const { schemas } = useStrapiSchemas();
@@ -103,63 +105,13 @@ export default function AdminPage() {
     selectedCollection ? schemas[selectedCollection] : null
   );
 
-  // Helper to generate columns for Table
-  function getTableColumns(schema: any, onEdit: (row: any) => void, onDelete: (row: any) => void, visibleCols: string[] | null): ColumnDef<any>[] {
-    const columns: ColumnDef<any>[] = [
-      {
-        accessorKey: "id",
-        header: "ID",
-        cell: info => info.getValue(),
-      },
-    ];
-    if (schema && schema.schema && schema.schema.attributes && visibleCols) {
-      visibleCols.forEach((key) => {
-        if (!schema.schema.attributes[key]) return;
-        columns.push({
-          header: key,
-          accessorFn: row => row[key],
-          cell: info => {
-            const value = info.getValue();
-            return typeof value === "object" ? JSON.stringify(value) : String(value ?? "-");
-          },
-        });
-      });
-    }
-    columns.push({
-      id: "actions",
-      header: "Actions",
-      cell: info => (
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(info.row.original)}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => onDelete(info.row.original)}
-          >
-            Delete
-          </Button>
-        </div>
-      ),
-      enableSorting: false,
-      enableColumnFilter: false,
-    });
-    return columns;
-  }
-
-  // Helper to filter out internal/system collections
   const collectionOptions = Object.keys(schemas || {})
     .filter(
       (col: string) => !col.startsWith("strapi::") && !col.startsWith("admin::") && !col.startsWith("plugin::")
     );
   const sidebarCollections = collectionOptions.map((col: string) => ({
     key: col,
-    label: schemas[col]?.schema?.displayName || col,
+    label: getSchemaDisplayName(schemas[col], col),
   }));
 
   const [loading, setLoading] = useState(false);
@@ -174,7 +126,7 @@ export default function AdminPage() {
       <div style={{ flex: 1, padding: 32 }}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ fontSize: 22, fontWeight: 700, marginRight: 16 }}>
-            {selectedCollection ? schemas[selectedCollection]?.schema?.displayName || selectedCollection : "Select a Collection"}
+            {selectedCollection ? getSchemaDisplayName(schemas[selectedCollection], selectedCollection) : "Select a Collection"}
           </h2>
           {selectedCollection && (
             <Button style={{ marginLeft: 16 }} onClick={() => { setSelectedRecord(null); setShowForm(true); }}>
@@ -197,29 +149,34 @@ export default function AdminPage() {
             </div>
             <AdminTable
               data={records}
-              columns={getTableColumns(schemas[selectedCollection], async (rec) => {
-                const documentId = rec.documentId;
-                if (!documentId) {
-                  alert("This record is missing a documentId and cannot be edited.");
-                  return;
-                }
-                setLoading(true);
-                setSelectedRecord(null);
-                try {
-                  const res = await strapi.post({
-                    method: "GET",
-                    collection: apiCollection!,
-                    id: documentId,
-                    query: { populate: "*" },
-                  });
-                  setSelectedRecord({ ...res.data });
-                  setShowForm(true);
-                } catch (err: unknown) {
-                  alert("Failed to fetch record for editing: " + (err && typeof err === "object" && "message" in err ? (err as any).message : String(err)));
-                } finally {
-                  setLoading(false);
-                }
-              }, handleDelete, visibleColumns)}
+              columns={getTableColumns(
+                schemas[selectedCollection],
+                async (rec) => {
+                  const documentId = rec.documentId;
+                  if (!documentId) {
+                    alert("This record is missing a documentId and cannot be edited.");
+                    return;
+                  }
+                  setLoading(true);
+                  setSelectedRecord(null);
+                  try {
+                    const res = await strapi.post({
+                      method: "GET",
+                      collection: apiCollection!,
+                      id: documentId,
+                      query: { populate: "*" },
+                    });
+                    setSelectedRecord({ ...res.data });
+                    setShowForm(true);
+                  } catch (err: unknown) {
+                    alert("Failed to fetch record for editing: " + (err && typeof err === "object" && "message" in err ? (err as any).message : String(err)));
+                  } finally {
+                    setLoading(false);
+                  }
+                },
+                handleDelete,
+                visibleColumns
+              )}
               loading={recordsLoading}
               error={recordsError || undefined}
               emptyMessage="No data found."
@@ -227,7 +184,7 @@ export default function AdminPage() {
             {/* Column Selector Dialog */}
             <ColumnSelectorDialog
               open={columnSelectorOpen}
-              columns={Object.keys(selectedCollection && schemas[selectedCollection]?.schema?.attributes || {})}
+              columns={getSchemaAttributeKeys(schemas[selectedCollection])}
               selected={visibleColumns || []}
               onChange={setVisibleColumns}
               onClose={() => setColumnSelectorOpen(false)}

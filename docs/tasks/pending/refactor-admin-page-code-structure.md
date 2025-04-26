@@ -23,9 +23,11 @@ The current implementation of `src/app/admin/page.tsx` has grown in complexity, 
 - Use context or hooks to share schema and collection state as needed.
 
 ### 3. **Helpers & Utilities**
-- Move Strapi API helpers (payload normalization, etc.) to `src/lib/strapi/`.
-- Extract table column generation logic (`getTableColumns`) to a helper in `src/lib/admin-table.ts` for reusability.
-- Any logic for mapping schema attributes to UI fields should be moved to `src/lib/schema-utils.ts`.
+- [x] Move Strapi API helpers to src/lib/strapi/
+- [x] Move table column generation to src/lib/admin-table.tsx
+- [x] Move schema-to-UI logic to src/lib/schema-utils.ts
+
+<!-- All helpers/utilities have been modularized and moved to src/lib. Imports in admin/page.tsx updated. TypeScript checks pass. -->
 
 ### 4. **General Improvements**
 - Add clear type definitions for records, preferences, and schema objects in `src/types/`.
@@ -69,9 +71,11 @@ The current implementation of `src/app/admin/page.tsx` has grown in complexity, 
 <!-- useColumnPreferences and useAdminRecords hooks implemented and integrated; admin/page.tsx refactored to use them. All logic for column preferences and record CRUD is now modular and reusable. -->
 
 ### 3. Helpers & Utilities
-- [ ] Move Strapi API helpers to src/lib/strapi/
-- [ ] Move table column generation to src/lib/admin-table.ts
-- [ ] Move schema-to-UI logic to src/lib/schema-utils.ts
+- [x] Move Strapi API helpers to src/lib/strapi/
+- [x] Move table column generation to src/lib/admin-table.tsx
+- [x] Move schema-to-UI logic to src/lib/schema-utils.ts
+
+<!-- All helpers/utilities have been modularized and moved to src/lib. Imports in admin/page.tsx updated. TypeScript checks pass. -->
 
 ### 4. Types & Documentation
 - [ ] Define types in src/types/
