@@ -3,11 +3,13 @@ import React from "react";
 import { Button } from "@k2600x/design-system";
 
 /**
- * Generate columns for the admin table based on schema and visible columns.
- * @param schema The Strapi schema object
- * @param onEdit Edit handler
- * @param onDelete Delete handler
- * @param visibleCols Array of visible column keys
+ * Generates table columns for the admin table based on the schema and visible columns.
+ *
+ * @param schema - The Strapi schema object for the collection.
+ * @param onEdit - Callback invoked when editing a row (receives the record object).
+ * @param onDelete - Callback invoked when deleting a row (receives the record object).
+ * @param visibleCols - Array of visible column keys (attributes).
+ * @returns Array of column definitions for TanStack Table.
  */
 export function getTableColumns(
   schema: any,

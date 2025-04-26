@@ -79,9 +79,9 @@ The current implementation of `src/app/admin/page.tsx` has grown in complexity, 
 
 ### 4. Types & Documentation
 - [x] Define types in src/types/
-- [ ] Add JSDoc/comments to exported functions/components
+- [x] Add JSDoc/comments to exported functions/components
 
-<!-- All relevant types for admin and Strapi have been centralized in src/types/. Helpers and utilities now use these types. TypeScript checks pass. -->
+<!-- All relevant types for admin and Strapi have been centralized in src/types/. Helpers and utilities now use these types. TypeScript checks pass. All exported helpers and types now have JSDoc/comments. -->
 
 ### 5. Testing & Validation
 - [ ] Add unit tests for helpers/hooks
