@@ -12,13 +12,15 @@
 
  
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import React from "react";
 
 import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
+
+import { StrapiMediaUpload } from "@/components/StrapiMediaUpload";
 
  
 
@@ -276,7 +278,11 @@ export function useFormFactory(
 
       // --- MEDIA/FILE FIELDS ---
 
-      if (cfg.type === "media") {
+      if (cfg.type === "media" || cfg.type === "file") {
+
+        // Defensive: always pass an array to StrapiMediaUpload
+
+        // UI: Solo mostrar el label una vez y evitar duplicados
 
         return (
 
@@ -290,39 +296,35 @@ export function useFormFactory(
 
             </label>
 
-            <Comp
-
-              id={cfg.name}
-
-              type="file"
-
-              multiple={cfg.props?.multiple}
-
-              accept={cfg.props?.accept}
-
-              required={cfg.required}
-
-              disabled={cfg.disabled}
-
-              variant={cfg.variant}
-
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const files = e.target.files;
-                setValue(cfg.name, cfg.props?.multiple ? (files ? Array.from(files) : []) : files?.[0] ?? null);
+            <Controller
+              name={cfg.name}
+              control={control}
+              render={({ field }) => {
+                let safeValue = field.value;
+                if (!Array.isArray(safeValue)) {
+                  if (safeValue == null) safeValue = [];
+                  else safeValue = [safeValue];
+                }
+                return (
+                  <StrapiMediaUpload
+                    value={safeValue}
+                    onChange={field.onChange}
+                    multiple={cfg.props?.multiple}
+                    accept={cfg.props?.accept}
+                    maxSize={cfg.props?.maxSize}
+                    disabled={cfg.disabled}
+                    // No label aquí para evitar duplicados
+                  />
+                );
               }}
-
             />
 
             {cfg.description && (
-
               <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
-
             )}
 
             {errorMsg && (
-
               <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
-
             )}
 
           </div>
@@ -364,15 +366,11 @@ export function useFormFactory(
             />
 
             {cfg.description && (
-
               <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
-
             )}
 
             {errorMsg && (
-
               <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
-
             )}
 
           </div>
@@ -418,15 +416,11 @@ export function useFormFactory(
             />
 
             {cfg.description && (
-
               <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
-
             )}
 
             {errorMsg && (
-
               <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
-
             )}
 
           </div>
@@ -470,15 +464,11 @@ export function useFormFactory(
           />
 
           {cfg.description && (
-
             <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
-
           )}
 
           {errorMsg && (
-
             <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
-
           )}
 
         </div>

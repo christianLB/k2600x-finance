@@ -42,3 +42,31 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return new Response(JSON.stringify({ error: "No media id provided" }), { status: 400 });
+    }
+    const jwt = await authenticate();
+    const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL;
+    if (!strapiUrl) {
+      return new Response(JSON.stringify({ error: "Strapi URL not defined" }), { status: 500 });
+    }
+    const deleteRes = await fetch(`${strapiUrl}/api/upload/files/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+      },
+    });
+    const data = await deleteRes.json();
+    if (!deleteRes.ok) {
+      return new Response(JSON.stringify(data), { status: deleteRes.status });
+    }
+    return new Response(JSON.stringify(data), { status: 200 });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  }
+}

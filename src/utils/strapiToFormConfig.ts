@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
 import { StrapiRelationField } from "@/components/admin/StrapiRelationField";
+import { StrapiMediaUpload } from "@/components/StrapiMediaUpload";
 
 // Helper for allowedTypes to accept string for accept attribute
 function mapMediaAccept(allowedTypes: string[] = []) {
@@ -87,9 +88,9 @@ const typeMap: Record<string, any> = {
   media: {
     type: "media",
     zod: z.any(),
-    component: Input,
+    component: StrapiMediaUpload, // Asignar el uploader explícitamente
     placeholder: "Upload file...",
-    props: { type: "file" },
+    props: {},
   },
 };
 
