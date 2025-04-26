@@ -151,7 +151,7 @@ export default function AdminPage() {
               data={records}
               columns={getTableColumns(
                 schemas[selectedCollection],
-                async (rec) => {
+                async (rec: any) => {
                   const documentId = rec.documentId;
                   if (!documentId) {
                     alert("This record is missing a documentId and cannot be edited.");
@@ -174,7 +174,7 @@ export default function AdminPage() {
                     setLoading(false);
                   }
                 },
-                handleDelete,
+                (rec: any) => handleDelete(rec),
                 visibleColumns
               )}
               loading={recordsLoading}

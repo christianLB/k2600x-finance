@@ -1,4 +1,4 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, CellContext } from "@tanstack/react-table";
 import React from "react";
 import { Button } from "@k2600x/design-system";
 
@@ -19,7 +19,7 @@ export function getTableColumns(
     {
       accessorKey: "id",
       header: "ID",
-      cell: info => info.getValue(),
+      cell: (info: CellContext<any, any>) => info.getValue(),
     },
   ];
   if (schema && schema.schema && schema.schema.attributes && visibleCols) {
@@ -27,8 +27,8 @@ export function getTableColumns(
       if (!schema.schema.attributes[key]) return;
       columns.push({
         header: key,
-        accessorFn: row => row[key],
-        cell: info => {
+        accessorFn: (row: any) => row[key],
+        cell: (info: CellContext<any, any>) => {
           const value = info.getValue();
           if (Array.isArray(value)) {
             return value.length;
@@ -44,7 +44,7 @@ export function getTableColumns(
   columns.push({
     id: "actions",
     header: "Actions",
-    cell: info => (
+    cell: (info: CellContext<any, any>) => (
       <div style={{ display: "flex", gap: 8 }}>
         <Button
           variant="outline"
