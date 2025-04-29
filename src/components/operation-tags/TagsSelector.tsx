@@ -87,12 +87,6 @@ export const TagsSelector: React.FC<TagsSelectorProps> = ({
     populate: ["parent_tag"],
   } : undefined);
 
-  // DEBUG LOGGING
-  if (typeof window !== 'undefined') {
-    console.log("TagsSelector fetched tags:", tags);
-    console.log("TagsSelector currentTag:", currentTag);
-  }
-
   const treeData = buildTagTree(tags);
 
   return (

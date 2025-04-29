@@ -22,7 +22,6 @@ export function useRelationOptions(
         (f) => f.type === "relation" && f.props?.target && !!f.props.target && typeof f.props.target === 'string'
       );
       if (relFields.length === 0) {
-        console.log("useRelationOptions: No valid relation fields found in fieldsConfig:", fieldsConfig);
         return;
       }
       const map: Record<string, { label: string; value: any }[]> = {};

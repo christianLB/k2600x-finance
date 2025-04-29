@@ -2,8 +2,16 @@ import type { ColumnDef, CellContext } from "@tanstack/react-table";
 import React from "react";
 import { Button } from "@k2600x/design-system";
 import { TagsCell } from "@/components/admin/TagsCell";
+import { BooleanCell } from "@/components/admin/BooleanCell";
 import type { Tag } from "@/components/operation-tags/TagsSelector";
 import Image from "next/image";
+
+export interface AdminTableMeta {
+  onCellUpdate?: (row: any, key: string, value: any) => void;
+  relatedPlural?: string;
+  onEdit?: (row: any) => void;
+  onDelete?: (row: any) => void;
+}
 
 /**
  * Generates table columns for the admin table based on the schema and visible columns.
@@ -21,8 +29,8 @@ export function getTableColumns(
   onDelete: (row: any) => void,
   visibleCols: string[] | null,
   onTagsUpdate?: (rowId: any, key: string, value: any) => void
-): ColumnDef<any>[] {
-  const columns: ColumnDef<any>[] = [
+): ColumnDef<any, any>[] {
+  const columns: ColumnDef<any, any>[] = [
     {
       accessorKey: "id",
       header: "ID",
@@ -54,6 +62,32 @@ export function getTableColumns(
         });
         return;
       }
+      // Boolean cell (use BooleanCell)
+      if (attr.type === "boolean") {
+        columns.push({
+          header: key,
+          accessorFn: (row: any) => row[key],
+          cell: (info: CellContext<any, any>) => {
+            const row = info.row.original;
+            return (
+              <BooleanCell
+                value={!!row[key]}
+                onChange={(newValue) => {
+                  // @ts-expect-error: meta type is not known to TS in this version
+                  if (typeof info.table.options.meta?.onCellUpdate === 'function') {
+                    // @ts-expect-error: meta type is not known to TS in this version
+                    info.table.options.meta.onCellUpdate(row, key, newValue);
+                  }
+                }}
+                row={row}
+                name={key}
+                disabled={false}
+              />
+            );
+          },
+        });
+        return;
+      }
       // Relation cell (view only)
       if (attr.type === "relation") {
         // Use pluralName for related collection
@@ -79,22 +113,6 @@ export function getTableColumns(
           },
           // Pass down relatedPlural for use in RelationCell (for fetches)
           meta: { relatedPlural },
-          // Render RelationCell for edit mode or advanced use
-          // (Uncomment and adapt if you want editable relation cells)
-          // cell: (info: CellContext<any, any>) => {
-          //   const row = info.row.original;
-          //   return (
-          //     <RelationCell
-          //       name={key}
-          //       value={row[key]}
-          //       onChange={...}
-          //       target={attr.target}
-          //       isMulti={attr.relationType && attr.relationType.includes("Many")}
-          //       displayField={attr.displayField || "displayName"}
-          //       relatedPlural={relatedPlural}
-          //     />
-          //   );
-          // },
         });
         return;
       }
@@ -108,17 +126,46 @@ export function getTableColumns(
             if (!value) return <span style={{ color: '#888' }}>-</span>;
             // If many, show thumbnails
             if (Array.isArray(value)) {
-              return value.map((file: any, idx: number) => (
-                <a key={file.id || idx} href={file.url} target="_blank" rel="noopener noreferrer">
-                  <Image src={file.url} alt={file.name || ''} width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4, marginRight: 4 }} />
-                </a>
-              ));
+              return (
+                <div style={{ display: "flex", gap: 4 }}>
+                  {value.map((media: any, idx: number) => (
+                    <Image
+                      key={media.id || idx}
+                      src={media.url || media.formats?.thumbnail?.url || ""}
+                      alt={media.name || "media"}
+                      width={40}
+                      height={40}
+                      style={{ objectFit: "cover", borderRadius: 4 }}
+                    />
+                  ))}
+                </div>
+              );
             }
+            // Single image
             return (
-              <a href={value.url} target="_blank" rel="noopener noreferrer">
-                <Image src={value.url} alt={value.name || ''} width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
-              </a>
+              <Image
+                src={value.url || value.formats?.thumbnail?.url || ""}
+                alt={value.name || "media"}
+                width={40}
+                height={40}
+                style={{ objectFit: "cover", borderRadius: 4 }}
+              />
             );
+          },
+        });
+        return;
+      }
+      // Enumeration cell
+      if (attr.type === "enumeration") {
+        columns.push({
+          header: key,
+          accessorFn: (row: any) => row[key],
+          cell: (info: CellContext<any, any>) => {
+            const value = info.getValue();
+            if (Array.isArray(value)) {
+              return value.length;
+            }
+            return value;
           },
         });
         return;
@@ -129,13 +176,7 @@ export function getTableColumns(
         accessorFn: (row: any) => row[key],
         cell: (info: CellContext<any, any>) => {
           const value = info.getValue();
-          if (Array.isArray(value)) {
-            return value.length;
-          }
-          if (typeof value === "object" && value !== null) {
-            return typeof (value as any).id !== "undefined" ? (value as any).id : JSON.stringify(value);
-          }
-          return value === undefined ? "" : String(value);
+          return value;
         },
       });
     });
@@ -148,21 +189,21 @@ export function getTableColumns(
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onEdit(info.row.original)}
+          // @ts-expect-error: meta type is not known to TS in this version
+          onClick={() => info.table.options.meta?.onEdit?.(info.row.original)}
         >
           Edit
         </Button>
         <Button
-          variant="destructive"
+          variant="ghost"
           size="sm"
-          onClick={() => onDelete(info.row.original)}
+          // @ts-expect-error: meta type is not known to TS in this version
+          onClick={() => info.table.options.meta?.onDelete?.(info.row.original)}
         >
           Delete
         </Button>
       </div>
     ),
-    enableSorting: false,
-    enableColumnFilter: false,
   });
   return columns;
 }

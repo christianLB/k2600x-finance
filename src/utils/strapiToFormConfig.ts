@@ -117,10 +117,8 @@ export function strapiToFormConfig(strapiSchema: any) {
   const attributes = strapiSchema?.schema?.attributes || {};
   // ENHANCEMENT: Defensive - ensure attributes is a non-empty object
   if (!attributes || Object.keys(attributes).length === 0) {
-    console.error("strapiToFormConfig: No attributes found in schema", strapiSchema);
     return { schema: z.object({}), defaultValues: {}, fieldsConfig: [] };
   }
-  console.log("strapiToFormConfig: attributes:", attributes);
   const zodShape: Record<string, ZodTypeAny> = {};
   const defaultValues: Record<string, any> = {};
   const fieldsConfig: FieldConfig[] = [];
@@ -132,7 +130,6 @@ export function strapiToFormConfig(strapiSchema: any) {
       console.warn(`Skipping field '${name}' due to missing type in schema`, attr);
       continue;
     }
-    console.log(`Field: ${name}`, attr);
 
     // DEFENSIVE: Skip unknown/unsupported types
     if (!typeMap[attr.type] && attr.type !== 'relation' && attr.type !== 'media' && attr.type !== 'enumeration') {

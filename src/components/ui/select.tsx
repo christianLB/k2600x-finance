@@ -20,8 +20,6 @@ function Select({
   ) {
     normalizedValue = undefined;
   }
-  // Optionally, keep debug log for now
-  console.log('[Select] normalizedValue:', normalizedValue, 'type:', typeof normalizedValue);
   return <SelectPrimitive.Root data-slot="select" value={normalizedValue} {...props} />
 }
 

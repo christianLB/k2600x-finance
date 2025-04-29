@@ -191,6 +191,14 @@ export default function AdminPage() {
               loading={recordsLoading}
               error={recordsError || undefined}
               emptyMessage="No data found."
+              meta={{
+                onCellUpdate: async (row: any, key: string, value: any) => {
+                  if (!selectedCollection) return;
+                  // Only send the changed field
+                  const payload = { [key]: value };
+                  await updateRecord(row.documentId, payload);
+                },
+              }}
             />
             {/* Column Selector Dialog */}
             <ColumnSelectorDialog
