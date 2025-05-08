@@ -198,6 +198,30 @@ export default function AdminPage() {
                   const payload = { [key]: value };
                   await updateRecord(row.documentId, payload);
                 },
+                onEdit: async (rec: any) => {
+                  const documentId = rec.documentId;
+                  if (!documentId) {
+                    alert("This record is missing a documentId and cannot be edited.");
+                    return;
+                  }
+                  setLoading(true);
+                  setSelectedRecord(null);
+                  try {
+                    const res = await strapi.post({
+                      method: "GET",
+                      collection: apiCollection!,
+                      id: documentId,
+                      query: { populate: "*" },
+                    });
+                    setSelectedRecord({ ...res.data });
+                    setShowForm(true);
+                  } catch (err: unknown) {
+                    alert("Failed to fetch record for editing: " + (err && typeof err === "object" && "message" in err ? (err as any).message : String(err)));
+                  } finally {
+                    setLoading(false);
+                  }
+                },
+                onDelete: (rec: any) => handleDelete(rec),
               }}
             />
             {/* Column Selector Dialog */}
