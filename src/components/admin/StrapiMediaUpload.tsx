@@ -109,13 +109,13 @@ export function StrapiMediaUpload({
       <ul className="flex flex-wrap gap-2 mt-2">
         {value.map((media) => {
           let icon = <FileIcon className="w-8 h-8 text-gray-400" />;
-          if (media.mime.startsWith("image/")) icon = <FileImage className="w-8 h-8 text-blue-400" />;
+          if (media.mime?.startsWith("image/")) icon = <FileImage className="w-8 h-8 text-blue-400" />;
           else if (media.mime === "application/pdf") icon = <FileArchive className="w-8 h-8 text-red-500" />;
-          else if (media.mime.startsWith("text/")) icon = <FileText className="w-8 h-8 text-green-500" />;
+          else if (media.mime?.startsWith("text/")) icon = <FileText className="w-8 h-8 text-green-500" />;
           const fileUrl = getStrapiMediaUrl(media.url);
           return (
             <li key={media.id} className="relative border rounded p-2 flex items-center gap-2 min-w-[180px]">
-              {media.mime.startsWith("image/") ? (
+              {media.mime?.startsWith("image/") ? (
                 <Image src={fileUrl} alt={media.name} width={64} height={64} className="w-16 h-16 object-cover rounded" />
               ) : (
                 <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded">
