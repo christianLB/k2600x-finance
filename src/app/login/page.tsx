@@ -38,7 +38,7 @@ export default function LoginPage() {
       } else {
         router.push("/");
       }
-    } catch (err) {
+    } catch {
       setError("Network error");
     } finally {
       setLoading(false);

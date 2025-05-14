@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     }
     const user = await res.json();
     return NextResponse.json({ user });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ user: null }, { status: 500 });
   }
 }

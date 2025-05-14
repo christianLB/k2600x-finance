@@ -26,7 +26,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check auth status on mount
   useEffect(() => {
     checkAuth();
-    // eslint-disable-next-line
   }, []);
 
   const checkAuth = async () => {
