@@ -5,6 +5,7 @@ import { Providers } from "./Providers";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { Toaster } from "sonner";
 import { ThemeScript } from "./ThemeScript";
+import UserIndicator from "@/components/UserIndicator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,9 @@ export default function RootLayout({
       >
         <ThemeScript />
         <Providers>
+          <div style={{ padding: "1rem 0", textAlign: "right" }}>
+            <UserIndicator />
+          </div>
           {children}
           <ConfirmDialog />
           <Toaster position="top-right" richColors />
