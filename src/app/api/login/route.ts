@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Set your Strapi URL here
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
 export async function POST(req: NextRequest) {
   const { identifier, password } = await req.json();
