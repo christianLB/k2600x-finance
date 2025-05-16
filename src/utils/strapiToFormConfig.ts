@@ -1,7 +1,7 @@
 import { z, ZodTypeAny } from "zod";
 import type { FieldConfig } from "@/hooks/useFormFactory";
 import { Input } from "@k2600x/design-system";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@k2600x/design-system";
 import { Switch } from "@k2600x/design-system";
 import { Select } from "@/components/ui/select";
 import { StrapiRelationField } from "@/components/admin/StrapiRelationField";

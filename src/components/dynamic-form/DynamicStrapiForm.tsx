@@ -6,7 +6,7 @@ import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import { useFormFactory } from "@/hooks/useFormFactory";
 import { strapiToFormConfig } from "@/utils/strapiToFormConfig";
 import { FormProvider } from "react-hook-form";
-import { Button } from "@/components/ui/button";
+import { Button } from "@k2600x/design-system";
 //import { useRelationOptions } from "@/hooks/useRelationOptions";
 
 export interface DynamicStrapiFormProps {

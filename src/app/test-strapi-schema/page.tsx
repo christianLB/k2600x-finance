@@ -4,7 +4,7 @@ import useStrapiSchema from "@/hooks/useStrapiSchema";
 import { strapiToFormConfig } from "@/utils/strapiToFormConfig";
 import { useFormFactory } from "@/hooks/useFormFactory";
 import { FormProvider } from "react-hook-form";
-import { Button } from "@/components/ui/button";
+import { Button } from "@k2600x/design-system";
 import { z } from "zod";
 
 export default function TestStrapiSchemaPage() {

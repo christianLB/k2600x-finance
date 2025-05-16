@@ -6,7 +6,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+import { Button } from "@k2600x/design-system";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 
 export interface Tag {

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import { Button } from "@k2600x/design-system";
 import { useStrapiUpload, StrapiMedia } from "@/hooks/useStrapiUpload";
 import { File as FileIcon, FileImage, FileText } from "lucide-react";
 import { FileArchive } from "lucide-react";

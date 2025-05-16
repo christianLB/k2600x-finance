@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { DndProvider } from "@minoru/react-dnd-treeview";
 import { Tree, NodeModel } from "@minoru/react-dnd-treeview";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Button } from "@/components/ui/button";
+import { Button } from "@k2600x/design-system";
 import { PencilIcon, Trash2Icon, PlusIcon } from "lucide-react";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
