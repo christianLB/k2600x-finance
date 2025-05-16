@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import { Button } from "@k2600x/design-system";
+import { Button, Popover, PopoverTrigger, PopoverContent } from "@k2600x/design-system";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 
 export interface Tag {
@@ -50,10 +45,13 @@ const TagTreeItem: React.FC<{
   node: TagTreeNode;
   depth: number;
   onSelect: (tag: Tag) => void;
-}> = ({ node, depth, onSelect }) => (
+  currentTagId?: number;
+}> = ({ node, depth, onSelect, currentTagId }) => (
   <div>
     <div
-      style={{ paddingLeft: depth * 16, cursor: "pointer" }}
+      className={`pl-${depth * 4} cursor-pointer py-1 px-2 rounded ${
+        currentTagId === node.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-accent hover:text-accent-foreground'
+      }`}
       onClick={() => onSelect(node)}
     >
       {node.name}
@@ -64,6 +62,7 @@ const TagTreeItem: React.FC<{
         node={child}
         depth={depth + 1}
         onSelect={onSelect}
+        currentTagId={currentTagId}
       />
     ))}
   </div>
@@ -90,25 +89,24 @@ export const TagsSelector: React.FC<TagsSelectorProps> = ({
   const treeData = buildTagTree(tags);
 
   return (
-    <Popover onOpenChange={setIsOpen} open={isOpen}>
+    <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline">
-          {currentTag ? currentTag.name : placeholder}
+        <Button variant="outline" className="w-full justify-start">
+          {currentTag?.name || placeholder}
         </Button>
       </PopoverTrigger>
-      <PopoverContent style={{ width: 300, maxHeight: 400, overflowY: "auto" }}>
-        {isLoading ? (
-          <div>Cargando tags...</div>
-        ) : (
-          treeData.map((node) => (
+      <PopoverContent className="w-80 p-0" align="start">
+        <div className="max-h-[300px] overflow-y-auto p-2">
+          {treeData.map((node) => (
             <TagTreeItem
               key={node.id}
               node={node}
               depth={0}
               onSelect={onSelect}
+              currentTagId={currentTag?.id}
             />
-          ))
-        )}
+          ))}
+        </div>
       </PopoverContent>
     </Popover>
   );

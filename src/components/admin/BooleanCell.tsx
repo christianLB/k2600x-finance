@@ -7,18 +7,34 @@ interface BooleanCellProps {
   disabled?: boolean;
   row?: any;
   name?: string;
+  table?: any; // Add table prop to access meta
 }
 
-export const BooleanCell: React.FC<BooleanCellProps> = ({ value, onChange, disabled, row, name }) => {
-  // Permite lógica adicional como en TagsCell, RelationCell, etc.
+export const BooleanCell: React.FC<BooleanCellProps> = ({
+  value,
+  onChange,
+  disabled = false,
+  row,
+  name,
+  table
+}) => {
   const handleChange = (checked: boolean) => {
-    if (onChange) onChange(checked);
-    // Si se pasa row y name, permite lógica tipo updateRow(row, name, checked)
-    if (row && name && typeof row.onBooleanChange === 'function') {
-      row.onBooleanChange(name, checked);
+    // Call the onChange prop if provided
+    if (onChange) {
+      onChange(checked);
+    }
+    
+    // If we have row, name, and table with onCellUpdate in meta, call it
+    if (row && name && table?.options?.meta?.onCellUpdate) {
+      table.options.meta.onCellUpdate(row, name, checked);
     }
   };
+
   return (
-    <Switch checked={value} onCheckedChange={handleChange} disabled={disabled} />
+    <Switch 
+      checked={value} 
+      onCheckedChange={handleChange} 
+      disabled={disabled} 
+    />
   );
 };
