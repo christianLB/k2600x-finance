@@ -1,6 +1,6 @@
 import { z, ZodTypeAny } from "zod";
 import type { FieldConfig } from "@/hooks/useFormFactory";
-import { Input } from "@/components/ui/input";
+import { Input } from "@k2600x/design-system";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@k2600x/design-system";
 import { Select } from "@/components/ui/select";
