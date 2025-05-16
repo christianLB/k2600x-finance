@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Providers";
-import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import ConfirmDialog from "@k2600x/design-system/dist/components/ConfirmDialog";
 import { Toaster } from "sonner";
 import { ThemeScript } from "./ThemeScript";
 import UserIndicator from "@/components/UserIndicator";
