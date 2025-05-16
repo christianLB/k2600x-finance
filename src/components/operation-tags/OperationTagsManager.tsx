@@ -15,7 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@k2600x/design-system";
 import { Input } from "@k2600x/design-system";
 import { Tag } from "@/types/tag";
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@k2600x/design-system";
 import { Button } from "@k2600x/design-system";
 
 /**

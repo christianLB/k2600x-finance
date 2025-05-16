@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@k2600x/design-system";
 import { Button } from "@k2600x/design-system";
 import { useConfirmStore } from "@/hooks/useConfirm";
 import React from 'react';

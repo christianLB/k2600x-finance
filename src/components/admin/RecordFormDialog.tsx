@@ -1,5 +1,5 @@
 import React from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@k2600x/design-system";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
 import { Button } from "@k2600x/design-system";
 
