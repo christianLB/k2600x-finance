@@ -75,11 +75,10 @@ export const TagsSelector: React.FC<TagsSelectorProps> = ({
   placeholder = "Seleccionar tag",
   onSelect,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen] = useState(false);
 
   const {
     data: { data: tags = [] } = { data: [] },
-    isLoading,
   } = useStrapiCollection<Tag>(fetchCollection, isOpen ? {
     filters: { appliesTo: { $contains: appliesTo } },
     pagination: { page: 1, pageSize: 500 },

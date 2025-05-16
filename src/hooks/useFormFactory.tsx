@@ -226,7 +226,7 @@ export function useFormFactory(
 
       if (cfg.type === "multi-select" && cfg.props?.options) {
 
-        import("@/components/ui/multi-select").then(({ default: MultiSelect }) => {
+        import("@k2600x/design-system/dist/components/multi-select").then(({ default: MultiSelect }) => {
 
           // Ensure value is always an array
 

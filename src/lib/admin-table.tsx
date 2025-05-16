@@ -1,4 +1,4 @@
-import type { ColumnDef, CellContext, TableMeta } from "@tanstack/react-table";
+import type { ColumnDef, CellContext } from "@tanstack/react-table";
 
 declare module '@tanstack/table-core' {
   interface TableMeta<TData> {
