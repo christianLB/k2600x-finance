@@ -3,7 +3,7 @@ import type { FieldConfig } from "@/hooks/useFormFactory";
 import { Input } from "@k2600x/design-system";
 import { Textarea } from "@k2600x/design-system";
 import { Switch } from "@k2600x/design-system";
-import { Select } from "@/components/ui/select";
+import { Select } from "@k2600x/design-system";
 import { StrapiRelationField } from "@/components/admin/StrapiRelationField";
 import { StrapiMediaUpload } from "@/components/admin/StrapiMediaUpload";
 

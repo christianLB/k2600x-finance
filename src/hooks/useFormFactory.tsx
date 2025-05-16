@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import React from "react";
 
-import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectContent, SelectItem } from "@k2600x/design-system";
 
 import { StrapiMediaUpload } from "@/components/admin/StrapiMediaUpload";
 
