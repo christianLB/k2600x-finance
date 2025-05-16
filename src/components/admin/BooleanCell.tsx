@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch } from "../ui/switch";
+import { Switch } from "@k2600x/design-system";
 
 interface BooleanCellProps {
   value: boolean;
