@@ -1,7 +1,7 @@
 import YearlyReportTable from "@/components/operations/YearlyExpenseReportTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OperationTagsManager from "@/components/operation-tags/OperationTagsManager";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@k2600x/design-system";
 
 export default function FinancePage() {
   return (
