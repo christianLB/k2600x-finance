@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { Loader } from "@/components/ui/loader";
+import { Loader } from "@k2600x/design-system";
 import {
   Table,
   TableHeader,

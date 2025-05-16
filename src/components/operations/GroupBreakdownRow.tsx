@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 //import { useStrapiCollection } from "../../hooks/useStrapiCollection";
-import { Loader } from "@/components/ui/loader";
+import { Loader } from "@k2600x/design-system";
 import {
   Table,
   TableHeader,

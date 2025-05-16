@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/multi-select";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader } from "@/components/ui/loader";
+import { Loader } from "@k2600x/design-system";
 
 interface RelationOption {
   label: string;
