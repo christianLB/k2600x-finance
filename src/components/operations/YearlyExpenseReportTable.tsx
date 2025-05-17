@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import { Loader, Table } from "@k2600x/design-system";
 import { ColumnDef } from "@tanstack/react-table";
 import GroupBreakdownRow from "./GroupBreakdownRow";
