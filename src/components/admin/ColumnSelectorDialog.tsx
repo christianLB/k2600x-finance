@@ -65,7 +65,7 @@ export const ColumnSelectorDialog: React.FC<ColumnSelectorDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSave} loading={loading}>
+          <Button size="sm" onClick={handleSave} loading={loading}>
             Save
           </Button>
         </div>

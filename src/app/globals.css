@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@k2600x/design-system/dist/design-system.css";
 @import "../styles/theme.css";
 
 @plugin "tailwindcss-animate";

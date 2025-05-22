@@ -11,7 +11,7 @@ import {
   DialogTitle,
   Loader 
 } from "@k2600x/design-system";
-import MultiSelect from "@k2600x/design-system/dist/components/multi-select";
+import {MultiSelect} from "@k2600x/design-system";
 
 interface RelationOption {
   label: string;

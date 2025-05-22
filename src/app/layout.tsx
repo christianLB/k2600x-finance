@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Providers";
-import ConfirmDialog from "@k2600x/design-system/dist/components/ConfirmDialog";
+//import ConfirmDialog from "@k2600x/design-system/dist/components/ConfirmDialog";
 import { Toaster } from "sonner";
 import { ThemeScript } from "./ThemeScript";
-import UserIndicator from "@/components/UserIndicator";
+import { ClientHeader } from "@/components/layout/ClientHeader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,11 +36,9 @@ export default function RootLayout({
       >
         <ThemeScript />
         <Providers>
-          <div style={{ padding: "1rem 0", textAlign: "right" }}>
-            <UserIndicator />
-          </div>
+          <ClientHeader />
           {children}
-          <ConfirmDialog />
+          {/* <ConfirmDialog /> */}
           <Toaster position="top-right" richColors />
         </Providers>
       </body>

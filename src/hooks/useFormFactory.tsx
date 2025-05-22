@@ -224,55 +224,55 @@ export function useFormFactory(
 
       // --- MULTI-SELECT FIELDS ---
 
-      if (cfg.type === "multi-select" && cfg.props?.options) {
+      // if (cfg.type === "MultiSelect" && cfg.props?.options) {
 
-        import("@k2600x/design-system/dist/components/multi-select").then(({ default: MultiSelect }) => {
+      //   import("@k2600x/design-system/MultiSelect").then(({ default: MultiSelect }) => {
 
-          // Ensure value is always an array
+      //     // Ensure value is always an array
 
-          const value = Array.isArray(watch(cfg.name)) ? watch(cfg.name) : [];
+      //     const value = Array.isArray(watch(cfg.name)) ? watch(cfg.name) : [];
 
-          return (
+      //     return (
 
-            <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+      //       <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
 
-              <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
+      //         <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 
-                {cfg.label}
+      //           {cfg.label}
 
-                {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
+      //           {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
 
-              </label>
+      //         </label>
 
-              <MultiSelect
+      //         <MultiSelect
 
-                options={cfg.props?.options}
+      //           options={cfg.props?.options}
 
-                defaultValue={value}
+      //           defaultValue={value}
 
-                onChange={(e: any) => setValue(cfg.name, e)}
+      //           onChange={(e: any) => setValue(cfg.name, e)}
 
-              />
+      //         />
 
-              {cfg.description && (
+      //         {cfg.description && (
 
-                <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
+      //           <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
 
-              )}
+      //         )}
 
-              {errorMsg && (
+      //         {errorMsg && (
 
-                <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
+      //           <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
 
-              )}
+      //         )}
 
-            </div>
+      //       </div>
 
-          );
+      //     );
 
-        });
+      //   });
 
-      }
+      // }
 
  
 

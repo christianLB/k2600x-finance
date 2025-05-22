@@ -1,7 +1,6 @@
 import React from "react";
-import { Dialog, DialogContent } from "@k2600x/design-system";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button } from "@k2600x/design-system";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
-import { Button } from "@k2600x/design-system";
 
 /**
  * Dialog for creating or editing a record in the admin table.
@@ -35,18 +34,22 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent style={{ minWidth: 400 }}>
-        <h3 style={{ fontWeight: 600, marginBottom: 12 }}>{title}</h3>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
         <DynamicStrapiForm
           collection={collection}
           document={record}
           onSuccess={onSave}
           onError={() => {}}
         />
-        <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 16 }}>
-          <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
-        </div>
+        <DialogFooter>
+          <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 16 }}>
+            <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>
+              Cancel
+            </Button>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
