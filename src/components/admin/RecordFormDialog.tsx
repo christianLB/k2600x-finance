@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button } from "@k2600x/design-system";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
 
@@ -31,24 +31,39 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
   loading = false,
   title = "Edit Record",
 }) => {
+  // Create a ref to store the form submit function
+  const formRef = useRef<{ submitForm: () => void }>(null);
+
+  // Function to handle form submission from the footer button
+  const handleFooterSubmit = () => {
+    if (formRef.current) {
+      formRef.current.submitForm();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent style={{ minWidth: 400 }}>
+      <DialogContent className="min-w-[800px] w-[1200px] max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <DynamicStrapiForm
-          collection={collection}
-          document={record}
-          onSuccess={onSave}
-          onError={() => {}}
-        />
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 -mr-2">
+          <DynamicStrapiForm
+            collection={collection}
+            document={record}
+            onSuccess={onSave}
+            onError={() => {}}
+            ref={formRef}
+            hideSubmitButton={true} // Hide the form's own submit button
+          />
+        </div>
         <DialogFooter>
-          <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 16 }}>
-            <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>
-              Cancel
-            </Button>
-          </div>
+          <Button 
+            onClick={handleFooterSubmit} 
+            disabled={loading}
+          >
+            {record ? "Update" : "Create"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -33,13 +33,13 @@ export const AdminTable: React.FC<AdminTableProps> = ({
   meta,
 }) => {
   if (loading) {
-    return <div style={{ padding: 24, textAlign: "center" }}>Loading...</div>;
+    return <div className="p-6 text-center">Loading...</div>;
   }
   if (error) {
-    return <div style={{ padding: 24, color: "#d32f2f", textAlign: "center" }}>{error}</div>;
+    return <div className="p-6 text-center text-destructive">{error}</div>;
   }
   if (!data || data.length === 0) {
-    return <div style={{ padding: 24, textAlign: "center" }}>{emptyMessage}</div>;
+    return <div className="p-6 text-center text-muted-foreground">{emptyMessage}</div>;
   }
 
   return (

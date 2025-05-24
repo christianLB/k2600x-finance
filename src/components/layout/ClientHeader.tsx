@@ -3,9 +3,13 @@
 import UserIndicator from "@/components/UserIndicator";
 import { ThemeToggle } from "@k2600x/design-system";
 
-export function ClientHeader() {
+interface ClientHeaderProps {
+  className?: string;
+}
+
+export function ClientHeader({ className = "" }: ClientHeaderProps) {
   return (
-    <div style={{ padding: "1rem 0", textAlign: "right", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "1rem" }}>
+    <div className={`flex items-center justify-end gap-4 ${className}`}>
       <UserIndicator />
       <ThemeToggle />
     </div>

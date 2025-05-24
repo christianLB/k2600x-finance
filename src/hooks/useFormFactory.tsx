@@ -114,7 +114,7 @@ export function useFormFactory(
 
         return (
 
-          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, height: '100%' }}>
 
             <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 
@@ -172,7 +172,7 @@ export function useFormFactory(
 
         return (
 
-          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, height: '100%' }}>
 
             <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 
@@ -234,7 +234,7 @@ export function useFormFactory(
 
       //     return (
 
-      //       <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+      //       <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, height: '100%' }}>
 
       //         <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 
@@ -286,7 +286,7 @@ export function useFormFactory(
 
         return (
 
-          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, height: '100%' }}>
 
             <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 
@@ -341,7 +341,7 @@ export function useFormFactory(
 
         return (
 
-          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, height: '100%' }}>
 
             <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 
@@ -387,7 +387,7 @@ export function useFormFactory(
 
         return (
 
-          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, height: '100%' }}>
 
             <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 
@@ -435,7 +435,7 @@ export function useFormFactory(
 
       return (
 
-        <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 18 }}>
+        <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, height: '100%' }}>
 
           <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
 

@@ -1,19 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Providers";
 //import ConfirmDialog from "@k2600x/design-system/dist/components/ConfirmDialog";
 import { Toaster } from "sonner";
 import { ThemeScript } from "./ThemeScript";
-import { ClientHeader } from "@/components/layout/ClientHeader";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const interFont = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -27,16 +26,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Note: We remove the ClientHeader from here
+  // and will only use it in non-admin layouts
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${interFont.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
         <ThemeScript />
         <Providers>
-          <ClientHeader />
+          {/* ClientHeader removed from here to avoid duplication */}
           {children}
           {/* <ConfirmDialog /> */}
           <Toaster position="top-right" richColors />

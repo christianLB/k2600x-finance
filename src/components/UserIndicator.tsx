@@ -62,19 +62,19 @@ export default function UserIndicator() {
       </Button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-card border border-border z-50">
           <div className="py-1">
-            <div className="px-4 py-2">
-              <p className="text-sm font-medium text-gray-900">
+            <div className="px-4 py-3">
+              <p className="text-sm font-medium text-foreground">
                 {user.username || 'Usuario'}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {user.email}
               </p>
             </div>
-            <div className="border-t border-gray-100"></div>
+            <div className="border-t border-border"></div>
             <button
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
+              className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-muted flex items-center"
               onClick={() => {
                 console.log('Cerrando sesión...');
                 logout();

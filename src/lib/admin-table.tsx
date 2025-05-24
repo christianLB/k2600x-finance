@@ -6,11 +6,22 @@ declare module '@tanstack/table-core' {
   }
 }
 import React from "react";
-import { Button } from "@k2600x/design-system";
+import { Button, Tooltip } from "@k2600x/design-system";
 import { TagsCell } from "@/components/admin/TagsCell";
 import { BooleanCell } from "@/components/admin/BooleanCell";
 import type { Tag } from "@/components/operation-tags/TagsSelector";
-import Image from "next/image";
+import {
+  FileText,
+  FileImage,
+  FileVideo,
+  FileArchive,
+  FileSpreadsheet,
+  FileType,
+  Presentation,
+  File as FileDefault,
+  Pencil,
+  Trash2
+} from "lucide-react";
 
 export interface AdminTableMeta {
   onCellUpdate?: (row: any, key: string, value: any) => void;
@@ -34,15 +45,23 @@ export function getTableColumns(
   onEdit: (row: any) => void,
   onDelete: (row: any) => void,
   visibleCols: string[] | null,
-  onTagsUpdate?: (rowId: any, key: string, value: any) => void
+  onTagsUpdate?: (rowId: any, key: string, value: any) => void,
+  showIdColumn: boolean = false // Default to hiding the ID column
 ): ColumnDef<any, any>[] {
-  const columns: ColumnDef<any, any>[] = [
-    {
+  // Initialize empty columns array
+  const columns: ColumnDef<any, any>[] = [];
+  
+  // Common header style for all columns
+  const headerClass = "text-left font-medium";
+  
+  // Only add ID column if showIdColumn is true
+  if (showIdColumn) {
+    columns.push({
       accessorKey: "id",
-      header: "ID",
+      header: () => <div className="text-left font-medium">ID</div>,
       cell: (info: CellContext<any, any>) => info.getValue(),
-    },
-  ];
+    });
+  }
   if (schema && schema.schema && schema.schema.attributes && visibleCols) {
     visibleCols.forEach((key) => {
       const attr = schema.schema.attributes[key];
@@ -121,6 +140,55 @@ export function getTableColumns(
         });
         return;
       }
+      // Helper function to get the appropriate file icon based on extension
+      const getFileIcon = (fileName: string, size = 24) => {
+        // Extract file extension
+        const extension = fileName.split('.').pop()?.toLowerCase() || '';
+        
+        // Document files
+        if (['doc', 'docx', 'txt', 'rtf'].includes(extension)) {
+          return <FileText size={size} />;
+        }
+        
+        // PDF files
+        if (extension === 'pdf') {
+          return <FileText size={size} />;
+        }
+        
+        // Spreadsheet files
+        if (['xls', 'xlsx', 'csv'].includes(extension)) {
+          return <FileSpreadsheet size={size} />;
+        }
+        
+        // Presentation files
+        if (['ppt', 'pptx'].includes(extension)) {
+          return <Presentation size={size} />;
+        }
+        
+        // Image files
+        if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(extension)) {
+          return <FileImage size={size} />;
+        }
+        
+        // Video files
+        if (['mp4', 'mov', 'avi', 'webm'].includes(extension)) {
+          return <FileVideo size={size} />;
+        }
+        
+        // Archive files
+        if (['zip', 'rar', 'tar', 'gz', '7z'].includes(extension)) {
+          return <FileArchive size={size} />;
+        }
+        
+        // Code files
+        if (['html', 'css', 'js', 'jsx', 'ts', 'tsx', 'json', 'xml'].includes(extension)) {
+          return <FileType size={size} />;
+        }
+        
+        // Default file icon for any other file type
+        return <FileDefault size={size} />;
+      };
+      
       // Media cell (view only)
       if (attr.type === "media") {
         columns.push({
@@ -129,32 +197,31 @@ export function getTableColumns(
           cell: (info: CellContext<any, any>) => {
             const value = info.getValue();
             if (!value) return <span style={{ color: '#888' }}>-</span>;
-            // If many, show thumbnails
+            // If many, show file icons with tooltips
             if (Array.isArray(value)) {
               return (
                 <div style={{ display: "flex", gap: 4 }}>
-                  {value.map((media: any, idx: number) => (
-                    <Image
-                      key={media.id || idx}
-                      src={media.url || media.formats?.thumbnail?.url || ""}
-                      alt={media.name || "media"}
-                      width={40}
-                      height={40}
-                      style={{ objectFit: "cover", borderRadius: 4 }}
-                    />
-                  ))}
+                  {value.map((media: any, idx: number) => {
+                    const fileName = media.name || "Unknown file";
+                    return (
+                      <Tooltip key={media.id || idx} content={fileName}>
+                        <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {getFileIcon(fileName, 24)}
+                        </div>
+                      </Tooltip>
+                    );
+                  })}
                 </div>
               );
             }
-            // Single image
+            // Single file
+            const fileName = value.name || "Unknown file";
             return (
-              <Image
-                src={value.url || value.formats?.thumbnail?.url || ""}
-                alt={value.name || "media"}
-                width={40}
-                height={40}
-                style={{ objectFit: "cover", borderRadius: 4 }}
-              />
+              <Tooltip content={fileName}>
+                <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getFileIcon(fileName, 24)}
+                </div>
+              </Tooltip>
             );
           },
         });
@@ -177,7 +244,8 @@ export function getTableColumns(
       }
       // Default cell
       columns.push({
-        header: key,
+        id: key, // Add id to fix TypeScript error
+        header: () => <div className="text-left font-medium">{key}</div>,
         accessorFn: (row: any) => row[key],
         cell: (info: CellContext<any, any>) => {
           const value = info.getValue();
@@ -186,27 +254,34 @@ export function getTableColumns(
       });
     });
   }
+  // Add actions column at the end (always visible)
   columns.push({
     id: "actions",
-    header: "Actions",
+    header: () => <div className="text-left font-medium">Actions</div>,
     cell: (info: CellContext<any, any>) => (
-      <div style={{ display: "flex", gap: 8 }}>
-        <Button
-          variant="outline"
-          size="sm"
-          // @ts-expect-error: meta type is not known to TS in this version
-          onClick={() => info.table.options.meta?.onEdit?.(info.row.original)}
-        >
-          Edit
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          // @ts-expect-error: meta type is not known to TS in this version
-          onClick={() => info.table.options.meta?.onDelete?.(info.row.original)}
-        >
-          Delete
-        </Button>
+      <div className="flex gap-2">
+        <Tooltip content="Edit">
+          <Button
+            variant="ghost"
+            size="icon"
+            // Direct call to the onEdit function passed as argument
+            onClick={() => onEdit(info.row.original)}
+            className="h-9 w-9 p-0"
+          >
+            <Pencil size={18} />
+          </Button>
+        </Tooltip>
+        <Tooltip content="Delete">
+          <Button
+            variant="ghost"
+            size="icon"
+            // Direct call to the onDelete function passed as argument
+            onClick={() => onDelete(info.row.original)}
+            className="h-9 w-9 p-0 text-destructive hover:text-destructive/80"
+          >
+            <Trash2 size={18} />
+          </Button>
+        </Tooltip>
       </div>
     ),
   });

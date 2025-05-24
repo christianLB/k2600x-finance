@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import strapi from "@/lib/strapi";
-import { Button } from "@k2600x/design-system";
+import { Button, Tooltip } from "@k2600x/design-system";
+import { PlusCircle, Settings } from "lucide-react";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { ColumnSelectorDialog } from "@/components/admin/ColumnSelectorDialog";
@@ -12,6 +13,8 @@ import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 import { useAdminRecords } from "@/hooks/useAdminRecords";
 import { getTableColumns } from "@/lib/admin-table";
 import { getSchemaAttributeKeys, getSchemaDisplayName } from "@/lib/schema-utils";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { Section } from "@/components/layout/Section";
 
 export default function AdminPage() {
   const { schemas } = useStrapiSchemas();
@@ -127,37 +130,54 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <AdminSidebar
-        collections={sidebarCollections}
-        selectedCollection={selectedCollection}
-        onSelect={setSelectedCollection}
-      />
-      <div style={{ flex: 1, padding: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, marginRight: 16 }}>
-            {selectedCollection ? getSchemaDisplayName(schemas[selectedCollection], selectedCollection) : "Select a Collection"}
-          </h2>
-          {selectedCollection && (
-            <Button style={{ marginLeft: 16 }} onClick={() => { setSelectedRecord(null); setShowForm(true); }}>
-              New
+    <AdminLayout
+      sidebar={
+        <AdminSidebar
+          collections={sidebarCollections}
+          selectedCollection={selectedCollection}
+          onSelect={setSelectedCollection}
+        />
+      }
+    >
+      <div className="flex justify-between items-center mb-6 w-full">
+        <h1 className="text-2xl font-bold text-left">
+          {selectedCollection ? getSchemaDisplayName(schemas[selectedCollection], selectedCollection) : "Select a Collection"}
+        </h1>
+        {selectedCollection && (
+          <Tooltip content="New Record">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => { setSelectedRecord(null); setShowForm(true); }}
+            >
+              <PlusCircle size={22} />
             </Button>
-          )}
-        </div>
-        {tableError && <div style={{ color: "red" }}>{tableError}</div>}
-        {selectedCollection && !showForm && (
-          <>
-            <div style={{ marginBottom: 16 }}>
-              <Button variant="outline" size="sm" onClick={() => setColumnSelectorOpen(true)}>
-                Select Columns
+          </Tooltip>
+        )}
+      </div>
+      
+      {tableError && <div className="p-3 mb-4 text-destructive bg-destructive/10 rounded-md">{tableError}</div>}
+      
+      {selectedCollection && !showForm && (
+        <Section>
+          <div className="flex items-center mb-4">
+            <Tooltip content="Select Columns">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setColumnSelectorOpen(true)}
+              >
+                <Settings size={18} />
               </Button>
-              {visibleColumns && (
-                <span style={{ marginLeft: 12, fontSize: 12, color: '#888' }}>
-                  Visible: {visibleColumns.join(", ")}
-                </span>
-              )}
-            </div>
-            <AdminTable
+            </Tooltip>
+            {visibleColumns && (
+              <span className="ml-3 text-xs text-muted-foreground">
+                Visible: {visibleColumns.join(", ")}
+              </span>
+            )}
+          </div>
+          
+          <AdminTable
               data={records}
               columns={getTableColumns(
                 schemas[selectedCollection],
@@ -186,7 +206,8 @@ export default function AdminPage() {
                 },
                 (rec: any) => handleDelete(rec),
                 visibleColumns,
-                handleTagsUpdate
+                handleTagsUpdate,
+                false // Hide the ID column
               )}
               loading={recordsLoading}
               error={recordsError || undefined}
@@ -197,55 +218,32 @@ export default function AdminPage() {
                   // Only send the changed field
                   const payload = { [key]: value };
                   await updateRecord(row.documentId, payload);
-                },
-                onEdit: async (rec: any) => {
-                  const documentId = rec.documentId;
-                  if (!documentId) {
-                    alert("This record is missing a documentId and cannot be edited.");
-                    return;
-                  }
-                  setLoading(true);
-                  setSelectedRecord(null);
-                  try {
-                    const res = await strapi.post({
-                      method: "GET",
-                      collection: apiCollection!,
-                      id: documentId,
-                      query: { populate: "*" },
-                    });
-                    setSelectedRecord({ ...res.data });
-                    setShowForm(true);
-                  } catch (err: unknown) {
-                    alert("Failed to fetch record for editing: " + (err && typeof err === "object" && "message" in err ? (err as any).message : String(err)));
-                  } finally {
-                    setLoading(false);
-                  }
-                },
-                onDelete: (rec: any) => handleDelete(rec),
+                }
               }}
             />
+            
             {/* Column Selector Dialog */}
             <ColumnSelectorDialog
-              open={columnSelectorOpen}
-              columns={getSchemaAttributeKeys(schemas[selectedCollection])}
-              selected={visibleColumns || []}
-              onChange={setVisibleColumns}
-              onClose={() => setColumnSelectorOpen(false)}
-              loading={columnsLoading}
-            />
-          </>
-        )}
-        {/* Modal for Create/Edit Form */}
-        <RecordFormDialog
-          open={showForm}
-          collection={selectedCollection!}
-          record={selectedRecord}
-          onSave={handleFormSubmit}
-          onClose={() => setShowForm(false)}
-          loading={loading}
-          title={selectedRecord ? "Edit Record" : "Create Record"}
+          open={columnSelectorOpen}
+          columns={getSchemaAttributeKeys(schemas[selectedCollection])}
+          selected={visibleColumns || []}
+          onChange={setVisibleColumns}
+          onClose={() => setColumnSelectorOpen(false)}
+          loading={columnsLoading}
         />
-      </div>
-    </div>
+      </Section>
+    )}
+
+    {/* Modal for Create/Edit Form */}
+    <RecordFormDialog
+      open={showForm}
+      collection={selectedCollection!}
+      record={selectedRecord}
+      onSave={handleFormSubmit}
+      onClose={() => setShowForm(false)}
+      loading={loading}
+      title={selectedRecord ? "Edit Record" : "Create Record"}
+    />
+  </AdminLayout>
   );
 }

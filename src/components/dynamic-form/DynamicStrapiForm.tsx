@@ -14,14 +14,22 @@ export interface DynamicStrapiFormProps {
   document?: any; // If provided, form is in edit mode; otherwise, create mode
   onSuccess?: (values: any) => void;
   onError?: (err: any) => void;
+  hideSubmitButton?: boolean; // Whether to hide the form's own submit button
 }
 
-export function DynamicStrapiForm({
-  collection,
-  document,
-  onSuccess,
-  onError,
-}: DynamicStrapiFormProps) {
+export const DynamicStrapiForm = React.forwardRef<
+  { submitForm: () => void },
+  DynamicStrapiFormProps
+>((
+  {
+    collection,
+    document,
+    onSuccess,
+    onError,
+    hideSubmitButton = false,
+  }, 
+  ref
+) => {
   // 1. Get schema from context
   const { schemas, loading: schemasLoading, error: schemasError } = useStrapiSchemas();
   const schema = schemas[collection];
@@ -67,20 +75,46 @@ export function DynamicStrapiForm({
     }
   };
 
+  // Expose submitForm method via ref
+  React.useImperativeHandle(ref, () => ({
+    submitForm: () => {
+      formFactory.form.handleSubmit(handleSubmit)();
+    },
+  }));
+
+  // Group fields for multi-column layout
+  const renderMultiColumnFields = () => {
+    const fields = formFactory.renderFields();
+    
+    // Use grid layout for 3 columns
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+        {fields}
+      </div>
+    );
+  };
+
   if (!fieldsConfig.length) {
-    return <div style={{ color: "red" }}>Error: No valid fields for {collection}</div>;
+    return <div className="text-destructive">Error: No valid fields for {collection}</div>;
   }
 
   return (
     <FormProvider {...formFactory.form}>
-      <form onSubmit={formFactory.form.handleSubmit(handleSubmit)} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        {formFactory.renderFields()}
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button type="submit">{document ? "Update" : "Create"}</Button>
-        </div>
+      <form 
+        onSubmit={formFactory.form.handleSubmit(handleSubmit)} 
+        className="flex flex-col gap-6 py-2"
+      >
+        {renderMultiColumnFields()}
+        {!hideSubmitButton && (
+          <div className="flex justify-end mt-4">
+            <Button type="submit" size="sm">{document ? "Update" : "Create"}</Button>
+          </div>
+        )}
       </form>
     </FormProvider>
   );
-}
+});
+
+DynamicStrapiForm.displayName = 'DynamicStrapiForm';
 
 export default DynamicStrapiForm;

@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
+import designSystemPreset from '@k2600x/design-system/tailwind.preset.js';
+
 module.exports = {
+  presets: [designSystemPreset],
   content: [
     './src/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
