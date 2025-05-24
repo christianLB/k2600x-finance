@@ -7,8 +7,8 @@ import {
   FileArchive,
   FileSpreadsheet,
   FileType,
-  FilePresentationIcon,
-  FilePdf
+  Presentation,
+  FileIcon as FilePdfIcon // Use a different icon for PDF
 } from 'lucide-react';
 
 type FileIconProps = {
@@ -32,7 +32,7 @@ export const FileIcon: React.FC<FileIconProps> = ({ fileName, size = 24 }) => {
     
     // PDF files
     if (extension === 'pdf') {
-      return <FilePdf size={size} />;
+      return <FilePdfIcon size={size} />;
     }
     
     // Spreadsheet files
@@ -42,7 +42,7 @@ export const FileIcon: React.FC<FileIconProps> = ({ fileName, size = 24 }) => {
     
     // Presentation files
     if (['ppt', 'pptx'].includes(extension)) {
-      return <FilePresentationIcon size={size} />;
+      return <Presentation size={size} />;
     }
     
     // Image files

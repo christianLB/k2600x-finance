@@ -55,20 +55,8 @@ export const DynamicStrapiForm = React.forwardRef<
   );
 
   // Defensive: handle loading/errors from context
-  if (schemasLoading) {
-    return <div>Loading schema...</div>;
-  }
-  if (schemasError) {
-    return <div style={{ color: "red" }}>Error loading schemas: {schemasError}</div>;
-  }
-  if (!schema || !schema.schema || !schema.schema.attributes || Object.keys(schema.schema.attributes).length === 0) {
-    return <div style={{ color: "red" }}>Error: schema not found or empty for {collection}</div>;
-  }
-
-  // Submission handler (create or update logic should be handled outside this form)
   const handleSubmit = async (values: any) => {
     try {
-      // Just call onSuccess/onError, actual mutation is handled by parent
       onSuccess?.(values);
     } catch (err: any) {
       onError?.(err);
@@ -82,11 +70,13 @@ export const DynamicStrapiForm = React.forwardRef<
     },
   }));
 
-  // Group fields for multi-column layout
-  const renderMultiColumnFields = () => {
+  // Render fields in a 3-column grid
+  const renderFields = () => {
+    if (!fieldsConfig.length) {
+      return <div className="text-destructive">Error: No valid fields for {collection}</div>;
+    }
+
     const fields = formFactory.renderFields();
-    
-    // Use grid layout for 3 columns
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
         {fields}
@@ -94,8 +84,14 @@ export const DynamicStrapiForm = React.forwardRef<
     );
   };
 
-  if (!fieldsConfig.length) {
-    return <div className="text-destructive">Error: No valid fields for {collection}</div>;
+  if (schemasLoading) {
+    return <div>Loading schema...</div>;
+  }
+  if (schemasError) {
+    return <div style={{ color: "red" }}>Error loading schemas: {schemasError}</div>;
+  }
+  if (!schema || !schema.schema || !schema.schema.attributes || Object.keys(schema.schema.attributes).length === 0) {
+    return <div style={{ color: "red" }}>Error: schema not found or empty for {collection}</div>;
   }
 
   return (
@@ -104,7 +100,7 @@ export const DynamicStrapiForm = React.forwardRef<
         onSubmit={formFactory.form.handleSubmit(handleSubmit)} 
         className="flex flex-col gap-6 py-2"
       >
-        {renderMultiColumnFields()}
+        {renderFields()}
         {!hideSubmitButton && (
           <div className="flex justify-end mt-4">
             <Button type="submit" size="sm">{document ? "Update" : "Create"}</Button>

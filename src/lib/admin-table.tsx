@@ -51,8 +51,7 @@ export function getTableColumns(
   // Initialize empty columns array
   const columns: ColumnDef<any, any>[] = [];
   
-  // Common header style for all columns
-  const headerClass = "text-left font-medium";
+  // No unused variables
   
   // Only add ID column if showIdColumn is true
   if (showIdColumn) {
