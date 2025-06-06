@@ -48,9 +48,9 @@ export function ConfirmDialog() {
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {extraContent && (
+        {React.isValidElement(extraContent) && (
           <div className="mb-2">
-            {React.cloneElement(extraContent as React.ReactElement, {
+            {React.cloneElement(extraContent as React.ReactElement<any>, {
               onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
                 setExtraState((e.target as HTMLInputElement).checked ?? undefined),
             })}
