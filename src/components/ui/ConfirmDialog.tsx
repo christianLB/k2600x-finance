@@ -50,10 +50,17 @@ export function ConfirmDialog() {
         </DialogHeader>
         {extraContent && (
           <div className="mb-2">
-            {React.cloneElement(extraContent as React.ReactElement, {
-              onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                setExtraState((e.target as HTMLInputElement).checked ?? undefined),
-            })}
+            {React.cloneElement(
+              extraContent as React.ReactElement<any>,
+              {
+                onChange: (
+                  e: React.ChangeEvent<HTMLInputElement>
+                ) =>
+                  setExtraState(
+                    (e.target as HTMLInputElement).checked ?? undefined
+                  ),
+              } as React.HTMLAttributes<HTMLInputElement>
+            )}
           </div>
         )}
         <DialogFooter className="flex justify-end space-x-2">
