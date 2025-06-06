@@ -73,14 +73,16 @@ export default function AdminPage() {
     if (!selectedCollection) return;
     setLoading(true);
     try {
-      let payload = values;
+      let payload = normalizeRelationsForUpdate(values, schemas[selectedCollection]);
+      // Remove documentId/id fields so they are not sent in the payload
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { documentId: _docId, id: _id, ...rest } = payload;
+      payload = rest;
       if (selectedRecord) {
-        // Update: use documentId for PUT, normalize relations
-        payload = normalizeRelationsForUpdate(values, schemas[selectedCollection]);
+        // Update: use documentId for PUT
         await updateRecord(selectedRecord.documentId, payload);
       } else {
-        // Create: normalize relations
-        payload = normalizeRelationsForUpdate(values, schemas[selectedCollection]);
+        // Create
         await createRecord(payload);
       }
       setShowForm(false);
