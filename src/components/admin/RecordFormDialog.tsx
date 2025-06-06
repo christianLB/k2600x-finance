@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button } from "@k2600x/design-system";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, Label } from "@k2600x/design-system";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
 
 /**
@@ -57,11 +57,13 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
             hideSubmitButton={true} // Hide the form's own submit button
           />
         </div>
-        <DialogFooter>
-          <Button 
-            onClick={handleFooterSubmit} 
-            disabled={loading}
-          >
+        <DialogFooter className="flex flex-col gap-2">
+          {record?.documentId && (
+            <Label disabled className="opacity-70 text-sm">
+              {record.documentId}
+            </Label>
+          )}
+          <Button onClick={handleFooterSubmit} disabled={loading}>
             {record ? "Update" : "Create"}
           </Button>
         </DialogFooter>

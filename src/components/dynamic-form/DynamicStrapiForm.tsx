@@ -36,15 +36,33 @@ export const DynamicStrapiForm = React.forwardRef<
 
   // Move all hooks to the top level, before any early returns
   //const relationOptionsMap = useRelationOptions([], schemas);
-  const { schema: zodSchema, defaultValues, fieldsConfig } = React.useMemo(
-    () => strapiToFormConfig(schema),
-    [schema]
+  const {
+    schema: baseSchema,
+    defaultValues: baseDefaults,
+    fieldsConfig: baseFields,
+  } = React.useMemo(() => strapiToFormConfig(schema), [schema]);
+
+  // Remove documentId from form fields and validation schema
+  const zodSchema = React.useMemo(
+    () => (baseSchema && "omit" in baseSchema ? baseSchema.omit({ documentId: true }) : baseSchema),
+    [baseSchema]
   );
+  const fieldsConfig = React.useMemo(
+    () => baseFields.filter((f) => f.name !== "documentId"),
+    [baseFields]
+  );
+  const defaultValues = React.useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { documentId: _docId, ...rest } = baseDefaults || {};
+    return rest;
+  }, [baseDefaults]);
 
   // PATCH: If document is present (edit mode), override defaultValues with document
   const mergedDefaultValues = React.useMemo(() => {
     if (!document) return defaultValues;
-    return { ...defaultValues, ...document };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { documentId: _docId, ...restDoc } = document;
+    return { ...defaultValues, ...restDoc };
   }, [defaultValues, document]);
 
   const formFactory = useFormFactory(
