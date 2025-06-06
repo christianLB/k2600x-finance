@@ -40,7 +40,6 @@ export function ConfirmDialog() {
     if (onCancel) onCancel();
     hide();
   };
-
   return (
     <Dialog open={open} onOpenChange={hide}>
       <DialogContent>
@@ -48,19 +47,13 @@ export function ConfirmDialog() {
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {extraContent && (
+
+        {React.isValidElement(extraContent) && (
           <div className="mb-2">
-            {React.cloneElement(
-              extraContent as React.ReactElement<any>,
-              {
-                onChange: (
-                  e: React.ChangeEvent<HTMLInputElement>
-                ) =>
-                  setExtraState(
-                    (e.target as HTMLInputElement).checked ?? undefined
-                  ),
-              } as React.HTMLAttributes<HTMLInputElement>
-            )}
+            {React.cloneElement(extraContent as React.ReactElement<any>, {
+              onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                setExtraState((e.target as HTMLInputElement).checked ?? undefined),
+            })}
           </div>
         )}
         <DialogFooter className="flex justify-end space-x-2">
