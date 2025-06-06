@@ -44,7 +44,10 @@ export const DynamicStrapiForm = React.forwardRef<
 
   // Remove documentId from form fields and validation schema
   const zodSchema = React.useMemo(
-    () => (baseSchema && "omit" in baseSchema ? baseSchema.omit({ documentId: true }) : baseSchema),
+    () =>
+      baseSchema && (baseSchema as any).omit
+        ? (baseSchema as any).omit({ documentId: true })
+        : baseSchema,
     [baseSchema]
   );
   const fieldsConfig = React.useMemo(
@@ -53,7 +56,7 @@ export const DynamicStrapiForm = React.forwardRef<
   );
   const defaultValues = React.useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { documentId: _docId, ...rest } = baseDefaults || {};
+    const { documentId: _docId, ...rest } = (baseDefaults || {}) as any;
     return rest;
   }, [baseDefaults]);
 
