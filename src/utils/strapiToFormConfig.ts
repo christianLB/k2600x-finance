@@ -200,8 +200,13 @@ export function strapiToFormConfig(strapiSchema: any) {
     if (!zodField) {
       zodField = z.any();
     }
+    // Ensure optionality matches the Strapi schema
+    if (attr.required !== true) {
+      // Calling optional multiple times is safe
+      zodField = zodField.optional();
+    }
     zodShape[name] = zodField;
-    defaultValues[name] = attr.default ?? '';
+    defaultValues[name] = attr.default ?? (attr.required ? '' : undefined);
 
     fieldsConfig.push({
       name,
