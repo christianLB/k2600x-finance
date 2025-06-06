@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import {
   Select,
   SelectTrigger,
@@ -46,9 +47,15 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const { schemas } = useStrapiSchemas();
 
-  // Extract real collection name (last part after dot)
-  const collection = target.split(".").pop() || target;
+  // Resolve collection name using pluralName from schema when available
+  const collection = React.useMemo(() => {
+    if (schemas && schemas[target]?.schema?.pluralName) {
+      return schemas[target].schema.pluralName as string;
+    }
+    return target.split(".").pop() || target;
+  }, [target, schemas]);
 
   // Fetch related collection only when dialog opens
   useEffect(() => {
