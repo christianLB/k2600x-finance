@@ -18,7 +18,7 @@ export interface DynamicStrapiFormProps {
 }
 
 export const DynamicStrapiForm = React.forwardRef<
-  { submitForm: () => void },
+  { submitForm: () => void; isDirty: () => boolean },
   DynamicStrapiFormProps
 >((
   {
@@ -89,6 +89,7 @@ export const DynamicStrapiForm = React.forwardRef<
     submitForm: () => {
       formFactory.form.handleSubmit(handleSubmit)();
     },
+    isDirty: () => formFactory.form.formState.isDirty,
   }));
 
   // Render fields in a 3-column grid
