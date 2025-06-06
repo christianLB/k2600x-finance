@@ -71,7 +71,11 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
         const json = await res.json();
         const items = json.data || [];
         const opts = items.map((item: any) => ({
-          label: item.attributes?.[displayField] || item.attributes?.name || item.id,
+          label:
+            item.attributes?.[displayField] ||
+            item.attributes?.displayName ||
+            item.attributes?.name ||
+            item.id,
           value: item.id,
           link: `/admin/${collection}/${item.id}`,
         }));
