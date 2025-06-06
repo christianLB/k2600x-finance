@@ -1,20 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Providers";
 import { ConfirmDialog } from "@/components/ui";
 import { Toaster } from "sonner";
 import { ThemeScript } from "./ThemeScript";
 
-const interFont = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Finance dashboard",
@@ -31,10 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body
-        className={`${interFont.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground`}
-        suppressHydrationWarning
-      >
+      <body className="antialiased bg-background text-foreground" suppressHydrationWarning>
         <ThemeScript />
         <Providers>
           {/* ClientHeader removed from here to avoid duplication */}
