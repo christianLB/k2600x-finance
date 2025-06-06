@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "@k2600x/design-system";
 
 /**
  * Sidebar navigation for admin collections.
@@ -24,17 +25,18 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <h2 className="text-lg font-semibold mb-4">Collections</h2>
       <nav className="flex flex-col space-y-1">
         {collections.map((col) => (
-          <button
+          <Button
             key={col.key}
-            className={`px-3 py-2 rounded-md text-left ${
-              col.key === selectedCollection 
-                ? "bg-primary/10 font-medium text-primary" 
+            variant="ghost"
+            className={`justify-start px-3 py-2 text-left ${
+              col.key === selectedCollection
+                ? "bg-primary/10 font-medium text-primary"
                 : "hover:bg-muted text-foreground"
             }`}
             onClick={() => onSelect(col.key)}
           >
             {col.label}
-          </button>
+          </Button>
         ))}
       </nav>
     </aside>

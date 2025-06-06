@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { 
-  Select, 
-  SelectTrigger, 
-  SelectContent, 
-  SelectItem, 
-  Dialog, 
-  DialogTrigger, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
-  Loader 
+  Loader,
+  Button,
+  MultiSelect
 } from "@k2600x/design-system";
-import {MultiSelect} from "@k2600x/design-system";
 
 interface RelationOption {
   label: string;
@@ -99,7 +100,12 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button type="button" disabled={disabled} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="p-0 h-auto text-left"
+          disabled={disabled}
+        >
           {loading ? (
             <span><Loader /> Cargando...</span>
           ) : (
@@ -121,7 +127,7 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
               )
             )
           )}
-        </button>
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

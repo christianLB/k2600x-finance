@@ -73,8 +73,9 @@ export default function UserIndicator() {
               </p>
             </div>
             <div className="border-t border-border"></div>
-            <button
-              className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-muted flex items-center"
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-destructive"
               onClick={() => {
                 console.log('Cerrando sesión...');
                 logout();
@@ -84,7 +85,7 @@ export default function UserIndicator() {
               <LogOut className="mr-2 h-4 w-4" />
               <span>Cerrar sesión</span>
               {loading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-            </button>
+            </Button>
           </div>
         </div>
       )}
