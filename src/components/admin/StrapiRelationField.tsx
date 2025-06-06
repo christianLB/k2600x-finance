@@ -5,16 +5,10 @@ import {
   SelectTrigger,
   SelectContent,
   SelectItem,
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   Loader,
-  Button,
   MultiSelect,
 } from "@k2600x/design-system";
-import { extractIds, extractLabels } from "@/utils/relationHelpers";
+import { extractIds } from "@/utils/relationHelpers";
 
 interface RelationOption {
   label: string;
@@ -47,7 +41,6 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
   const [options, setOptions] = useState<RelationOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
   const { schemas } = useStrapiSchemas();
 
   // Resolve collection name using pluralName from schema when available
@@ -58,9 +51,8 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
     return target.split(".").pop() || target;
   }, [target, schemas]);
 
-  // Fetch related collection only when dialog opens
+  // Fetch related collection when component mounts or deps change
   useEffect(() => {
-    if (!open) return;
     let ignore = false;
     async function fetchOptions() {
       setLoading(true);
@@ -95,11 +87,10 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
     return () => {
       ignore = true;
     };
-  }, [open, collection, apiUrl, displayField]);
+  }, [collection, apiUrl, displayField]);
 
-  // Normalize incoming value to id array and extract fallback labels
+  // Normalize incoming value to an array of ids
   const normalizedArray = extractIds(value).map((v) => String(v));
-  const fallbackLabels = extractLabels(value, displayField);
 
   const selectedOptions = isMulti
     ? options.filter((opt) => normalizedArray.includes(String(opt.value)))
@@ -124,104 +115,46 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          className="p-0 h-auto text-left"
+    <div>
+      {loading ? (
+        <div>
+          <Loader /> Cargando...
+        </div>
+      ) : isMulti ? (
+        <MultiSelect
+          options={multiSelectOptions}
+          defaultValue={multiSelectDefaultValue}
+          onChange={onChange}
+          placeholder={placeholder}
+          className={disabled ? "opacity-60" : undefined}
+        />
+      ) : (
+        <Select
+          value={selectValue}
+          onValueChange={(val) => {
+            const parsed =
+              options.length > 0 && typeof options[0].value === "number"
+                ? Number(val)
+                : val;
+            onChange(parsed);
+          }}
           disabled={disabled}
         >
-          {loading ? (
-            <span>
-              <Loader /> Cargando...
-            </span>
-          ) : isMulti ? (
-            !selectedOptions ||
-            (Array.isArray(selectedOptions) && selectedOptions.length === 0) ? (
-              fallbackLabels.length > 0 ? (
-                fallbackLabels.map((lbl, idx) => (
-                  <span
-                    key={idx}
-                    style={{ marginRight: 6, textDecoration: "underline" }}
-                  >
-                    {lbl}
-                  </span>
-                ))
-              ) : (
-                <span style={{ color: "#888" }}>{placeholder}</span>
-              )
-            ) : (
-              Array.isArray(selectedOptions) &&
-              selectedOptions.map((opt: any) => (
-                <a
-                  key={opt.value}
-                  href={opt.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ textDecoration: "underline", marginRight: 6 }}
-                >
-                  {opt.label}
-                </a>
-              ))
-            )
-          ) : !selectedOptions || Array.isArray(selectedOptions) ? (
-            fallbackLabels.length > 0 ? (
-              <span style={{ textDecoration: "underline" }}>
-                {fallbackLabels[0]}
-              </span>
-            ) : (
-              <span style={{ color: "#888" }}>{placeholder}</span>
-            )
-          ) : (
-            <a
-              href={selectedOptions.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: "underline" }}
-            >
-              {selectedOptions.label}
-            </a>
-          )}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Seleccionar relación</DialogTitle>
-        </DialogHeader>
-        {loading ? (
-          <div style={{ padding: 16 }}>
-            <Loader /> Cargando...
-          </div>
-        ) : isMulti ? (
-          <MultiSelect
-            options={multiSelectOptions}
-            defaultValue={multiSelectDefaultValue}
-            onChange={onChange}
-          />
-        ) : (
-          <Select
-            value={selectValue}
-            onValueChange={(val) => {
-              const parsed =
-                options.length > 0 && typeof options[0].value === "number"
-                  ? Number(val)
-                  : val;
-              onChange(parsed);
-            }}
-          >
-            <SelectTrigger>{/* placeholder handled above */}</SelectTrigger>
-            <SelectContent>
-              {options.map((opt) => (
-                <SelectItem key={opt.value} value={String(opt.value)}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </DialogContent>
-    </Dialog>
+          <SelectTrigger>
+            {selectedOptions && !Array.isArray(selectedOptions)
+              ? selectedOptions.label
+              : placeholder}
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((opt) => (
+              <SelectItem key={opt.value} value={String(opt.value)}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    </div>
   );
 };
 
