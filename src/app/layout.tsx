@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Providers";
-import { ConfirmDialog } from "@k2600x/design-system";
+import { ConfirmDialog } from "@/components/ui";
 import { Toaster } from "sonner";
 import { ThemeScript } from "./ThemeScript";
 
