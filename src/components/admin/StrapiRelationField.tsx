@@ -67,15 +67,21 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
         if (!res.ok) throw new Error("Failed to fetch related data");
         const json = await res.json();
         const items = json.data || [];
-        const opts = items.map((item: any) => ({
-          label:
-            item.attributes?.[displayField] ||
-            item.attributes?.displayName ||
-            item.attributes?.name ||
-            item.id,
-          value: item.id,
-          link: `/admin/${collection}/${item.id}`,
-        }));
+        const opts = items.map((item: any) => {
+          const attrs = item.attributes || {};
+          return {
+            label:
+              attrs[displayField] ||
+              attrs.displayName ||
+              attrs.name ||
+              item[displayField] ||
+              item.displayName ||
+              item.name ||
+              item.id,
+            value: item.id,
+            link: `/admin/${collection}/${item.id}`,
+          };
+        });
         if (!ignore) setOptions(opts);
       } catch (e: any) {
         if (!ignore) setError(e.message || "Unknown error");

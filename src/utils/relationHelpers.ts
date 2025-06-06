@@ -13,7 +13,16 @@ export function extractLabels(
   if (value == null) return [];
   const getLabel = (v: any) => {
     if (typeof v === "object" && v !== null) {
-      return v[displayField] || v.displayName || v.name || String(v.id ?? "");
+      const attrs = (v as any).attributes || {};
+      return (
+        v[displayField] ||
+        v.displayName ||
+        v.name ||
+        attrs[displayField] ||
+        attrs.displayName ||
+        attrs.name ||
+        String(v.id ?? "")
+      );
     }
     return String(v);
   };
