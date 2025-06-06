@@ -29,7 +29,7 @@ interface StrapiRelationFieldProps {
   isMulti?: boolean;
   disabled?: boolean;
   placeholder?: string;
-  displayField?: string; // Field to show as label (default: displayName or name)
+  displayField?: string; // Field used as label (default: "name")
   apiUrl?: string; // Override for fetching
 }
 
@@ -40,7 +40,7 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
   isMulti = false,
   disabled = false,
   placeholder = "(Selecciona...)",
-  displayField = "displayName",
+  displayField = "name",
   apiUrl,
 }) => {
   const [options, setOptions] = useState<RelationOption[]>([]);

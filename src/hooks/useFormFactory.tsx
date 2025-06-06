@@ -431,7 +431,38 @@ export function useFormFactory(
 
  
 
-      // --- DEFAULT: STRING, TEXT, BOOLEAN, ETC. ---
+      // --- BOOLEAN FIELDS ---
+      if (cfg.type === "boolean") {
+        return (
+          <div key={cfg.name} style={{ display: "flex", flexDirection: "column", gap: 2, height: '100%' }}>
+            <label htmlFor={cfg.name} style={{ fontWeight: 500, marginBottom: 2 }}>
+              {cfg.label}
+              {cfg.required && <span style={{ color: "#d32f2f", marginLeft: 4 }}>*</span>}
+            </label>
+            <Controller
+              name={cfg.name}
+              control={control}
+              render={({ field }) => (
+                <Comp
+                  {...(cfg.props || {})}
+                  checked={!!field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={cfg.disabled}
+                  id={cfg.name}
+                />
+              )}
+            />
+            {cfg.description && (
+              <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cfg.description}</span>
+            )}
+            {errorMsg && (
+              <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>{errorMsg}</span>
+            )}
+          </div>
+        );
+      }
+
+      // --- DEFAULT: STRING, TEXT, ETC. ---
 
       return (
 
