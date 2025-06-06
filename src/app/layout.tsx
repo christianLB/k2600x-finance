@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Providers";
-//import ConfirmDialog from "@k2600x/design-system/dist/components/ConfirmDialog";
+import { ConfirmDialog } from "@k2600x/design-system";
 import { Toaster } from "sonner";
 import { ThemeScript } from "./ThemeScript";
 
@@ -39,7 +39,7 @@ export default function RootLayout({
         <Providers>
           {/* ClientHeader removed from here to avoid duplication */}
           {children}
-          {/* <ConfirmDialog /> */}
+          <ConfirmDialog />
           <Toaster position="top-right" richColors />
         </Providers>
       </body>
