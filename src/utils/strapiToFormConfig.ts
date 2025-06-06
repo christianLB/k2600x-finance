@@ -206,7 +206,11 @@ export function strapiToFormConfig(strapiSchema: any) {
       zodField = zodField.optional();
     }
     zodShape[name] = zodField;
-    defaultValues[name] = attr.default ?? (attr.required ? '' : undefined);
+    if (attr.type === 'boolean') {
+      defaultValues[name] = attr.default ?? (attr.required ? false : undefined);
+    } else {
+      defaultValues[name] = attr.default ?? (attr.required ? '' : undefined);
+    }
 
     fieldsConfig.push({
       name,
