@@ -18,4 +18,11 @@ describe("relation helpers", () => {
     expect(extractLabels(null)).toEqual([]);
     expect(extractLabels([1, 2])).toEqual(["1", "2"]);
   });
+
+  test("string ids match numeric option values", () => {
+    const options = [{ label: "One", value: 1 }];
+    const normalized = extractIds("1").map((v) => String(v));
+    const selected = options.find((o) => normalized.includes(String(o.value)));
+    expect(selected?.label).toBe("One");
+  });
 });

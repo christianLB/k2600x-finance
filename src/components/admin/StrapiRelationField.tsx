@@ -98,12 +98,12 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
   }, [open, collection, apiUrl, displayField]);
 
   // Normalize incoming value to id array and extract fallback labels
-  const normalizedArray = extractIds(value);
+  const normalizedArray = extractIds(value).map((v) => String(v));
   const fallbackLabels = extractLabels(value, displayField);
 
   const selectedOptions = isMulti
-    ? options.filter((opt) => normalizedArray.includes(opt.value))
-    : options.find((opt) => normalizedArray.includes(opt.value));
+    ? options.filter((opt) => normalizedArray.includes(String(opt.value)))
+    : options.find((opt) => normalizedArray.includes(String(opt.value)));
 
   // For MultiSelect: options must have id:number, defaultValue:number[]
   // Map options to required shape for MultiSelect
@@ -200,7 +200,16 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
             onChange={onChange}
           />
         ) : (
-          <Select value={selectValue} onValueChange={onChange}>
+          <Select
+            value={selectValue}
+            onValueChange={(val) => {
+              const parsed =
+                options.length > 0 && typeof options[0].value === "number"
+                  ? Number(val)
+                  : val;
+              onChange(parsed);
+            }}
+          >
             <SelectTrigger>{/* placeholder handled above */}</SelectTrigger>
             <SelectContent>
               {options.map((opt) => (
