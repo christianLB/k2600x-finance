@@ -8,7 +8,7 @@ import { Button, Input } from "@k2600x/design-system";
 import { PencilIcon, Trash2Icon, PlusIcon } from "lucide-react";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
-import { useConfirm } from "@/hooks/useConfirm";
+import { useConfirm } from "@k2600x/design-system";
 import useStrapiDelete from "@/hooks/useStrapiDelete";
 import {
   Dialog,
