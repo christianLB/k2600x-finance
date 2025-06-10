@@ -15,6 +15,7 @@ export interface DynamicStrapiFormProps {
   onSuccess?: (values: any) => void;
   onError?: (err: any) => void;
   hideSubmitButton?: boolean; // Whether to hide the form's own submit button
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export const DynamicStrapiForm = React.forwardRef<
@@ -27,7 +28,8 @@ export const DynamicStrapiForm = React.forwardRef<
     onSuccess,
     onError,
     hideSubmitButton = false,
-  }, 
+    onDirtyChange,
+  },
   ref
 ) => {
   // 1. Get schema from context
@@ -91,6 +93,10 @@ export const DynamicStrapiForm = React.forwardRef<
     },
     isDirty: () => formFactory.form.formState.isDirty,
   }));
+
+  React.useEffect(() => {
+    onDirtyChange?.(formFactory.form.formState.isDirty);
+  }, [formFactory.form.formState.isDirty, onDirtyChange]);
 
   // Render fields in a 3-column grid
   const renderFields = () => {

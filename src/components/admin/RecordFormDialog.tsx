@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, Label } from "@k2600x/design-system";
 import { useConfirm } from "@/hooks/useConfirm";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
@@ -34,7 +34,12 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
 }) => {
   // Create a ref to store the form submit function
   const formRef = useRef<{ submitForm: () => void; isDirty: () => boolean }>(null);
+  const [dirty, setDirty] = useState(false);
   const confirm = useConfirm();
+
+  useEffect(() => {
+    setDirty(false);
+  }, [record, open]);
 
   // Function to handle form submission from the footer button
   const handleFooterSubmit = () => {
@@ -45,7 +50,7 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
 
   const handleOpenChange = (val: boolean) => {
     if (!val) {
-      if (formRef.current?.isDirty()) {
+      if (dirty) {
         confirm({
           title: "¿Cerrar sin guardar?",
           description: "Hay cambios sin guardar.",
@@ -71,6 +76,7 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
             onError={() => {}}
             ref={formRef}
             hideSubmitButton={true} // Hide the form's own submit button
+            onDirtyChange={setDirty}
           />
         </div>
         <DialogFooter className="flex flex-col gap-2">
@@ -81,7 +87,7 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
           )}
           <Button
             onClick={handleFooterSubmit}
-            disabled={loading || !formRef.current?.isDirty()}
+            disabled={loading || !dirty}
           >
             {record ? "Update" : "Create"}
           </Button>
