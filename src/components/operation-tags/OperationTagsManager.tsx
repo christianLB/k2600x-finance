@@ -4,18 +4,12 @@ import React, { useState, useEffect } from "react";
 import { DndProvider } from "@minoru/react-dnd-treeview";
 import { Tree, NodeModel } from "@minoru/react-dnd-treeview";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Button, Input } from "@k2600x/design-system";
 import { PencilIcon, Trash2Icon, PlusIcon } from "lucide-react";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 import { useStrapiUpdateMutation } from "@/hooks/useStrapiUpdateMutation";
 import { useConfirm } from "@/hooks/useConfirm";
 import useStrapiDelete from "@/hooks/useStrapiDelete";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@k2600x/design-system";
+import { Dialog, DialogHeader, DialogTitle, Button, Input } from "@k2600x/design-system";
 import { Tag } from "@/types/tag";
 
 interface TagsManagerProps {
@@ -168,7 +162,8 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
               </div>
               <div className="flex gap-1">
                 <Button
-                  size="icon"
+                  size="sm"
+                  className="p-2"
                   variant="ghost"
                   onClick={() => {
                     if (node.data && 'id' in node.data && 'name' in node.data) {
@@ -179,7 +174,8 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
                   <PencilIcon className="w-4 h-4 text-muted-foreground" />
                 </Button>
                 <Button
-                  size="icon"
+                  size="sm"
+                  className="p-2"
                   variant="ghost"
                   onClick={() => {
                     if (node.data && 'id' in node.data && 'name' in node.data) {
@@ -190,7 +186,8 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
                   <Trash2Icon className="w-4 h-4 text-destructive" />
                 </Button>
                 <Button
-                  size="icon"
+                  size="sm"
+                  className="p-2"
                   variant="ghost"
                   onClick={() => {
                     if (node.data && 'id' in node.data && 'name' in node.data) {
@@ -206,12 +203,13 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
         />
       </DndProvider>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
+      <Dialog isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+        <div className="dialog-content">
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar Tag" : "Nuevo Tag"}</DialogTitle>
           </DialogHeader>
           <Input
+            id="tag-name"
             placeholder="Nombre del tag"
             value={tagDraft.name ?? ""}
             onChange={(e) =>
@@ -219,6 +217,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
             }
           />
           <Input
+            id="tag-color"
             type="color"
             value={tagDraft.color ?? "#cccccc"}
             onChange={(e) =>
@@ -232,7 +231,7 @@ export default function TagsManager({ appliesTo }: TagsManagerProps) {
           >
             Guardar
           </Button>
-        </DialogContent>
+        </div>
       </Dialog>
     </div>
   );

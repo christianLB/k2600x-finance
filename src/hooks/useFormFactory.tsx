@@ -124,7 +124,7 @@ export function useFormFactory(
 
             </label>
 
-            <Select value={value} onValueChange={(e: any) => setValue(cfg.name, e)} disabled={cfg.disabled}>
+            <Select value={value} onValueChange={(e: any) => setValue(cfg.name, e)}>
 
               <SelectTrigger>{selectedOption ? selectedOption.label : (cfg.placeholder || "(Selecciona...)")}</SelectTrigger>
 

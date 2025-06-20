@@ -20,8 +20,6 @@ export interface AdminTableProps {
   onEdit?: (row: any) => void;
   onDelete?: (row: any) => void;
   emptyMessage?: string;
-  // Add meta for custom table features (e.g. onCellUpdate)
-  meta?: Record<string, any>;
 }
 
 export const AdminTable: React.FC<AdminTableProps> = ({
@@ -30,7 +28,6 @@ export const AdminTable: React.FC<AdminTableProps> = ({
   loading,
   error,
   emptyMessage = "No data found.",
-  meta,
 }) => {
   if (loading) {
     return <div className="p-6 text-center">Loading...</div>;
@@ -43,11 +40,6 @@ export const AdminTable: React.FC<AdminTableProps> = ({
   }
 
   return (
-    <Table
-      data={data}
-      columns={columns}
-      className="mt-2"
-      meta={meta}
-    />
+    <Table data={data} columns={columns as any} className="mt-2" />
   );
 };

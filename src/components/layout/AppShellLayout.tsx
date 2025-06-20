@@ -1,5 +1,6 @@
 import React from "react";
 import type { NavbarProps, SidebarProps } from "@k2600x/design-system";
+
 import { Navbar, Sidebar, Container, DarkThemeToggle } from "@k2600x/design-system";
 
 export interface AppShellLayoutProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Popover, PopoverTrigger, PopoverContent } from "@k2600x/design-system";
+import { Button, Popover } from "@k2600x/design-system";
 import { useStrapiCollection } from "@/hooks/useStrapiCollection";
 
 export interface Tag {
@@ -88,25 +88,25 @@ export const TagsSelector: React.FC<TagsSelectorProps> = ({
   const treeData = buildTagTree(tags);
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="w-full justify-start">
+    <Popover
+      trigger={
+        <Button variant="secondary" className="w-full justify-start">
           {currentTag?.name || placeholder}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="start">
-        <div className="max-h-[300px] overflow-y-auto p-2">
-          {treeData.map((node) => (
-            <TagTreeItem
-              key={node.id}
-              node={node}
-              depth={0}
-              onSelect={onSelect}
-              currentTagId={currentTag?.id}
-            />
-          ))}
-        </div>
-      </PopoverContent>
+      }
+      align="left"
+    >
+      <div className="max-h-[300px] overflow-y-auto p-2">
+        {treeData.map((node) => (
+          <TagTreeItem
+            key={node.id}
+            node={node}
+            depth={0}
+            onSelect={onSelect}
+            currentTagId={currentTag?.id}
+          />
+        ))}
+      </div>
     </Popover>
   );
 };

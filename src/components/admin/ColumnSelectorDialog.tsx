@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@k2600x/design-system";
-import { Button } from "@k2600x/design-system";
+import { Dialog, Button } from "@k2600x/design-system";
 
 /**
  * Dialog for selecting visible columns in the admin table.
@@ -46,8 +45,8 @@ export const ColumnSelectorDialog: React.FC<ColumnSelectorDialogProps> = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent style={{ minWidth: 320 }}>
+    <Dialog isOpen={open} onClose={onClose}>
+      <div className="dialog-content" style={{ minWidth: 320 }}>
         <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Select Columns to Display</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
           {columns.map((attr) => (
@@ -62,14 +61,14 @@ export const ColumnSelectorDialog: React.FC<ColumnSelectorDialogProps> = ({
           ))}
         </div>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-          <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button size="sm" onClick={handleSave} loading={loading}>
+          <Button size="sm" onClick={handleSave} disabled={loading}>
             Save
           </Button>
         </div>
-      </DialogContent>
+      </div>
     </Dialog>
   );
 };

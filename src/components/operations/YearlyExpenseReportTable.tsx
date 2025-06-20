@@ -126,9 +126,9 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
             </div>
           ) : tableData.length > 0 ? (
             <>
-              <Table 
-                data={tableDataWithMonths} 
-                columns={columns}
+              <Table
+                data={tableDataWithMonths as any}
+                columns={columns as any}
                 className="w-full"
               />
               
