@@ -22,7 +22,6 @@ interface StrapiRelationFieldProps {
   onChange: (val: any) => void;
   target: string; // Strapi collection name
   isMulti?: boolean;
-  disabled?: boolean;
   placeholder?: string;
   displayField?: string; // Field used as label (default: "name")
   apiUrl?: string; // Override for fetching
@@ -33,7 +32,6 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
   onChange,
   target,
   isMulti = false,
-  disabled = false,
   placeholder = "(Selecciona...)",
   displayField = "name",
   apiUrl,
@@ -128,9 +126,8 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
       ) : isMulti ? (
         <MultiSelect
           options={multiSelectOptions}
-          defaultValue={multiSelectDefaultValue}
+          selectedIds={multiSelectDefaultValue}
           onChange={onChange}
-          placeholder={placeholder}
         />
       ) : (
         <Select
@@ -142,7 +139,6 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
                 : val;
             onChange(parsed);
           }}
-          disabled={disabled}
         >
           <SelectTrigger>
             {selectedOptions && !Array.isArray(selectedOptions)

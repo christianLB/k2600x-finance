@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, Label } from "@k2600x/design-system";
+import { Dialog, DialogHeader, DialogTitle, DialogFooter, Button, Label } from "@k2600x/design-system";
 import { useConfirm } from "@/hooks/useConfirm";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
 
@@ -48,23 +48,21 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
     }
   };
 
-  const handleOpenChange = (val: boolean) => {
-    if (!val) {
-      if (dirty) {
-        confirm({
-          title: "¿Cerrar sin guardar?",
-          description: "Hay cambios sin guardar.",
-          onConfirm: onClose,
-        });
-        return;
-      }
+  const handleClose = () => {
+    if (dirty) {
+      confirm({
+        title: "¿Cerrar sin guardar?",
+        description: "Hay cambios sin guardar.",
+        onConfirm: onClose,
+      });
+      return;
     }
     onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="min-w-[800px] w-[1200px] max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col">
+    <Dialog isOpen={open} onClose={handleClose}>
+      <div className="dialog-content min-w-[800px] w-[1200px] max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -92,7 +90,7 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
             {record ? "Update" : "Create"}
           </Button>
         </DialogFooter>
-      </DialogContent>
+      </div>
     </Dialog>
   );
 };

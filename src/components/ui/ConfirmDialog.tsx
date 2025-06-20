@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  Button,
-} from "@k2600x/design-system";
+import { ConfirmDialog as DSConfirmDialog } from "@k2600x/design-system";
 import React from "react";
 import { useConfirmStore } from "@/hooks/useConfirm";
 
@@ -42,27 +34,20 @@ export function ConfirmDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={hide}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        {React.isValidElement(extraContent) && (
-          <div className="mb-2">
-            {React.cloneElement(extraContent as React.ReactElement<any>, {
-              onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                setExtraState((e.target as HTMLInputElement).checked ?? undefined),
-            })}
-          </div>
-        )}
-        <DialogFooter className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={handleCancel}>
-            {cancelText}
-          </Button>
-          <Button onClick={handleConfirm}>{confirmText}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <DSConfirmDialog
+      isOpen={open}
+      onClose={handleCancel}
+      onConfirm={handleConfirm}
+      title={title || ""}
+      description={description || ""}
+      confirmText={confirmText || "Ok"}
+      cancelText={cancelText || "Cancel"}
+    >
+      {React.isValidElement(extraContent) &&
+        React.cloneElement(extraContent as React.ReactElement<any>, {
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+            setExtraState((e.target as HTMLInputElement).checked ?? undefined),
+        })}
+    </DSConfirmDialog>
   );
 }

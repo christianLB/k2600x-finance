@@ -1,7 +1,7 @@
 "use client";
 
 import UserIndicator from "@/components/UserIndicator";
-import { ThemeToggle } from "@k2600x/design-system";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface ClientHeaderProps {
   className?: string;

@@ -4,8 +4,6 @@ import { Providers } from "./Providers";
 import { ConfirmDialog } from "@/components/ui";
 import { Toaster } from "sonner";
 import { ThemeScript } from "./ThemeScript";
-
-
 export const metadata: Metadata = {
   title: "Finance dashboard",
   description: "By k2600x",

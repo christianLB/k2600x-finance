@@ -262,10 +262,10 @@ export function getTableColumns(
         <Tooltip content="Edit">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
+            className="p-2 h-9 w-9"
             // Direct call to the onEdit function passed as argument
             onClick={() => onEdit(info.row.original)}
-            className="h-9 w-9 p-0"
           >
             <Pencil size={18} />
           </Button>
@@ -273,10 +273,10 @@ export function getTableColumns(
         <Tooltip content="Delete">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
+            className="p-2 h-9 w-9 text-destructive hover:text-destructive/80"
             // Direct call to the onDelete function passed as argument
             onClick={() => onDelete(info.row.original)}
-            className="h-9 w-9 p-0 text-destructive hover:text-destructive/80"
           >
             <Trash2 size={18} />
           </Button>

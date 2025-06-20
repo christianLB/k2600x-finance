@@ -186,7 +186,7 @@ export default function TestStrapiSchemaPage() {
                 >
                   {formFactory.renderFields()}
                   <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-                    <Button type="submit" variant="default" style={{ minWidth: 120, fontWeight: 600, fontSize: 16 }}>Submit</Button>
+                    <Button type="submit" variant="primary" style={{ minWidth: 120, fontWeight: 600, fontSize: 16 }}>Submit</Button>
                   </div>
                 </form>
               </FormProvider>

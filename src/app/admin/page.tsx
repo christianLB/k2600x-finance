@@ -149,7 +149,8 @@ export default function AdminPage() {
           <Tooltip content="New Record">
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
+              className="p-2"
               onClick={() => { setSelectedRecord(null); setShowForm(true); }}
             >
               <PlusCircle size={22} />
@@ -166,7 +167,8 @@ export default function AdminPage() {
             <Tooltip content="Select Columns">
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
+                className="p-2"
                 onClick={() => setColumnSelectorOpen(true)}
               >
                 <Settings size={18} />
@@ -214,14 +216,6 @@ export default function AdminPage() {
               loading={recordsLoading}
               error={recordsError || undefined}
               emptyMessage="No data found."
-              meta={{
-                onCellUpdate: async (row: any, key: string, value: any) => {
-                  if (!selectedCollection) return;
-                  // Only send the changed field
-                  const payload = { [key]: value };
-                  await updateRecord(row.documentId, payload);
-                }
-              }}
             />
             
             {/* Column Selector Dialog */}

@@ -86,9 +86,9 @@ export default function GroupBreakdownRow({
               <div className="mt-1 italic text-muted-foreground">No hay grupos</div>
             ) : (
               <div className="overflow-x-auto">
-                <Table 
-                  data={groupData} 
-                  columns={columns}
+                <Table
+                  data={groupData as any}
+                  columns={columns as any}
                   className="w-full"
                 />
               </div>
