@@ -2,8 +2,7 @@
 
 import React from "react";
 
-import { DarkThemeToggle } from "@k2600x/design-system";
-import { AppShellLayout } from "@/components/layout";
+import { AppShellLayout, ThemeToggle } from "@/components/layout";
 
 export default function FinancePage() {
   const navbar = [
@@ -25,7 +24,7 @@ export default function FinancePage() {
             </svg>
             Finance Management
           </h1>
-        <DarkThemeToggle />
+        <ThemeToggle />
       </div>
       <div>
         <h2 className="text-xl font-semibold mb-4">Finance Dashboard</h2>
