@@ -14,7 +14,7 @@
     "@babel/preset-typescript": "^7.27.0",
     "@headlessui/react": "^2.2.0",
     "@hookform/resolvers": "^5.0.1",
-    "@k2600x/design-system": "^1.8.0",
+    "@k2600x/design-system": "^3.0.0",
     "@minoru/react-dnd-treeview": "^3.5.0",
     "@radix-ui/react-checkbox": "^1.1.4",
     "@radix-ui/react-dialog": "^1.1.6",
