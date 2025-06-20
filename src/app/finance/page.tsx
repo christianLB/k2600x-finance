@@ -1,7 +1,8 @@
 'use client';
 
 import React from "react";
-import { ThemeToggle } from "@/components/layout";
+
+import { DarkThemeToggle } from "@k2600x/design-system";
 import { AppShellLayout } from "@/components/layout";
 
 export default function FinancePage() {
@@ -24,7 +25,7 @@ export default function FinancePage() {
             </svg>
             Finance Management
           </h1>
-        <ThemeToggle />
+        <DarkThemeToggle />
       </div>
       <div>
         <h2 className="text-xl font-semibold mb-4">Finance Dashboard</h2>

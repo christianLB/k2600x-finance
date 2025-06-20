@@ -1,7 +1,7 @@
 import React from "react";
 import type { NavbarProps, SidebarProps } from "@k2600x/design-system";
-import { Navbar, Sidebar, Container } from "@k2600x/design-system";
-import { ThemeToggle } from "./ThemeToggle";
+
+import { Navbar, Sidebar, Container, DarkThemeToggle } from "@k2600x/design-system";
 
 export interface AppShellLayoutProps {
   children: React.ReactNode;
@@ -23,10 +23,10 @@ export function AppShellLayout({
         <Navbar
           items={navbarItems}
           logo={logo}
-          cta={<ThemeToggle />}
+          cta={<DarkThemeToggle />}
           className="border-b border-border"
         />
-        <Container className="flex-1 py-[var(--spacing-md)]">
+        <Container as="main" className="flex-1 py-[var(--spacing-md)]">
           {children}
         </Container>
       </div>
