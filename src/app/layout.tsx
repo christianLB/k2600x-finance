@@ -5,10 +5,6 @@ import { ConfirmDialog } from "@/components/ui";
 import { Toaster } from "sonner";
 import { ThemeScript } from "./ThemeScript";
 
-import { Inter, JetBrains_Mono } from "next/font/google";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "Finance dashboard",
@@ -23,11 +19,7 @@ export default function RootLayout({
   // Note: We remove the ClientHeader from here
   // and will only use it in non-admin layouts
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${mono.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <head />
       <body className="antialiased bg-background text-foreground" suppressHydrationWarning>
         <ThemeScript />
