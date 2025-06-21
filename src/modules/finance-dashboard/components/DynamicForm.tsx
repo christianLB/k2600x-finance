@@ -37,7 +37,6 @@ export function DynamicForm<T extends Record<string, any>>({
 }: DynamicFormProps<T>) {
   const {
     control,
-    register,
     handleSubmit,
     formState: { errors, isSubmitting, isSubmitSuccessful },
   } = useForm<T>({
@@ -57,11 +56,6 @@ export function DynamicForm<T extends Record<string, any>>({
     <form onSubmit={handleSubmit(submitHandler)} className="flex flex-col gap-4">
       {fields.map((field) => {
         const errorMsg = (errors as any)[field.name]?.message as string | undefined;
-        const commonProps = {
-          id: field.name,
-          placeholder: field.placeholder,
-          ...register(field.name as any),
-        };
 
         return (
           <div key={field.name} className="flex flex-col gap-1">
@@ -99,7 +93,21 @@ export function DynamicForm<T extends Record<string, any>>({
                 )}
               />
             ) : (
-              <Input type={field.type} {...commonProps} />
+              <Controller
+                control={control}
+                name={field.name as any}
+                render={({ field: ctrl }) => (
+                  <Input
+                    id={field.name}
+                    type={field.type}
+                    placeholder={field.placeholder}
+                    value={ctrl.value ?? ""}
+                    onChange={ctrl.onChange}
+                    onBlur={ctrl.onBlur}
+                    ref={ctrl.ref}
+                  />
+                )}
+              />
             )}
             {errorMsg && <span className="text-destructive text-sm">{errorMsg}</span>}
           </div>
