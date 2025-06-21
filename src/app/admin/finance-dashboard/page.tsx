@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { AppShellLayout } from "@/components/layout";
 import { DynamicForm } from "@/modules/finance-dashboard/components/DynamicForm";
@@ -9,8 +10,15 @@ import { useStrapiForm } from "@/modules/finance-dashboard/hooks/useStrapiForm";
 import useStrapiSchema from "@/hooks/useStrapiSchema";
 
 export default function AdminFinanceDashboardPage() {
-  const { schemas } = useStrapiSchema();
-  const [model, setModel] = useState<string>(schemas[0]?.uid || "");
+  const { data: schemaData } = useStrapiSchema();
+  const schemas = Array.isArray(schemaData?.data) ? schemaData.data : [];
+  const [model, setModel] = useState<string>("");
+
+  useEffect(() => {
+    if (!model && schemas.length > 0) {
+      setModel(schemas[0].uid);
+    }
+  }, [model, schemas]);
 
   const { data, columns, pagination, refetch } = useStrapiCollection(model);
   const { schema, defaultValues, fields, onSubmit } = useStrapiForm(model, "update");
@@ -20,7 +28,7 @@ export default function AdminFinanceDashboardPage() {
   };
 
   return (
-    <AppShellLayout title="Admin v2: Dynamic Collections" navbarItems={[]} sidebarItems={[]}> 
+    <AppShellLayout navbarItems={[]} sidebarItems={[]}>
       <div className="p-4 space-y-6">
         <div className="flex space-x-4 mb-4">
           <Link href="/admin" className="underline hover:text-primary">
@@ -39,7 +47,7 @@ export default function AdminFinanceDashboardPage() {
             value={model}
             onChange={(e) => setModel(e.target.value)}
           >
-            {schemas.map((s) => (
+            {schemas.map((s: any) => (
               <option key={s.uid} value={s.uid}>
                 {s.info.displayName}
               </option>
@@ -69,8 +77,8 @@ export default function AdminFinanceDashboardPage() {
         <section>
           <h2 className="text-lg font-semibold">Edit or Create {model}</h2>
           <DynamicForm
-            schema={schema}
-            fields={fields}
+            schema={schema as any}
+            fields={fields as any}
             defaultValues={defaultValues}
             onSubmit={async (values) => {
               await onSubmit(values);
