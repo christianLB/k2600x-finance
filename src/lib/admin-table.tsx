@@ -1,10 +1,4 @@
 import type { ColumnDef, CellContext } from "@tanstack/react-table";
-
-declare module '@tanstack/table-core' {
-  interface TableMeta<TData> {
-    onCellUpdate?: (row: TData, key: string, value: any) => void;
-  }
-}
 import React from "react";
 import { Button, Tooltip } from "@k2600x/design-system";
 import { TagsCell } from "@/components/admin/TagsCell";
@@ -97,9 +91,8 @@ export function getTableColumns(
               <BooleanCell
                 value={!!row[key]}
                 onChange={(newValue) => {
-                  if (info.table.options.meta?.onCellUpdate) {
-                    info.table.options.meta.onCellUpdate(row, key, newValue);
-                  }
+                  const meta = info.table.options.meta as AdminTableMeta | undefined;
+                  meta?.onCellUpdate?.(row, key, newValue);
                 }}
                 row={row}
                 name={key}

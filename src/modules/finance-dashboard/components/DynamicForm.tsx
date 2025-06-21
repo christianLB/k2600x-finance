@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z, ZodSchema } from "zod";
+import { z } from "zod/v4";
 import {
   Input,
   Select,
@@ -23,7 +23,7 @@ export type DynamicField = {
 };
 
 export interface DynamicFormProps<T extends Record<string, any>> {
-  schema: ZodSchema<T>;
+  schema: z.ZodType<T>;
   fields: DynamicField[];
   defaultValues: Partial<T>;
   onSubmit: (values: T) => Promise<void> | void;
@@ -40,7 +40,7 @@ export function DynamicForm<T extends Record<string, any>>({
     handleSubmit,
     formState: { errors, isSubmitting, isSubmitSuccessful },
   } = useForm<T>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema as any) as Resolver<T>,
     defaultValues: defaultValues as any,
   });
 
