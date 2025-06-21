@@ -27,9 +27,9 @@ export function AppShellLayout({
           cta={<ThemeToggle />}
           className="border-b border-border"
         />
-        <Container as="main" className="flex-1 py-[var(--spacing-md)]">
-          {children}
-        </Container>
+        <main className="flex-1 py-[var(--spacing-md)]">
+          <Container className="h-full">{children}</Container>
+        </main>
       </div>
     </div>
   );
