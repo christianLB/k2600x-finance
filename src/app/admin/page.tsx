@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
 import strapi from "@/lib/strapi";
 import { Button, Tooltip } from "@k2600x/design-system";
@@ -141,6 +142,11 @@ export default function AdminPage() {
         />
       }
     >
+      <div className="mb-2 text-right">
+        <Link href="/admin/finance-dashboard" className="underline text-sm hover:text-primary">
+          Go to Admin v2
+        </Link>
+      </div>
       <div className="flex justify-between items-center mb-6 w-full">
         <h1 className="text-2xl font-bold text-left">
           {selectedCollection ? getSchemaDisplayName(schemas[selectedCollection], selectedCollection) : "Select a Collection"}
