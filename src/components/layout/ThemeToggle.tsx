@@ -6,12 +6,17 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   const handleToggle = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    const nextTheme = theme === "light" ? "dark" : theme === "dark" ? "futuristic" : "light";
+    setTheme(nextTheme);
   };
 
   return (
     <Button variant="ghost" size="sm" onClick={handleToggle} aria-label="Toggle theme">
-      <Icon name={theme === "dark" ? "Sun" : "Moon"} size="sm" aria-hidden />
+      <Icon
+        name={theme === "light" ? "Moon" : theme === "dark" ? "Star" : "Sun"}
+        size="sm"
+        aria-hidden
+      />
     </Button>
   );
 }

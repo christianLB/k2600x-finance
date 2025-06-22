@@ -13,13 +13,13 @@ jest.mock('@k2600x/design-system', () => ({
 }));
 
 describe('ThemeToggle', () => {
-  test('toggles from dark to light', () => {
+  test('cycles from dark to futuristic', () => {
     const setTheme = jest.fn();
     (useTheme as jest.Mock).mockReturnValue({ theme: 'dark', setTheme });
 
     const { getByRole } = render(<ThemeToggle />);
     fireEvent.click(getByRole('button'));
 
-    expect(setTheme).toHaveBeenCalledWith('light');
+    expect(setTheme).toHaveBeenCalledWith('futuristic');
   });
 });

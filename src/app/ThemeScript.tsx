@@ -1,6 +1,6 @@
 // ThemeScript.tsx
-// This script injects the correct theme class (dark/light) before React hydration to prevent flashing.
-// It uses localStorage preference, falls back to system, and updates on system changes.
+// This script injects the correct theme class before React hydration to prevent flashing.
+// It now supports the "futuristic" theme from the design system.
 
 'use client';
 
@@ -9,18 +9,18 @@ import { useEffect } from 'react';
 export function ThemeScript() {
   useEffect(() => {
     // Helper to set theme class
-    function setThemeClass(theme: 'dark' | 'light') {
-      document.documentElement.classList.remove('dark', 'light');
+    function setThemeClass(theme: 'dark' | 'light' | 'futuristic') {
+      document.documentElement.classList.remove('dark', 'light', 'futuristic');
       document.documentElement.classList.add(theme);
     }
 
     // Check localStorage
     let theme = typeof window !== 'undefined' && window.localStorage.getItem('theme');
-    if (theme !== 'dark' && theme !== 'light') {
-      // Fallback to system
-      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (theme !== 'dark' && theme !== 'light' && theme !== 'futuristic') {
+      theme = 'futuristic';
+      window.localStorage.setItem('theme', theme);
     }
-    setThemeClass(theme as 'dark' | 'light');
+    setThemeClass(theme as 'dark' | 'light' | 'futuristic');
 
     // Listen for system changes
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
