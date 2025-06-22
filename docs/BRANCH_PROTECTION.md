@@ -10,8 +10,6 @@ Pull requests must pass these checks before merging:
 - `lint`
 - `type-check`
 - `test:unit`
-- `test:e2e`
-- `deploy-preview`
 
 You can view them in the **Checks** tab of the PR.
 

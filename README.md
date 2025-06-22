@@ -37,7 +37,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Contributing
 
-All pull requests run the [CI workflow](.github/workflows/ci.yml). The workflow installs dependencies, runs linting, type checks, builds the app, executes unit and E2E tests, and posts a Vercel deploy preview.
+All pull requests run the [CI workflow](.github/workflows/ci.yml). The workflow installs dependencies, runs linting, type checks, builds the app, and executes unit tests.
 
 Before opening a PR, ensure these commands pass locally:
 
@@ -46,7 +46,6 @@ pnpm lint
 pnpm type-check
 pnpm build
 pnpm test:unit
-pnpm test:e2e
 ```
 
 See [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md) for branch protection details.
