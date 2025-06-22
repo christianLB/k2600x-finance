@@ -34,3 +34,19 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Contributing
+
+All pull requests run the [CI workflow](.github/workflows/ci.yml). The workflow installs dependencies, runs linting, type checks, builds the app, executes unit and E2E tests, and posts a Vercel deploy preview.
+
+Before opening a PR, ensure these commands pass locally:
+
+```bash
+pnpm lint
+pnpm type-check
+pnpm build
+pnpm test:unit
+pnpm test:e2e
+```
+
+See [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md) for branch protection details.
