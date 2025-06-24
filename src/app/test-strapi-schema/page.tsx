@@ -8,6 +8,15 @@ import { Button } from "@k2600x/design-system";
 import { z } from "zod";
 
 export default function TestStrapiSchemaPage() {
+  /*
+  DEPRECATED: This page is commented out to prevent build errors.
+  */
+  return (
+    <div>
+      <h1>Strapi Schema Test Page - DEPRECATED</h1>
+    </div>
+  );
+  /*
   const [uid, setUid] = React.useState("");
   const [showForm, setShowForm] = React.useState(true);
   const {
@@ -202,4 +211,5 @@ export default function TestStrapiSchemaPage() {
       </div>
     </div>
   );
+  */
 }

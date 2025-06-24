@@ -1,10 +1,10 @@
 "use client";
 import React, { useMemo, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AppShellLayout } from "@/components/layout";
-import { useStrapiSchema } from "@/modules/finance-dashboard/hooks/useStrapiSchema";
-import { useStrapiCollection } from "@/modules/finance-dashboard/hooks/useStrapiCollection";
-import { SmartDataTable } from "@/modules/finance-dashboard/components/SmartDataTable";
+import { AppShellLayout } from "../../../components/layout";
+import { useStrapiSchema } from "../../../modules/finance-dashboard/hooks/useStrapiSchema";
+import { useStrapiCollection } from "../../../modules/finance-dashboard/hooks/useStrapiCollection";
+import { SmartDataTable } from "../../../modules/finance-dashboard/components/SmartDataTable";
 
 interface StrapiSchema {
   uid: string;
