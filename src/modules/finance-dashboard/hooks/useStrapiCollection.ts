@@ -20,6 +20,7 @@ export function useStrapiCollection(modelName: string) {
   });
 
   const fetchSchema = useCallback(async () => {
+    if (!modelName) return;
     try {
       const res = await strapi.post({ method: 'SCHEMA', schemaUid: modelName });
       const schema = Array.isArray(res.data) ? res.data[0] : res.data;
@@ -37,6 +38,10 @@ export function useStrapiCollection(modelName: string) {
 
   const fetchData = useCallback(
     async (page: number = pagination.page, pageSize: number = pagination.pageSize) => {
+      if (!modelName) {
+        setData([]);
+        return;
+      }
       try {
         const res: StrapiResponse<any> = await strapi.post({
           method: 'GET',

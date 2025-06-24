@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Loader, Table } from "@k2600x/design-system";
+import { Loader } from "@k2600x/design-system";
+import { SmartDataTable as Table, PaginationState } from "@/modules/finance-dashboard/components/SmartDataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import fetchMonthlyGroupReport from "@/lib/fetchMonthlyGroupReport";
 
@@ -89,7 +90,10 @@ export default function GroupBreakdownRow({
                 <Table
                   data={groupData as any}
                   columns={columns as any}
-                  className="w-full"
+                  pagination={{ totalItems: groupData.length, itemsPerPage: groupData.length, currentPage: 1 } as PaginationState}
+                  onEdit={() => {}}
+                  onPageChange={() => {}}
+                  collection="group-breakdown"
                 />
               </div>
             )}

@@ -1,93 +1,87 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import React, { useMemo, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AppShellLayout } from "@/components/layout";
-import { DynamicForm } from "@/modules/finance-dashboard/components/DynamicForm";
-import { SmartDataTable } from "@/modules/finance-dashboard/components/SmartDataTable";
+import { useStrapiSchema } from "@/modules/finance-dashboard/hooks/useStrapiSchema";
 import { useStrapiCollection } from "@/modules/finance-dashboard/hooks/useStrapiCollection";
-import { useStrapiForm } from "@/modules/finance-dashboard/hooks/useStrapiForm";
-import useStrapiSchema from "@/hooks/useStrapiSchema";
+import { SmartDataTable } from "@/modules/finance-dashboard/components/SmartDataTable";
+
+interface StrapiSchema {
+  uid: string;
+  kind: 'collectionType' | 'singleType';
+  info: {
+    displayName: string;
+  };
+}
 
 export default function AdminFinanceDashboardPage() {
-  const { data: schemaData } = useStrapiSchema();
-  const schemas = Array.isArray(schemaData?.data) ? schemaData.data : [];
-  const [model, setModel] = useState<string>("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const { schemas: schemaData, loading: schemasLoading } = useStrapiSchema();
+
+  const schemas: StrapiSchema[] = useMemo(() => {
+    return (schemaData || []).filter(
+      (s: StrapiSchema) => s.kind === 'collectionType' && s.uid.startsWith('api::')
+    );
+  }, [schemaData]);
+
+  const selectedModelFromParams = searchParams.get("collection");
 
   useEffect(() => {
-    if (!model && schemas.length > 0) {
-      setModel(schemas[0].uid);
+    if (!schemasLoading && !selectedModelFromParams && schemas.length > 0) {
+      router.replace(`${pathname}?collection=${schemas[0].uid}`);
     }
-  }, [model, schemas]);
+  }, [schemasLoading, selectedModelFromParams, schemas, router, pathname]);
 
-  const { data, columns, pagination, refetch } = useStrapiCollection(model);
-  const { schema, defaultValues, fields, onSubmit } = useStrapiForm(model, "update");
+  const selectedModel = selectedModelFromParams || "";
 
-  const handlePageChange = () => {
-    refetch();
+  const { data, columns, pagination, refetch } = useStrapiCollection(selectedModel);
+
+  const sidebarItems = useMemo(() => {
+    return schemas.map((s: StrapiSchema) => ({
+      label: s.info.displayName,
+      href: `${pathname}?collection=${s.uid}`,
+    }));
+  }, [schemas, pathname]);
+
+  const navbarItems = [{ label: "Admin Dashboard", href: "/admin/finance-dashboard" }];
+
+  const tablePagination = {
+    currentPage: pagination.page,
+    itemsPerPage: pagination.pageSize,
+    totalItems: pagination.total,
   };
 
   return (
-    <AppShellLayout navbarItems={[]} sidebarItems={[]}>
-      <div className="p-4 space-y-6">
-        <div className="flex space-x-4 mb-4">
-          <Link href="/admin" className="underline hover:text-primary">
-            Go to Admin v1
-          </Link>
-          <Link href="/admin/finance-dashboard" className="underline font-semibold hover:text-primary">
-            Admin v2 (Current)
-          </Link>
-        </div>
-
-        <section>
-          <label htmlFor="collection-select" className="block mb-2 font-medium text-sm">Select Collection</label>
-          <select
-            id="collection-select"
-            className="p-2 border rounded"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-          >
-            {schemas.map((s: any) => (
-              <option key={s.uid} value={s.uid}>
-                {s.info.displayName}
-              </option>
-            ))}
-          </select>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold">List of {model}</h2>
-          <SmartDataTable
-            data={data}
-            columns={columns}
-            pagination={{
-              totalItems: pagination.total,
-              itemsPerPage: pagination.pageSize,
-              currentPage: pagination.page,
-            }}
-            onEdit={(row) => {
-              onSubmit(row);
-              refetch();
-            }}
-            onPageChange={handlePageChange}
-            collection={model}
-          />
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold">Edit or Create {model}</h2>
-          <DynamicForm
-            schema={schema as any}
-            fields={fields as any}
-            defaultValues={defaultValues}
-            onSubmit={async (values) => {
-              await onSubmit(values);
-              refetch();
-            }}
-          />
-        </section>
+    <AppShellLayout navbarItems={navbarItems} sidebarItems={sidebarItems}>
+      <div className="flex flex-col gap-8">
+        {schemasLoading ? (
+          <div>Loading schemas...</div>
+        ) : selectedModel ? (
+          <section>
+            <h1 className="text-2xl font-bold mb-4">
+              {schemas.find((s: StrapiSchema) => s.uid === selectedModel)?.info.displayName}
+            </h1>
+            <SmartDataTable
+              data={data}
+              columns={columns}
+              pagination={tablePagination}
+              onEdit={(row) => {
+                console.log("Editing row:", row);
+              }}
+              onPageChange={() => refetch()}
+              collection={selectedModel}
+            />
+          </section>
+        ) : (
+          <div>
+            <h1 className="text-2xl font-bold">No Collections Found</h1>
+            <p>Could not find any collections in your Strapi instance.</p>
+          </div>
+        )}
       </div>
     </AppShellLayout>
   );
 }
-

@@ -1,8 +1,8 @@
 'use client';
 import React, { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
-import { Button, Pagination, Dialog, DialogHeader, DialogTitle, DialogFooter } from '@k2600x/design-system';
+
+import { Button, DataTable, Dialog, DialogHeader, DialogTitle, DialogFooter } from '@k2600x/design-system';
 import { DynamicStrapiForm } from '@/components/dynamic-form/DynamicStrapiForm';
 
 export interface PaginationState {
@@ -11,7 +11,7 @@ export interface PaginationState {
   currentPage: number;
 }
 
-export interface SmartDataTableProps<T> {
+export interface SmartDataTableProps<T extends { id: React.Key }> {
   data: T[];
   columns: ColumnDef<T, any>[];
   pagination: PaginationState;
@@ -20,7 +20,7 @@ export interface SmartDataTableProps<T> {
   collection: string;
 }
 
-export function SmartDataTable<T>({
+export function SmartDataTable<T extends { id: React.Key }>({
   data,
   columns,
   pagination,
@@ -46,7 +46,16 @@ export function SmartDataTable<T>({
     [columns],
   );
 
-  const table = useReactTable({ data, columns: cols, getCoreRowModel: getCoreRowModel() });
+  // Map local pagination to design system pagination format
+  const dataTablePagination = React.useMemo(() => {
+    const { totalItems, itemsPerPage, currentPage } = pagination;
+    return {
+      pageCount: Math.max(1, Math.ceil(totalItems / itemsPerPage)),
+      currentPage,
+      itemsPerPage,
+      onPageChange,
+    };
+  }, [pagination, onPageChange]);
 
   const handleClose = () => setEditRow(null);
   const handleSuccess = (values: any) => {
@@ -56,38 +65,16 @@ export function SmartDataTable<T>({
 
   return (
     <div>
-      <table className="table-auto w-full border-collapse">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} className="text-left px-3 py-2 border-b">
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-b">
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="px-3 py-2">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="flex justify-end mt-4">
-        <Pagination
-          totalItems={pagination.totalItems}
-          itemsPerPage={pagination.itemsPerPage}
-          currentPage={pagination.currentPage}
-          onPageChange={onPageChange}
-        />
-      </div>
+      <DataTable
+        data={data}
+        columns={cols}
+        pagination={dataTablePagination}
+        rowActions={(row) => (
+          <Button variant="ghost" size="sm" onClick={() => setEditRow(row)}>
+            Edit
+          </Button>
+        )}
+      />
       <Dialog isOpen={!!editRow} onClose={handleClose}>
         {editRow && (
           <div className="p-6 min-w-[400px] w-[95vw] max-w-xl">

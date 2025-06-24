@@ -2,8 +2,20 @@ import { useEffect, useState } from 'react';
 import { strapiService } from '@/services/strapiService';
 import { z } from 'zod';
 
+// This schema represents the structure returned by the Strapi API
+const StrapiApiSchema = z.object({
+  uid: z.string(),
+  schema: z.object({
+    kind: z.enum(['collectionType', 'singleType']),
+    displayName: z.string(),
+    attributes: z.record(z.any()),
+  }),
+});
+
+// This schema represents the desired, flattened structure for use in the app
 export const StrapiSchemaItemSchema = z.object({
   uid: z.string(),
+  kind: z.enum(['collectionType', 'singleType']),
   info: z.object({ displayName: z.string() }),
   attributes: z.record(z.any()),
 });
@@ -20,8 +32,24 @@ export function useStrapiSchema() {
       try {
         const res = await strapiService.getCollection('content-type-builder/content-types');
         const items = (res as any).data?.data ?? (res as any).data ?? res;
-        const parsed = z.array(StrapiSchemaItemSchema).parse(items);
-        setSchemas(parsed);
+        
+        // 1. Parse the raw API response
+        const parsedFromApi = z.array(StrapiApiSchema).parse(items);
+
+        // 2. Transform into the desired flattened structure
+        const transformedSchemas = parsedFromApi.map(item => ({
+          uid: item.uid,
+          kind: item.schema.kind,
+          info: {
+            displayName: item.schema.displayName,
+          },
+          attributes: item.schema.attributes,
+        }));
+        
+        // 3. (Optional but good practice) Validate the transformed structure
+        const finalSchemas = z.array(StrapiSchemaItemSchema).parse(transformedSchemas);
+
+        setSchemas(finalSchemas);
       } catch (e: any) {
         setError(e.message);
       } finally {

@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { Table } from '@k2600x/design-system';
+import { SmartDataTable as Table, PaginationState } from '@/modules/finance-dashboard/components/SmartDataTable';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useAccounts } from '../hooks/useAccounts';
 import type { Account } from '../schemas/accountSchemas';
@@ -21,7 +21,17 @@ export function AccountList() {
   if (loading) return <div className="p-6 text-center">Loading...</div>;
   if (error) return <div className="p-6 text-center text-destructive">{error}</div>;
 
-  return <Table data={data} columns={columns as any} />;
+  const pagination: PaginationState = { totalItems: data.length, itemsPerPage: data.length, currentPage: 1 };
+  return (
+    <Table
+      data={data}
+      columns={columns as any}
+      pagination={pagination}
+      onEdit={() => {}}
+      onPageChange={() => {}}
+      collection="accounts"
+    />
+  );
 }
 
 export default AccountList;
