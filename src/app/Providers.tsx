@@ -2,8 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode, useState, useEffect } from "react";
-import { StrapiSchemaProvider } from "@/context/StrapiSchemaProvider";
-import { AuthProvider } from "@/context/AuthContext";
+import { StrapiSchemaProvider } from "../context/StrapiSchemaProvider";
+import { AuthProvider } from "../context/AuthContext";
 import { useTheme } from "@k2600x/design-system";
 import dynamic from "next/dynamic";
 

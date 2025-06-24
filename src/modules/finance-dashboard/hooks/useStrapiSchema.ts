@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { strapiService } from '@/services/strapiService';
+import strapi from '@/services/strapi';
 import { z } from 'zod';
 
 // This schema represents the structure returned by the Strapi API
@@ -30,7 +30,7 @@ export function useStrapiSchema() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await strapiService.getCollection('content-type-builder/content-types');
+        const res = await strapi.post({ method: 'SCHEMA' });
         const items = (res as any).data?.data ?? (res as any).data ?? res;
         
         // 1. Parse the raw API response
