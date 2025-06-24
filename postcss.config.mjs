@@ -1,5 +1,9 @@
 const config = {
-  plugins: process.env.VITEST ? [] : ["@tailwindcss/postcss"],
+  plugins: [
+    '@tailwindcss/postcss',
+    'autoprefixer',
+  ],
 };
 
 export default config;
+

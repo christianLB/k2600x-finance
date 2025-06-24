@@ -1,12 +1,25 @@
 "use client";
 
-import React, { Fragment, useEffect, useState } from "react";
-import { Loader, Table } from "@k2600x/design-system";
+import React, { useEffect, useState } from "react";
+import { Loader, DataTable } from "@k2600x/design-system";
 import { ColumnDef } from "@tanstack/react-table";
 import GroupBreakdownRow from "./GroupBreakdownRow";
 import fetchYearlyReport from "@/lib/fetchYearlyReport";
 
-const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const MONTHS = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
 
 interface MonthData {
   tag_id: number | null;
@@ -21,7 +34,9 @@ interface YearlyReportTableProps {
 
 export default function YearlyReportTable({ year }: YearlyReportTableProps) {
   const [tableData, setTableData] = useState<MonthData[]>([]);
-  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({});
+  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>(
+    {}
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +69,7 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
   }
 
   // Prepare data for the table
-  const tableDataWithMonths = tableData.map(item => ({
+  const tableDataWithMonths = tableData.map((item) => ({
     ...item,
     category: item.category ?? "Sin categoría",
     months: [...Array(12)].map((_, i) => ({
@@ -65,27 +80,31 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
   }));
 
   // Define columns for the table
-  const columns: ColumnDef<typeof tableDataWithMonths[0]>[] = [
+  const columns: ColumnDef<(typeof tableDataWithMonths)[0]>[] = [
     {
-      accessorKey: 'category',
-      header: 'Categoría',
-      cell: ({ row }: { row: { original: typeof tableDataWithMonths[0] } }) => (
-        <div className="font-semibold">
-          {row.original.category}
-        </div>
-      ),
+      accessorKey: "category",
+      header: "Categoría",
+      cell: ({
+        row,
+      }: {
+        row: { original: (typeof tableDataWithMonths)[0] };
+      }) => <div className="font-semibold">{row.original.category}</div>,
     },
     ...MONTHS.map((month, monthIndex) => ({
       accessorKey: `months.${monthIndex}`,
       header: month,
-      cell: ({ row }: { row: { original: typeof tableDataWithMonths[0] } }) => {
+      cell: ({
+        row,
+      }: {
+        row: { original: (typeof tableDataWithMonths)[0] };
+      }) => {
         const monthData = row.original.months[monthIndex];
         const cellId = makeCellId(monthData.tag_id, monthIndex);
         const isExpanded = expandedCells[cellId];
         const amount = monthData.value;
 
         return (
-          <div 
+          <div
             onClick={() => toggleExpand(monthData.tag_id, monthIndex)}
             className="cursor-pointer relative"
           >
@@ -100,12 +119,14 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
       },
     })),
     {
-      accessorKey: 'total',
-      header: 'Total',
-      cell: ({ row }: { row: { original: typeof tableDataWithMonths[0] } }) => (
-        <div className="font-semibold">
-          {row.original.total.toFixed(2)}
-        </div>
+      accessorKey: "total",
+      header: "Total",
+      cell: ({
+        row,
+      }: {
+        row: { original: (typeof tableDataWithMonths)[0] };
+      }) => (
+        <div className="font-semibold">{row.original.total.toFixed(2)}</div>
       ),
     },
   ];
@@ -121,25 +142,23 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
               <Loader />
             </div>
           ) : error ? (
-            <div className="text-center text-red-600 p-4">
-              Error: {error}
-            </div>
+            <div className="text-center text-red-600 p-4">Error: {error}</div>
           ) : tableData.length > 0 ? (
             <>
-              <Table
+              <DataTable
                 data={tableDataWithMonths as any}
                 columns={columns as any}
                 className="w-full"
               />
-              
+
               {/* Render expanded rows */}
-              {tableData.map(({ category, tag_id }) => (
+              {tableData.map(({ category, tag_id }) =>
                 [...Array(12)].map((_, monthIndex) => {
                   const cellId = makeCellId(tag_id, monthIndex);
                   const isExpanded = expandedCells[cellId];
-                  
+
                   if (!isExpanded) return null;
-                  
+
                   return (
                     <div key={`${cellId}-breakdown`} className="mt-2">
                       <GroupBreakdownRow
@@ -153,12 +172,10 @@ export default function YearlyReportTable({ year }: YearlyReportTableProps) {
                     </div>
                   );
                 })
-              ))}
+              )}
             </>
           ) : (
-            <div className="text-center p-4">
-              No data available
-            </div>
+            <div className="text-center p-4">No data available</div>
           )}
         </div>
       </div>

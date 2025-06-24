@@ -1,5 +1,5 @@
 import React from "react";
-import { Table } from "@k2600x/design-system";
+import { SmartDataTable, PaginationState } from "@/modules/finance-dashboard/components/SmartDataTable";
 import type { ColumnDef } from "@tanstack/react-table";
 
 /**
@@ -14,12 +14,15 @@ import type { ColumnDef } from "@tanstack/react-table";
  */
 export interface AdminTableProps {
   data: any[];
-  columns: ColumnDef<any>[];
+  columns: ColumnDef<any, any>[];
   loading: boolean;
   error?: string;
   onEdit?: (row: any) => void;
   onDelete?: (row: any) => void;
   emptyMessage?: string;
+  pagination?: PaginationState;
+  onPageChange?: (page: number) => void;
+  collection?: string;
 }
 
 export const AdminTable: React.FC<AdminTableProps> = ({
@@ -28,6 +31,10 @@ export const AdminTable: React.FC<AdminTableProps> = ({
   loading,
   error,
   emptyMessage = "No data found.",
+  pagination,
+  onEdit = () => {},
+  onPageChange,
+  collection,
 }) => {
   if (loading) {
     return <div className="p-6 text-center">Loading...</div>;
@@ -40,6 +47,13 @@ export const AdminTable: React.FC<AdminTableProps> = ({
   }
 
   return (
-    <Table data={data} columns={columns as any} className="mt-2" />
+    <SmartDataTable
+      data={data}
+      columns={columns}
+      pagination={pagination as any}
+      onEdit={onEdit}
+      onPageChange={onPageChange ?? (() => {})}
+      collection={collection ?? ""}
+    />
   );
 };
