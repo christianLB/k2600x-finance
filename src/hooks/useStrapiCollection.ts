@@ -1,143 +1,79 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// =============================================================
+// File: src/hooks/useStrapiCollection.ts  (nuevo)
+// =============================================================
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { strapiService } from "@/services/strapiService";
+import { useStrapiSchemaCtx } from "@/context/StrapiSchemaProvider";
 
-interface StrapiPaginationMeta {
-  pagination: {
-    page: number;
-    pageSize: number;
-    pageCount: number;
-    total: number;
-  };
+export interface PaginationMeta {
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  total: number;
 }
 
-interface StrapiResponse<T> {
+export interface CollectionResponse<T> {
   data: T[];
-  meta: StrapiPaginationMeta;
+  meta: { pagination: PaginationMeta };
 }
 
-interface StrapiMutationResponse<T> {
-  data?: T;
-  error?: string;
-}
-
-export interface UseStrapiCollectionOptions {
+export interface UseCollectionOptions {
+  page?: number;
+  pageSize?: number;
+  populate?: string[];
   filters?: Record<string, unknown>;
-  populate?: string[] | string;
-  sort?: string[];
-  pagination?: { page: number; pageSize: number };
-  enabled?: boolean;
+  sort?: string;
 }
 
-const fetchCollection = async <T>(
-  collection: string,
-  params: UseStrapiCollectionOptions = {}
-): Promise<StrapiResponse<T>> => {
-  const { filters, populate, sort, pagination } = params;
+export function useStrapiCollection<T = any>(
+  uid: string,
+  opts: UseCollectionOptions = {}
+) {
+  const schemaCtx = useStrapiSchemaCtx();
+  const qc = useQueryClient();
 
-  const response = await fetch("/api/strapi", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      method: "GET",
-      collection,
-      query: {
-        filters,
-        populate: populate ?? "*",
-        sort,
-        pagination,
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Error fetching collection ${collection}`);
-  }
-
-  const json: StrapiResponse<T> = await response.json();
-  return json;
-};
-
-export const useStrapiCollection = <T>(
-  collection: string,
-  params: UseStrapiCollectionOptions = {}
-) => {
-  const queryClient = useQueryClient();
-  const { enabled = true, ...restParams } = params;
+  const col = schemaCtx.get(uid);
+  if (!col) throw new Error(`Schema not found for uid ${uid}`);
 
   const {
-    data,
-    error,
-    isLoading,
-    refetch,
-  } = useQuery<StrapiResponse<T>, Error>({
-    queryKey: [collection, restParams],
-    queryFn: () => fetchCollection<T>(collection, restParams),
-    enabled,
+    page = 1,
+    pageSize = 25,
+    populate = col.defaultPopulate,
+    filters,
+    sort,
+  } = opts;
+
+  const queryKey = [uid, { page, pageSize, populate, filters, sort }];
+
+  const query = useQuery<CollectionResponse<T>>({
+    queryKey,
+    queryFn: () => {
+      const qs: Record<string, unknown> = {
+        "pagination[page]": page,
+        "pagination[pageSize]": pageSize,
+      };
+      if (sort) qs["sort"] = sort;
+      if (filters) Object.assign(qs, filters);
+
+      // populate: sólo primer nivel; si no hay relaciones usar '*'
+      const firstLevelRels = populate.filter((rel) => !rel.includes("."));
+
+      qs.populate = "*";
+      return strapiService.get<CollectionResponse<T>>(`/api/${col.apiID}`, qs);
+    },
+    //keepPreviousData: true,
   });
 
-  const createMutation = useMutation<StrapiMutationResponse<T>, Error, T>({
-    mutationFn: async (newData) => {
-      const response = await fetch(`/api/strapi`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ method: "POST", collection, data: newData }),
-      });
-      const result: StrapiMutationResponse<T> = await response.json();
-      if (!response.ok) throw new Error(result.error || "Error creating document");
-      return result;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [collection] }),
-  });
-
-  const updateMutation = useMutation<
-    StrapiMutationResponse<T>,
-    Error,
-    { documentId: string; updatedData: Partial<T> }
-  >({
-    mutationFn: async ({ documentId, updatedData }) => {
-      const response = await fetch(`/api/strapi`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          method: "PUT",
-          collection,
-          id: documentId,
-          data: updatedData,
-        }),
-      });
-      const result: StrapiMutationResponse<T> = await response.json();
-      if (!response.ok) throw new Error(result.error || "Error updating document");
-      return result;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [collection] }),
-  });
-
-  const deleteMutation = useMutation<StrapiMutationResponse<null>, Error, string>({
-    mutationFn: async (documentId) => {
-      const response = await fetch(`/api/strapi`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          method: "DELETE",
-          collection,
-          id: documentId,
-        }),
-      });
-      if (!response.ok) throw new Error("Failed to delete document");
-      return { data: null };
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [collection] }),
-  });
+  const onPageChange = (nextPage: number) => {
+    qc.setQueryData(queryKey, (old: any) => old); // placeholder, react-query will refetch automatically because key changes
+  };
 
   return {
-    data: data ?? { data: [], meta: {} },
-    error,
-    isLoading,
-    refetch,
-    create: createMutation.mutate,
-    createAsync: createMutation.mutateAsync,
-    update: updateMutation.mutate,
-    updateAsync: updateMutation.mutateAsync,
-    delete: deleteMutation.mutate,
-    deleteAsync: deleteMutation.mutateAsync,
+    data: query.data?.data ?? [],
+    meta: query.data?.meta.pagination,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+    onPageChange,
   };
-};
+}
