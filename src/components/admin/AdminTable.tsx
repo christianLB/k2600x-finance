@@ -48,12 +48,11 @@ export const AdminTable: React.FC<AdminTableProps> = ({
 
   return (
     <SmartDataTable
-      data={data}
+      data={data || []}
       columns={columns}
-      pagination={pagination as any}
-      onEdit={onEdit}
+      pagination={pagination ?? { currentPage: 1, itemsPerPage: 0, totalItems: 0 }}
       onPageChange={onPageChange ?? (() => {})}
-      collection={collection ?? ""}
+      collection={collection ?? ''}
     />
   );
 };

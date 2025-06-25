@@ -37,7 +37,18 @@ export default function AdminFinanceDashboardPage() {
 
   const selectedModel = selectedModelFromParams || "";
 
-  const { data, columns, pagination, refetch } = useStrapiCollection(selectedModel);
+  // Use the enhanced useStrapiCollection hook with proper options
+  const { 
+    data, 
+    columns, 
+    pagination, 
+    loading: collectionLoading, 
+    error: collectionError,
+    refetch,
+    setPage
+  } = useStrapiCollection(selectedModel, {
+    initialPageSize: 10
+  });
 
   const sidebarItems = useMemo(() => {
     return schemas.map((s: StrapiSchema) => ({
@@ -48,6 +59,7 @@ export default function AdminFinanceDashboardPage() {
 
   const navbarItems = [{ label: "Admin Dashboard", href: "/admin/finance-dashboard" }];
 
+  // Convert pagination format for SmartDataTable
   const tablePagination = {
     currentPage: pagination.page,
     itemsPerPage: pagination.pageSize,
@@ -58,27 +70,34 @@ export default function AdminFinanceDashboardPage() {
     <AppShellLayout navbarItems={navbarItems} sidebarItems={sidebarItems}>
       <div className="flex flex-col gap-8">
         {schemasLoading ? (
-          <div>Loading schemas...</div>
+          <div className="p-4 text-center">Loading schemas...</div>
         ) : selectedModel ? (
           <section>
             <h1 className="text-2xl font-bold mb-4">
               {schemas.find((s: StrapiSchema) => s.uid === selectedModel)?.info.displayName}
             </h1>
-            <SmartDataTable
-              data={data}
-              columns={columns}
-              pagination={tablePagination}
-              onEdit={(row) => {
-                console.log("Editing row:", row);
-              }}
-              onPageChange={() => refetch()}
-              collection={selectedModel}
-            />
+            {collectionLoading ? (
+              <div className="p-4 text-center">Loading data...</div>
+            ) : collectionError ? (
+              <div className="p-4 text-center text-red-500">
+                Error loading data: {collectionError.message}
+              </div>
+            ) : (
+              <SmartDataTable
+                data={data}
+                columns={columns}
+                pagination={tablePagination}
+                onPageChange={(page) => setPage(page)}
+                onMutationSuccess={() => refetch()}
+                collection={selectedModel}
+              />
+            )}
           </section>
         ) : (
-          <div>
+          <div className="p-4">
             <h1 className="text-2xl font-bold">No Collections Found</h1>
             <p>Could not find any collections in your Strapi instance.</p>
+            <p className="text-sm text-gray-500 mt-2">Make sure your Strapi server is running and accessible.</p>
           </div>
         )}
       </div>

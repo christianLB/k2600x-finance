@@ -27,7 +27,6 @@ export function AccountList() {
       data={data}
       columns={columns as any}
       pagination={pagination}
-      onEdit={() => {}}
       onPageChange={() => {}}
       collection="accounts"
     />

@@ -23,7 +23,8 @@ export type DynamicField = {
 };
 
 export interface DynamicFormProps<T extends Record<string, any>> {
-  schema: z.ZodType<T>;
+  // Accept either a ZodType or a ZodObject schema
+  schema: z.ZodType<T> | z.ZodObject<any>;
   fields: DynamicField[];
   defaultValues: Partial<T>;
   onSubmit: (values: T) => Promise<void> | void;

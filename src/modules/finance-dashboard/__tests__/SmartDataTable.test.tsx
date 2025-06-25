@@ -7,7 +7,7 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { SmartDataTable } from '../components/SmartDataTable';
 
-jest.mock('@/components/dynamic-form/DynamicStrapiForm', () => ({
+jest.mock('../../../components/dynamic-form/DynamicStrapiForm', () => ({
   DynamicStrapiForm: () => <div>DynamicForm</div>,
 }));
 
@@ -24,7 +24,7 @@ describe('SmartDataTable', () => {
         data={data}
         columns={columns}
         pagination={{ totalItems: 1, itemsPerPage: 10, currentPage: 1 }}
-        onEdit={jest.fn()}
+        onMutationSuccess={jest.fn()}
         onPageChange={jest.fn()}
         collection="finance-data"
       />,

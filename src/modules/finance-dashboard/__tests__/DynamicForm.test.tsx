@@ -9,7 +9,7 @@ import { z } from 'zod';
 jest.mock('@k2600x/design-system', () => {
   const React = require('react');
   return {
-    Input: React.forwardRef((props: any, ref) => <input ref={ref} {...props} />),
+    Input: React.forwardRef((props: any, ref: React.Ref<HTMLInputElement>) => <input ref={ref} {...props} />),
     Button: (props: any) => <button {...props}>{props.children}</button>,
     Select: (props: any) => <select {...props}>{props.children}</select>,
     SelectTrigger: (props: any) => <div {...props}>{props.children}</div>,
@@ -24,15 +24,16 @@ describe('DynamicForm', () => {
     { name: 'name', label: 'Name', type: 'text', placeholder: 'Name' },
     { name: 'age', label: 'Age', type: 'number', placeholder: 'Age' },
   ];
+  // Define proper type for the schema to match ZodType<T>
   const schema = z.object({
     name: z.string().min(1),
     age: z.coerce.number().min(0),
-  });
+  }) as z.ZodType<{name: string, age: number}>;
 
   test('submits valid data', async () => {
     const onSubmit = jest.fn();
     const { getByLabelText, getByRole } = render(
-      <DynamicForm schema={schema} fields={fields} defaultValues={{}} onSubmit={onSubmit} />
+      <DynamicForm schema={schema as any} fields={fields} defaultValues={{}} onSubmit={onSubmit} />
     );
 
     fireEvent.change(getByLabelText('Name'), { target: { value: 'John' } });
@@ -45,7 +46,7 @@ describe('DynamicForm', () => {
 
   test('shows validation error', async () => {
     const { getByRole, findByText } = render(
-      <DynamicForm schema={schema} fields={fields} defaultValues={{}} onSubmit={jest.fn()} />
+      <DynamicForm schema={schema as any} fields={fields} defaultValues={{}} onSubmit={jest.fn()} />
     );
 
     fireEvent.click(getByRole('button'));

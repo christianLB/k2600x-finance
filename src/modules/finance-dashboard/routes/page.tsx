@@ -89,11 +89,8 @@ export default function FinanceDashboardPage() {
                 itemsPerPage: pagination.pageSize,
                 currentPage: pagination.page,
               }}
-              onPageChange={() => {}}
-              onEdit={(row) => {
-                onSubmit(row);
-                refetch();
-              }}
+              onPageChange={(page) => refetch()}
+              onMutationSuccess={() => refetch()}
               collection={model}
             />
           </section>

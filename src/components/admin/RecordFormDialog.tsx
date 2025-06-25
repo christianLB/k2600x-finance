@@ -79,9 +79,9 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
         </div>
         <DialogFooter className="flex flex-col gap-2">
           {record?.documentId && (
-            <Label disabled className="opacity-70 text-sm">
+            <span className="text-sm text-muted-foreground opacity-70">
               {record.documentId}
-            </Label>
+            </span>
           )}
           <Button
             onClick={handleFooterSubmit}
