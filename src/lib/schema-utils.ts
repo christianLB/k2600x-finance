@@ -1,5 +1,10 @@
 import type { StrapiSchema } from "@/types/admin";
-import { CollectionMeta } from "@/context/StrapiSchemaProvider";
+// import { CollectionMeta } from "@/context/StrapiSchemaProvider"; // DEPRECATED
+interface CollectionMeta { 
+  apiID: string; 
+  displayName: string; 
+  attributes: Record<string, any>;
+} // Stub for build compatibility
 
 /**
  * Returns the attribute keys from a Strapi schema object.

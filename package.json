@@ -14,7 +14,8 @@
     "lint": "eslint . --ext .ts,.tsx || true",
     "test": "jest",
     "type-check": "tsc --noEmit || true",
-    "test:unit": "jest || true"
+    "test:unit": "jest || true",
+    "strapi:types": "node scripts/generate-strapi-types.cjs src/types/strapi-generated.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -25,6 +26,7 @@
     "@radix-ui/react-switch": "^1.1.3",
     "@radix-ui/react-tabs": "^1.1.3",
     "@shadcn/ui": "^0.0.4",
+    "@strapi/client": "^1.4.0",
     "@tailwindcss/postcss": "^4.1.10",
     "@tanstack/react-query": "^5.81.2",
     "axios": "^1.8.1",
@@ -53,13 +55,14 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^14.3.1",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20",
+    "@types/node": "^20.19.1",
     "@types/react": "^18",
     "@types/testing-library__jest-dom": "^5.14.9",
     "autoprefixer": "^10.4.21",
     "babel-jest": "^29.7.0",
     "jest": "^30.0.2",
     "jest-environment-jsdom": "^30.0.2",
+    "strapi-sdk-js": "^3.0.0",
     "typescript": "5.8.3",
     "vitest": "^1.4.0"
   },

@@ -1,178 +1,269 @@
-'use client';
-import React, { useMemo, useState, useRef } from 'react';
-import { useStrapiMutation } from '../hooks';
-import type { ColumnDef } from '@tanstack/react-table';
+"use client";
+// ==========================================================================
+// SmartDataTable v4 — Presentational Component
+// ==========================================================================
+//
+// @description
+// This component is a "presentational" or "dumb" component. It is
+// responsible for rendering the UI for a Strapi collection, but it does
+// not fetch any data itself. Instead, it receives all data, schema,
+// and mutation handlers as props from a parent component.
+//
+// @features
+// - Renders a DataTable for any Strapi collection.
+// - Dynamically generates columns based on the provided Strapi schema.
+// - Includes dialogs for Create, Update, and Delete operations.
+// - Uses a DynamicStrapiForm for editing and creating records.
+// - Delegates all state management and API calls to its parent.
+//
+// ==========================================================================
 
-// Import with type assertions to bypass JSX type errors
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import {
   Button,
   DataTable,
   Dialog,
   DialogHeader,
   DialogTitle,
-  DialogFooter
-} from '@k2600x/design-system';
+  DialogFooter,
+  Switch,
+} from "@k2600x/design-system";
+import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
 
-// Cast as any to bypass type errors from design-system JSX elements
-const ButtonComponent = Button as any;
-const DataTableComponent = DataTable as any;
-const DialogComponent = Dialog as any;
-const DialogHeaderComponent = DialogHeader as any;
-const DialogTitleComponent = DialogTitle as any;
-const DialogFooterComponent = DialogFooter as any;
-import { DynamicStrapiForm } from '@/components/dynamic-form/DynamicStrapiForm';
+// ==========================================================================
+// Type Definitions
+// ==========================================================================
 
-export interface PaginationState {
-  totalItems: number;
-  itemsPerPage: number;
-  currentPage: number;
+// Cast Design System components to `any` to bypass strict type checks
+// that may conflict with the dynamic nature of this component.
+const Btn = Button as any;
+const DT = DataTable as any;
+const Dlg = Dialog as any;
+const DlgHeader = DialogHeader as any;
+const DlgTitle = DialogTitle as any;
+const DlgFooter = DialogFooter as any;
+
+// Defines the shape of the Strapi schema object required by this component.
+interface StrapiSchema {
+  uid: string;
+  primaryKey: string;
+  primaryField: string;
+  attributes: {
+    [key: string]: {
+      type: string;
+      relation?: {
+        targetUID: string;
+      };
+    };
+  };
 }
 
-export interface SmartDataTableProps<T extends { id: React.Key }> {
-  data: T[];
-  columns: ColumnDef<T, any>[];
-  pagination: PaginationState;
-  onPageChange: (page: number) => void;
-  onMutationSuccess?: () => void;
-  collection: string; // This should be the Strapi model UID, e.g., 'api::category.category'
+// Defines the props for the SmartDataTable component.
+interface Props {
+  schema: StrapiSchema;
+  data: any[];
+  isLoading: boolean;
+  // CRUD operations are handled by the parent component.
+  onCreate: (values: any) => Promise<any>;
+  onUpdate: (id: any, values: any) => Promise<any>;
+  onDelete: (id: any) => Promise<any>;
+  // Pagination state is also controlled by the parent.
+  pagination: {
+    pageCount: number;
+    currentPage: number;
+    onPageChange: (page: number) => void;
+  };
 }
 
-export const SmartDataTable = <T extends { id: React.Key }>(props: SmartDataTableProps<T>) => {
-  const {
-    data,
-    columns,
-    pagination,
-    onPageChange,
-    onMutationSuccess,
-    collection,
-  } = props;
-  const [editRow, setEditRow] = useState<T | null>(null);
-  const [deleteRow, setDeleteRow] = useState<T | null>(null);
-  const { update, remove, loading: isMutating } = useStrapiMutation();
-  const formRef = useRef<{ submitForm: () => void; isDirty: () => boolean; }>(null);
-  const [isFormDirty, setIsFormDirty] = useState(false);
+// ==========================================================================
+// Component
+// ==========================================================================
 
-  const handleUpdate = async (values: any) => {
-    if (!editRow) return;
+export default function SmartDataTable({ schema, data, isLoading, onCreate, onUpdate, onDelete, pagination }: Props) {
+  // State for managing the Create, Update, and Delete dialogs.
+  const [isNewDialogOpen, setNewDialogOpen] = useState(false);
+  const [editingRow, setEditingRow] = useState<any | null>(null);
+  const [deletingRow, setDeletingRow] = useState<any | null>(null);
+  const [isDirty, setDirty] = useState(false);
+
+  // Ref to access the DynamicStrapiForm's imperative methods (e.g., submitForm).
+  const formRef = useRef<{ submitForm: () => void; isDirty: () => boolean }>(null);
+
+  // State for tracking the status of mutations.
+  const [mutationState, setMutationState] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+
+  /**
+   * Dynamically generates table columns from the Strapi schema.
+   * This memoized function avoids re-computation on every render.
+   */
+  const columns: ColumnDef<any, any>[] = useMemo(() => {
+    if (!schema) return [];
+
+    const generatedColumns: ColumnDef<any, any>[] = Object.entries(schema.attributes)
+      .map(([fieldName, attr]) => {
+        // Handle different attribute types to render them appropriately.
+        switch (attr.type) {
+          case "boolean":
+            return {
+              accessorKey: fieldName,
+              header: fieldName,
+              cell: ({ row }) => <Switch checked={row.original[fieldName]} disabled />,
+            };
+          case "media":
+            return {
+              accessorKey: fieldName,
+              header: fieldName,
+              cell: ({ row }) =>
+                row.original[fieldName]?.url ? (
+                  <a href={row.original[fieldName].url} target="_blank" rel="noreferrer" className="underline text-xs">file</a>
+                ) : '—',
+            };
+          // Add more type handlers as needed (e.g., relations, dates).
+          default:
+            // For simple types, just display the value.
+            return { accessorKey: fieldName, header: fieldName };
+        }
+      });
+
+    // Add a final column for action buttons (Edit, Delete).
+    generatedColumns.push({
+      id: "actions",
+      cell: ({ row }) => (
+        <div className="flex gap-2 justify-end">
+          <Btn size="sm" variant="ghost" onClick={() => setEditingRow(row.original)}>
+            Edit
+          </Btn>
+          <Btn size="sm" variant="destructive" onClick={() => setDeletingRow(row.original)}>
+            Delete
+          </Btn>
+        </div>
+      ),
+    });
+
+    return generatedColumns;
+  }, [schema]);
+
+  // ==========================================================================
+  // CRUD Handlers
+  // ==========================================================================
+
+  const executeMutation = async (mutationFn: () => Promise<any>, onSuccess: () => void) => {
+    setMutationState('pending');
     try {
-      await update(collection, String(editRow.id), values);
-      setEditRow(null);
-      onMutationSuccess?.();
+      await mutationFn();
+      setMutationState('success');
+      onSuccess();
+      // Briefly show success, then reset.
+      setTimeout(() => setMutationState('idle'), 2000);
     } catch (error) {
-      console.error('Failed to update document:', error);
+      console.error("Mutation failed:", error);
+      setMutationState('error');
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteRow) return;
-    try {
-      await remove(collection, String(deleteRow.id));
-      setDeleteRow(null);
-      onMutationSuccess?.();
-    } catch (error) {
-      console.error('Failed to delete document:', error);
-    }
+  const handleCreate = (values: any) => {
+    executeMutation(() => onCreate(values), () => setNewDialogOpen(false));
   };
 
-  const handleFooterSubmit = () => {
-    formRef.current?.submitForm();
+  const handleUpdate = (values: any) => {
+    if (!editingRow) return;
+    const id = editingRow[schema.primaryKey];
+    executeMutation(() => onUpdate(id, values), () => setEditingRow(null));
   };
 
-  const tableColumns = useMemo<ColumnDef<T, any>[]>(
-    () => [
-      ...columns,
-      {
-        id: 'actions',
-        header: () => <span className="text-right w-full block">Actions</span>,
-        cell: ({ row }) => {
-          const original = row.original;
-          return (
-            <div className="flex space-x-2 justify-end">
-              <ButtonComponent variant="ghost" size="sm" onClick={() => setEditRow(original)}>
-                Edit
-              </ButtonComponent>
-              <ButtonComponent variant="destructive" size="sm" onClick={() => setDeleteRow(original)}>
-                Delete
-              </ButtonComponent>
-            </div>
-          );
-        },
-      },
-    ],
-    [columns]
-  );
-  
-  const dataTablePagination = useMemo(() => ({
-    pageCount: Math.ceil(pagination.totalItems / pagination.itemsPerPage),
-    currentPage: pagination.currentPage,
-    itemsPerPage: pagination.itemsPerPage,
-    onPageChange: onPageChange,
-  }), [pagination, onPageChange]);
+  const handleDelete = () => {
+    if (!deletingRow) return;
+    const id = deletingRow[schema.primaryKey];
+    executeMutation(() => onDelete(id), () => setDeletingRow(null));
+  };
+
+  // ==========================================================================
+  // Render Logic
+  // ==========================================================================
+
+  if (!schema) {
+    return <p className="text-zinc-500">Select a model to begin.</p>;
+  }
 
   return (
-    <div>
-      <DataTableComponent
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Btn size="sm" onClick={() => setNewDialogOpen(true)}>
+          Add New Record
+        </Btn>
+      </div>
+
+      <DT
         data={data}
-        columns={tableColumns}
-        pagination={dataTablePagination}
+        columns={columns}
+        pagination={{
+          pageCount: pagination.pageCount,
+          currentPage: pagination.currentPage,
+          itemsPerPage: 10, // This could be a prop if needed
+          onPageChange: pagination.onPageChange,
+        }}
+        loading={isLoading}
       />
 
-      {/* Edit Dialog */}
-      <DialogComponent isOpen={!!editRow} onClose={() => {
-        if (formRef.current?.isDirty()) {
-          if (window.confirm('You have unsaved changes. Are you sure you want to close?')) {
-            setEditRow(null);
-          }
-        } else {
-          setEditRow(null);
-        }
-      }}>
-        <div className="dialog-content p-6 min-w-[400px] w-[95vw] max-w-xl">
-          {editRow && (
+      {/* Create Record Dialog */}
+      <Dlg isOpen={isNewDialogOpen} onClose={() => setNewDialogOpen(false)}>
+        <div className="p-6 w-[95vw] max-w-xl">
+          <DlgHeader><DlgTitle>New Record</DlgTitle></DlgHeader>
+          <DynamicStrapiForm
+            ref={formRef}
+            collection={schema.uid}
+            onSuccess={handleCreate}
+            hideSubmitButton
+            onDirtyChange={setDirty}
+          />
+          <DlgFooter className="mt-4 flex justify-end gap-2">
+            <Btn variant="ghost" onClick={() => setNewDialogOpen(false)}>Cancel</Btn>
+            <Btn onClick={() => formRef.current?.submitForm()} disabled={!isDirty || mutationState === 'pending'}>
+              {mutationState === 'pending' ? 'Creating...' : 'Create'}
+            </Btn>
+          </DlgFooter>
+        </div>
+      </Dlg>
+
+      {/* Edit Record Dialog */}
+      <Dlg isOpen={!!editingRow} onClose={() => setEditingRow(null)}>
+        <div className="p-6 w-[95vw] max-w-xl">
+          {editingRow && (
             <>
-              <DialogHeaderComponent>
-                <DialogTitleComponent>Edit Record</DialogTitleComponent>
-              </DialogHeaderComponent>
+              <DlgHeader><DlgTitle>Edit Record</DlgTitle></DlgHeader>
               <DynamicStrapiForm
                 ref={formRef}
-                collection={collection}
-                document={editRow}
+                collection={schema.uid}
+                document={editingRow}
                 onSuccess={handleUpdate}
                 hideSubmitButton
-                onDirtyChange={(isDirty) => setIsFormDirty(isDirty)}
+                onDirtyChange={setDirty}
               />
-              <DialogFooterComponent className="mt-4">
-                <ButtonComponent onClick={() => setEditRow(null)} variant="ghost">
-                  Cancel
-                </ButtonComponent>
-                <ButtonComponent onClick={handleFooterSubmit} disabled={isMutating || !isFormDirty}>
-                  {isMutating ? 'Saving...' : 'Save Changes'}
-                </ButtonComponent>
-              </DialogFooterComponent>
+              <DlgFooter className="mt-4 flex justify-end gap-2">
+                <Btn variant="ghost" onClick={() => setEditingRow(null)}>Cancel</Btn>
+                <Btn onClick={() => formRef.current?.submitForm()} disabled={!isDirty || mutationState === 'pending'}>
+                  {mutationState === 'pending' ? 'Saving...' : 'Save Changes'}
+                </Btn>
+              </DlgFooter>
             </>
           )}
         </div>
-      </DialogComponent>
+      </Dlg>
 
       {/* Delete Confirmation Dialog */}
-      <DialogComponent isOpen={!!deleteRow} onClose={() => setDeleteRow(null)}>
-        <div className="dialog-content p-6 min-w-[400px] w-[95vw] max-w-xl">
-          <DialogHeaderComponent>
-            <DialogTitleComponent>Confirm Deletion</DialogTitleComponent>
-          </DialogHeaderComponent>
-          <p>Are you sure you want to delete this record? This action cannot be undone.</p>
-          <DialogFooterComponent className="mt-6 flex justify-end space-x-2">
-            <ButtonComponent onClick={() => setDeleteRow(null)} variant="ghost" disabled={isMutating}>
-              Cancel
-            </ButtonComponent>
-            <ButtonComponent onClick={handleDelete} variant="destructive" disabled={isMutating}>
-              {isMutating ? 'Deleting...' : 'Delete'}
-            </ButtonComponent>
-          </DialogFooterComponent>
+      <Dlg isOpen={!!deletingRow} onClose={() => setDeletingRow(null)}>
+        <div className="p-6 w-[95vw] max-w-sm">
+          <DlgHeader><DlgTitle>Confirm Deletion</DlgTitle></DlgHeader>
+          <p className="my-4 text-sm">This action is permanent and cannot be undone.</p>
+          <DlgFooter className="mt-2 flex justify-end gap-2">
+            <Btn variant="ghost" onClick={() => setDeletingRow(null)}>Cancel</Btn>
+            <Btn variant="destructive" onClick={handleDelete} disabled={mutationState === 'pending'}>
+              {mutationState === 'pending' ? 'Deleting...' : 'Delete'}
+            </Btn>
+          </DlgFooter>
         </div>
-      </DialogComponent>
+      </Dlg>
     </div>
   );
 }
-
-export default SmartDataTable;

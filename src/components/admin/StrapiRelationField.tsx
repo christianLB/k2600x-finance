@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { strapiPublic } from "@/lib/strapi.public";
 import {
   Select,
   SelectTrigger,
@@ -10,6 +11,12 @@ import {
 } from "@k2600x/design-system";
 import { extractIds } from "@/utils/relationHelpers";
 
+// Strapi data structure
+interface StrapiDataItem<T> {
+  id: number;
+  attributes: T;
+}
+
 interface RelationOption {
   label: string;
   value: string | number;
@@ -17,14 +24,12 @@ interface RelationOption {
 }
 
 interface StrapiRelationFieldProps {
-  name: string;
   value: string | number | Array<string | number> | null;
-  onChange: (val: any) => void;
+  onChange: (value: number | string | number[] | undefined) => void;
   target: string; // Strapi collection name
   isMulti?: boolean;
   placeholder?: string;
   displayField?: string; // Field used as label (default: "name")
-  apiUrl?: string; // Override for fetching
 }
 
 export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
@@ -34,119 +39,74 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
   isMulti = false,
   placeholder = "(Selecciona...)",
   displayField = "name",
-  apiUrl,
 }) => {
-  const [options, setOptions] = useState<RelationOption[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { schemas } = useStrapiSchemas();
+  const { data: options = [], isLoading, error } = useQuery<RelationOption[], Error>({
+    queryKey: ['strapi', target, 'relation', displayField],
+    queryFn: async () => {
+      const response = await strapiPublic.collection(target).find({
+        fields: [displayField],
+        pagination: { limit: -1 }, // Fetch all items for the dropdown
+      });
 
-  // Resolve collection name using pluralName from schema when available
-  const collection = React.useMemo(() => {
-    if (schemas && schemas[target]?.schema?.pluralName) {
-      return schemas[target].schema.pluralName as string;
-    }
-    return target.split(".").pop() || target;
-  }, [target, schemas]);
+      if (!response.data) return [];
 
-  // Fetch related collection when component mounts or deps change
-  useEffect(() => {
-    let ignore = false;
-    async function fetchOptions() {
-      setLoading(true);
-      setError(null);
-      try {
-        const url = apiUrl || `/api/strapi?collection=${collection}`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ method: "GET", collection }),
-        });
-        if (!res.ok) throw new Error("Failed to fetch related data");
-        const json = await res.json();
-        const items = json.data || [];
-        const opts = items.map((item: any) => {
-          const attrs = item.attributes || {};
-          return {
-            label:
-              attrs[displayField] ||
-              attrs.displayName ||
-              attrs.name ||
-              item[displayField] ||
-              item.displayName ||
-              item.name ||
-              item.id,
-            value: item.id,
-            link: `/admin/${collection}/${item.id}`,
-          };
-        });
-        if (!ignore) setOptions(opts);
-      } catch (e: any) {
-        if (!ignore) setError(e.message || "Unknown error");
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    }
-    fetchOptions();
-    return () => {
-      ignore = true;
+      return response.data.map((item) => {
+        const attrs = item.attributes;
+        return {
+          label: String(attrs[displayField] || attrs.displayName || attrs.name || item.id),
+          value: item.id,
+          link: `/admin/${target}/${item.id}`,
+        };
+      });
+    },
+  });
+
+  const normalizedIds = useMemo(() => extractIds(value), [value]);
+
+  const { multiSelectOptions, selectValue, selectedLabel } = useMemo(() => {
+    const stringIds = normalizedIds.map(String);
+
+    const multiOpts = options.map((opt) => ({
+      id: Number(opt.value),
+      label: opt.label,
+    }));
+
+    const singleSelected = options.find((opt) => stringIds.includes(String(opt.value)));
+
+    return {
+      multiSelectOptions: multiOpts,
+      selectValue: singleSelected ? String(singleSelected.value) : undefined,
+      selectedLabel: singleSelected ? singleSelected.label : placeholder,
     };
-  }, [collection, apiUrl, displayField]);
+  }, [options, normalizedIds, placeholder]);
 
-  // Normalize incoming value to an array of ids
-  const normalizedIds = extractIds(value);
-  const normalizedArray = normalizedIds.map((v) => String(v));
-
-  const selectedOptions = isMulti
-    ? options.filter((opt) => normalizedArray.includes(String(opt.value)))
-    : options.find((opt) => normalizedArray.includes(String(opt.value)));
-
-  // For MultiSelect: options must have id:number, defaultValue:number[]
-  // Map options to required shape for MultiSelect
-  const multiSelectOptions = options.map((opt) => ({
-    id: typeof opt.value === "number" ? opt.value : Number(opt.value),
-    label: opt.label,
-  }));
-  const multiSelectDefaultValue = normalizedIds;
-
-  // For Select: value must be string or undefined
-  const selectValue =
-    normalizedArray.length > 0 ? String(normalizedArray[0]) : undefined;
 
   if (error) {
-    return <div style={{ color: "#d32f2f" }}>Error: {error}</div>;
+    return <div style={{ color: "#d32f2f" }}>Error: {error.message}</div>;
   }
 
   return (
     <div>
-      {loading ? (
+      {isLoading ? (
         <div>
           <Loader /> Cargando...
         </div>
       ) : isMulti ? (
         <MultiSelect
           options={multiSelectOptions}
-          selectedIds={multiSelectDefaultValue}
-          onChange={onChange}
+          selectedIds={normalizedIds}
+          onChange={(ids) => onChange(ids as any)}
         />
       ) : (
         <Select
           value={selectValue}
           onValueChange={(val) => {
-            const parsed =
-              options.length > 0 && typeof options[0].value === "number"
-                ? Number(val)
-                : val;
-            onChange(parsed);
+            onChange(val ? Number(val) : undefined);
           }}
         >
-          <SelectTrigger>
-            {selectedOptions && !Array.isArray(selectedOptions)
-              ? selectedOptions.label
-              : placeholder}
-          </SelectTrigger>
+          <SelectTrigger>{selectedLabel}</SelectTrigger>
           <SelectContent>
-            {options.map((opt) => (
+            {options.map((opt: RelationOption) => (
               <SelectItem key={opt.value} value={String(opt.value)}>
                 {opt.label}
               </SelectItem>

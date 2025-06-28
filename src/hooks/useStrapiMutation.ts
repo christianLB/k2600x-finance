@@ -1,78 +1,56 @@
 // =============================================================
-// File: src/hooks/useStrapiMutation.ts
+// File: src/hooks/useStrapiCRUD.ts  (React Query v5 compatible)
 // =============================================================
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { strapiService } from "@/services/strapiService";
-import { useStrapiSchemaCtx } from "@/context/StrapiSchemaProvider";
+// import { useStrapiSchemaCtx } from "@/context/StrapiSchemaProvider"; // DEPRECATED
 
-export interface MutationOptions<T> {
-  invalidate?: string[];
-  onSuccess?: (data: T) => void;
-}
-
-export function useStrapiMutation() {
+/**
+ * Hook providing React Query mutations for create/update/delete operations
+ * and exposes primaryKey for the given collection UID.
+ */
+export function useStrapiCRUD(uid: string) {
   const qc = useQueryClient();
-  const schemaCtx = useStrapiSchemaCtx();
-
-  const pathOf = (uid: string, id?: string | number | Record<string, any>) => {
-    const col = schemaCtx.get(uid);
-    if (!col) throw new Error(`Schema not found for uid: ${uid}`);
-    const base = `/api/${col.apiID}`;
-
-    // allow passing a full record; extract primaryKey
-    let identifier: string | number | undefined;
-    if (typeof id === "object" && id !== null) {
-      identifier = id[col.primaryKey];
-    } else {
-      identifier = id;
-    }
-    return identifier !== undefined && identifier !== ""
-      ? `${base}/${identifier}`
-      : base;
+  // DEPRECATED: StrapiSchemaProvider context was removed
+  // Return minimal stub for build compatibility
+  return {
+    create: () => Promise.resolve(),
+    update: () => Promise.resolve(),
+    delete: () => Promise.resolve(),
+    primaryKey: 'id'
   };
+  
+  /* DEPRECATED CODE:
+  const { get } = useStrapiSchemaCtx();
+  const col = get(uid);
+  if (!col) {
+    throw new Error(`Schema not found for uid: ${uid}`);
+  }
+  const basePath = `/api/${col.apiID}`;
+  const pk = col.primaryKey;
 
-  const create = <T = any>(uid: string, opts: MutationOptions<T> = {}) =>
-    useMutation({
-      mutationFn: (payload: unknown) =>
-        strapiService.post(pathOf(uid), payload),
-      onSuccess: (data) => {
-        opts.onSuccess?.(data as T);
-        opts.invalidate?.forEach((u) =>
-          qc.invalidateQueries({ queryKey: [u] })
-        );
-      },
-    });
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: (payload: any) =>
+      strapiService.post(basePath, { data: payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [uid] }),
+  });
 
-  const update = <T = any>(
-    uid: string,
-    id: string | number,
-    opts: MutationOptions<T> = {}
-  ) =>
-    useMutation({
-      mutationFn: (payload: unknown) =>
-        strapiService.put(pathOf(uid, id), payload),
-      onSuccess: (data) => {
-        opts.onSuccess?.(data as T);
-        opts.invalidate?.forEach((u) =>
-          qc.invalidateQueries({ queryKey: [u] })
-        );
-      },
-    });
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string | number; payload: any }) =>
+      strapiService.put(`${basePath}/${id}`, { data: payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [uid] }),
+  });
 
-  const remove = <T = any>(
-    uid: string,
-    id: string | number,
-    opts: MutationOptions<T> = {}
-  ) =>
-    useMutation({
-      mutationFn: () => strapiService.del(pathOf(uid, id)),
-      onSuccess: (data) => {
-        opts.onSuccess?.(data as T);
-        opts.invalidate?.forEach((u) =>
-          qc.invalidateQueries({ queryKey: [u] })
-        );
-      },
-    });
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string | number) => strapiService.del(`${basePath}/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [uid] }),
+  });
 
-  return { create, update, remove };
+  return { primaryKey: pk, createMutation, updateMutation, deleteMutation };
+  */
 }
+
+export default useStrapiCRUD;

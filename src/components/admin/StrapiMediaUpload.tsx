@@ -1,9 +1,18 @@
 import React, { useRef, useState } from "react";
 import Image from "next/image";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { strapiService } from "@/services/strapiService";
 import { Button } from "@k2600x/design-system";
-import { useStrapiUpload, StrapiMedia } from "@/hooks/useStrapiUpload";
-import { File as FileIcon, FileImage, FileText } from "lucide-react";
-import { FileArchive } from "lucide-react";
+import { File as FileIcon, FileImage, FileText, FileArchive } from "lucide-react";
+
+// Assuming StrapiMedia type is defined elsewhere, or we define it here.
+export interface StrapiMedia {
+  id: number;
+  name: string;
+  url: string;
+  mime: string;
+  // Add other relevant fields from your Strapi media type
+}
 
 export type StrapiMediaUploadProps = {
   value: StrapiMedia[];
@@ -15,7 +24,6 @@ export type StrapiMediaUploadProps = {
   label?: string;
 };
 
-// Helper to get absolute Strapi media URL
 function getStrapiMediaUrl(url: string): string {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -34,31 +42,62 @@ export function StrapiMediaUpload({
 }: StrapiMediaUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
-  const { upload, uploading, error, deleteMedia } = useStrapiUpload({
-    onUpload: (media) => onChange([...value, ...media]),
-    onError: () => {},
+  const queryClient = useQueryClient();
+
+  const uploadMutation = useMutation<StrapiMedia[], Error, FileList>({
+    mutationFn: async (files: FileList) => {
+      const results: StrapiMedia[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const result = await strapiService.uploadFile<StrapiMedia>(files[i]);
+        results.push(result);
+      }
+      return results;
+    },
+    onSuccess: (newMedia: StrapiMedia[]) => {
+      onChange([...value, ...newMedia]);
+      queryClient.invalidateQueries({ queryKey: ['strapi', 'media'] });
+    },
   });
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const deleteMutation = useMutation<void, Error, number>({
+    mutationFn: (id: number) => strapiService.deleteFile(id),
+    onSuccess: (_: void, id: number) => {
+      onChange(value.filter((v) => v.id !== id));
+      queryClient.invalidateQueries({ queryKey: ['strapi', 'media'] });
+    },
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    if (maxSize && Array.from(e.target.files).some(f => f.size > maxSize)) {
-      alert("Archivo demasiado grande");
-      return;
+    const fileList = e.target.files;
+    if (maxSize) {
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
+        if (file.size > maxSize) {
+          alert("Archivo demasiado grande");
+          return;
+        }
+      }
     }
-    await upload(e.target.files);
+    uploadMutation.mutate(fileList);
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragActive(false);
-    if (disabled || uploading) return;
-    const files = e.dataTransfer.files;
-    if (maxSize && Array.from(files).some(f => f.size > maxSize)) {
-      alert("Archivo demasiado grande");
-      return;
+    if (disabled || uploadMutation.isPending) return;
+    const fileList = e.dataTransfer.files;
+    if (maxSize) {
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
+        if (file.size > maxSize) {
+          alert("Archivo demasiado grande");
+          return;
+        }
+      }
     }
-    await upload(files);
+    uploadMutation.mutate(fileList);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -71,41 +110,37 @@ export function StrapiMediaUpload({
     setDragActive(false);
   };
 
-  const handleRemove = async (media: StrapiMedia) => {
-    await deleteMedia(media.id);
-    onChange(value.filter(v => v.id !== media.id));
+  const handleRemove = (media: StrapiMedia) => {
+    deleteMutation.mutate(media.id);
   };
 
   return (
     <div className="space-y-2">
       {label && <label className="block font-medium">{label}</label>}
       <div
-        className={`relative border-2 rounded-md px-4 py-6 flex flex-col items-center justify-center transition-colors duration-150 cursor-pointer ${dragActive ? "border-blue-500 bg-blue-50" : "border-dashed border-muted bg-muted/10"} ${disabled ? "opacity-60 cursor-not-allowed" : "hover:border-blue-400"}`}
-        onClick={() => !disabled && inputRef.current?.click()}
+        onClick={() => inputRef.current?.click()}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        tabIndex={0}
-        role="button"
-        aria-disabled={disabled}
+        className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors hover:border-primary/80 bg-background text-foreground/60"
       >
         <input
           ref={inputRef}
           type="file"
-          multiple={multiple}
           accept={accept}
-          disabled={disabled || uploading}
+          multiple={multiple}
           onChange={handleFileChange}
+          disabled={disabled || uploadMutation.isPending}
           style={{ display: "none" }}
         />
         <span className="text-sm text-muted-foreground mb-2 select-none">
-          {uploading ? "Subiendo..." : dragActive ? "Suelta el archivo aquí" : `Haz click o arrastra archivo${multiple ? 's' : ''} aquí para subir`}
+          {uploadMutation.isPending ? "Subiendo..." : dragActive ? "Suelta el archivo aquí" : `Haz click o arrastra archivo${multiple ? 's' : ''} aquí para subir`}
         </span>
-        <Button type="button" size="sm" variant="secondary" disabled={disabled || uploading} className="pointer-events-none opacity-60">
+        <Button type="button" size="sm" variant="secondary" disabled={disabled || uploadMutation.isPending} className="pointer-events-none opacity-60">
           Seleccionar archivo
         </Button>
       </div>
-      {error && <div className="text-xs text-red-500 mt-1">{error.message}</div>}
+      {uploadMutation.error && <div className="text-xs text-red-500 mt-1">{uploadMutation.error.message}</div>}
       <ul className="flex flex-wrap gap-2 mt-2">
         {value.map((media) => {
           let icon = <FileIcon className="w-8 h-8 text-gray-400" />;
@@ -131,7 +166,7 @@ export function StrapiMediaUpload({
               >
                 {media.name}
               </a>
-              <Button type="button" size="sm" variant="ghost" onClick={() => handleRemove(media)} disabled={uploading}>
+              <Button type="button" size="sm" variant="ghost" onClick={() => handleRemove(media)} disabled={deleteMutation.isPending}>
                 Quitar
               </Button>
             </li>

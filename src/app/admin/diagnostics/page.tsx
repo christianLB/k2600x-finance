@@ -1,109 +1,53 @@
 // =============================================================
-// File: src/app/(admin)/diagnostics/page.tsx  (CRUD diagnostics v3 – fixed hook order)
+// File: src/app/(admin)/diagnostics/page.tsx  (CRUD Diagnostics v5 – TanStack + @strapi/client; sin StrapiSchemaProvider)
 // =============================================================
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
-import { useStrapiSchemaCtx } from "@/context/StrapiSchemaProvider";
-import { useStrapiCollection } from "@/hooks/useStrapiCollection";
-import { useStrapiMutation } from "@/hooks/useStrapiMutation";
-import { useDraftRecord } from "@/hooks/useDraftRecord";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ThemeProvider,
   AppLayout,
   Button,
   Textarea,
 } from "@k2600x/design-system";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// Removed direct import of strapiPublic as we're using API routes now
+import SmartDataTable from "@/modules/finance-dashboard/components/SmartDataTable";
 
 export default function DiagnosticsPage() {
-  const { list: schemas } = useStrapiSchemaCtx();
-  const [selectedModel, setSelectedModel] = useState<string>(
-    schemas[0]?.uid ?? ""
-  );
-  const [createdId, setCreatedId] = useState<string | number | null>(null);
+  const queryClient = useQueryClient();
 
-  // draft based on schema
-  const { draft, reset } = useDraftRecord(selectedModel);
-  const [payload, setPayload] = useState<string>(
-    JSON.stringify(draft, null, 2)
-  );
+  /* --------------------------- cargar esquemas --------------------------- */
+  const {
+    data: schemas = [],
+    isLoading: isLoadingSchemas,
+    error: schemasError,
+  } = useQuery<any[]>({
+    queryKey: ["schemas"],
+    queryFn: async () => {
+      const response = await fetch("/api/strapi/schemas");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `Failed to fetch schemas: ${errorData.error || response.statusText}`,
+          { cause: errorData.details }
+        );
+      }
+      // The API route already filters for collection types
+      return response.json();
+    },
+  });
+
+  /* ----------------------- modelo seleccionado ----------------------- */
+  const [selectedModel, setSelectedModel] = useState<string>("");
   useEffect(() => {
-    setPayload(JSON.stringify(draft, null, 2));
-    setCreatedId(null);
-  }, [draft]);
+    if (!selectedModel && schemas.length) {
+      setSelectedModel(schemas[0].uid);
+    }
+  }, [schemas, selectedModel]);
 
-  // collection data (for quick feedback)
-  const { data, meta, isLoading, error, refetch } = useStrapiCollection(
-    selectedModel,
-    { pageSize: 5 }
-  );
-
-  // mutations — HOOKS MUST BE CALLED UNCONDITIONALLY
-  const { create, update, remove } = useStrapiMutation();
-  const schemaCtx = useStrapiSchemaCtx();
-  const pk = schemaCtx.get(selectedModel)?.primaryKey ?? "id";
-
-  const createMut = create(selectedModel, {
-    invalidate: [selectedModel],
-    onSuccess: (res: any) => {
-      const record = (res as any).data ?? res;
-      const newId = (record as any).documentId ?? record.id ?? record[pk];
-      setCreatedId(newId);
-      refetch();
-    },
-  });
-  // always initialise, id may be 0 placeholder if none
-  const updateMut = update(selectedModel, createdId ?? "", {
-    invalidate: [selectedModel],
-    onSuccess: () => refetch(),
-  });
-  const deleteMut = remove(selectedModel, createdId ?? "", {
-    invalidate: [selectedModel],
-    onSuccess: () => {
-      setCreatedId(null);
-      refetch();
-    },
-  });
-
-  // sidebar buttons
-  const sidebar = useMemo(
-    () => (
-      <ul className="flex flex-col gap-2">
-        {schemas.map((s) => (
-          <li key={s.uid}>
-            <Button
-              size="sm"
-              variant={s.uid === selectedModel ? "primary" : "secondary"}
-              className="w-full justify-start"
-              onClick={() => {
-                setSelectedModel(s.uid);
-                setCreatedId(null);
-              }}
-            >
-              {s.displayName}
-            </Button>
-          </li>
-        ))}
-      </ul>
-    ),
-    [schemas, selectedModel]
-  );
-
-  const Indicator = ({ label, ok }: { label: string; ok: boolean }) => (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="w-32">{label}</span>
-      <span
-        className="px-2 py-1 rounded-full text-xs font-semibold"
-        style={{
-          background: ok ? "#4ade80" : "#ef4444",
-          color: ok ? "#000" : "#fff",
-        }}
-      >
-        {ok ? "OK" : "FAIL"}
-      </span>
-    </div>
-  );
-
-  const parsePayload = () => {
+  /* ----------------------------- payload ----------------------------- */
+  const [payload, setPayload] = useState<string>("{}");
+  const safeParse = () => {
     try {
       return JSON.parse(payload);
     } catch {
@@ -111,29 +55,201 @@ export default function DiagnosticsPage() {
     }
   };
 
+  /* -------------------- query de la colección -------------------- */
+  const [currentPage, setCurrentPage] = useState(1);
+  useEffect(() => {
+    setCurrentPage(1); // Reset page to 1 when model changes
+  }, [selectedModel]);
+
+  const {
+    data: collection,
+    isLoading: isLoadingCollection,
+    error: loadError,
+  } = useQuery({
+    queryKey: ["collection", selectedModel, currentPage],
+    queryFn: async () => {
+      if (!selectedModel) return null;
+      
+      const response = await fetch(
+        `/api/strapi/collections/${btoa(selectedModel)}?` +
+        new URLSearchParams({
+          page: currentPage.toString(),
+          pageSize: "5",
+          populate: ""
+        })
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `Failed to fetch collection: ${errorData.error || response.statusText}`,
+          { cause: errorData.details }
+        );
+      }
+      
+      return response.json();
+    },
+    enabled: Boolean(selectedModel),
+  });
+
+  /* ------------------------- operaciones CRUD ------------------------- */
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (!selectedModel) throw new Error("No collection selected");
+      
+      const response = await fetch(
+        `/api/strapi/collections/${btoa(selectedModel)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `Failed to create record: ${errorData.error || response.statusText}`,
+          { cause: errorData.details }
+        );
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["collection", selectedModel],
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number | string; data: any }) => {
+      if (!selectedModel) throw new Error("No collection selected");
+      
+      const response = await fetch(
+        `/api/strapi/collections/${btoa(selectedModel)}/${encodeURIComponent(String(id))}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `Failed to update record: ${errorData.error || response.statusText}`,
+          { cause: errorData.details }
+        );
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["collection", selectedModel],
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number | string) => {
+      if (!selectedModel) throw new Error("No collection selected");
+      
+      const response = await fetch(
+        `/api/strapi/collections/${btoa(selectedModel)}/${encodeURIComponent(String(id))}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `Failed to delete record: ${errorData.error || response.statusText}`,
+          { cause: errorData.details }
+        );
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["collection", selectedModel],
+      });
+    },
+  });
+
+  /* ----------------------------- handlers ----------------------------- */
+  const handleCreate = () => {
+    const parsed = safeParse();
+    if (!parsed) return alert("Invalid JSON");
+    createMutation.mutate(parsed);
+  };
+
+  const handleUpdate = () => {
+    const parsed = safeParse();
+    if (!parsed) return alert("Invalid JSON");
+    const id = parsed.id ?? parsed.documentId;
+    if (!id) return alert("Missing 'id' or 'documentId' in payload");
+    updateMutation.mutate({ id, data: parsed });
+  };
+
+  const handleDelete = () => {
+    const parsed = safeParse();
+    if (!parsed) return alert("Invalid JSON");
+    const id = parsed.id ?? parsed.documentId;
+    if (!id) return alert("Missing 'id' or 'documentId' in payload");
+    deleteMutation.mutate(id);
+  };
+
+  /* ----------------------------- sidebar ----------------------------- */
+  const sidebar = useMemo(() => {
+    if (isLoadingSchemas) return <p className="p-4">Cargando modelos…</p>;
+    if (schemasError)
+      return <p className="p-4 text-red-600">Error cargando modelos</p>;
+
+    return (
+      <ul className="flex flex-col gap-2">
+        {schemas.map((s: any) => (
+          <li key={s.uid}>
+            <Button
+              size="sm"
+              variant={s.uid === selectedModel ? "primary" : "secondary"}
+              className="w-full justify-start"
+              onClick={() => setSelectedModel(s.uid)}
+            >
+              {s.schema.displayName}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    );
+  }, [schemas, selectedModel, isLoadingSchemas, schemasError]);
+
+  /* ---------------------- schema para la tabla ---------------------- */
+  const tableSchema = useMemo(() => {
+    if (!selectedModel || !schemas.length) return null;
+    const selectedSchemaData = schemas.find((s) => s.uid === selectedModel);
+    if (!selectedSchemaData) return null;
+
+    return {
+      ...selectedSchemaData.schema,
+      uid: selectedSchemaData.uid,
+      primaryKey: "id",
+      primaryField: "id", // Default, as it's not provided by the API but required by the component type
+    };
+  }, [selectedModel, schemas]);
+
+  /* ----------------------------- render ----------------------------- */
   return (
     <ThemeProvider>
-      <AppLayout title="Diagnostics – Admin v2" sidebar={sidebar}>
+      <AppLayout title="Diagnostics – Admin v5" sidebar={sidebar}>
         <div className="p-4 space-y-6 max-w-xl">
-          {/* Schema preview */}
-          <details className="mb-4">
-            <summary className="cursor-pointer text-sm underline">
-              Ver esquema para {selectedModel}
-            </summary>
-            <pre className="mt-2 p-2 bg-muted text-xs whitespace-pre-wrap rounded max-h-64 overflow-auto">
-              {JSON.stringify(
-                schemaCtx.get(selectedModel)?.attributes,
-                null,
-                2
-              )}
-            </pre>
-          </details>
-          <h2 className="text-xl font-bold">Estado de hooks</h2>
-          <Indicator label="Schema" ok={schemas.length > 0} />
-          <Indicator label="Collection" ok={!error} />
-          <Indicator label="Mutation" ok={true} />
+          <h2 className="text-xl font-bold">CRUD Diagnostics (TanStack)</h2>
 
-          {/* Payload editor */}
+          {/* Editor JSON */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Payload (JSON)</label>
             <Textarea
@@ -144,57 +260,75 @@ export default function DiagnosticsPage() {
             />
           </div>
 
-          {/* Actions */}
+          {/* Botones */}
           <div className="flex gap-2 flex-wrap">
-            <Button
-              onClick={() => {
-                const p = parsePayload();
-                if (!p) return alert("JSON inválido");
-                createMut.mutate(p);
-              }}
-            >
-              Crear
+            <Button onClick={handleCreate} disabled={createMutation.isPending}>
+              Create
             </Button>
             <Button
               variant="secondary"
-              disabled={!createdId}
-              onClick={() => {
-                const p = parsePayload();
-                if (!p) return alert("JSON inválido");
-                if (!createdId) return;
-                updateMut.mutate(p);
-              }}
+              onClick={handleUpdate}
+              disabled={updateMutation.isPending}
             >
               Update
             </Button>
             <Button
               variant="destructive"
-              disabled={!createdId}
-              onClick={() => {
-                if (!createdId) return;
-                deleteMut.mutate();
-              }}
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
             >
-              Borrar
-            </Button>
-            <Button variant="ghost" onClick={reset}>
-              Reset Draft
+              Delete
             </Button>
           </div>
 
-          {/* Messages */}
-          {createMut.isSuccess && (
-            <div className="text-xs">✔ Creado key {String(createdId)}</div>
+          {/* Indicadores de estado */}
+          {createMutation.isPending && <div>Creating…</div>}
+          {createMutation.isError && (
+            <div className="text-red-600">
+              Error: {(createMutation.error as Error).message} {((createMutation.error as Error).cause as any)?.message ? `(${((createMutation.error as Error).cause as any)?.message})` : ''}
+            </div>
           )}
-          {updateMut.isSuccess && createdId && (
-            <div className="text-xs">✔ Actualizado {String(createdId)}</div>
+          {createMutation.isSuccess && (
+            <div className="text-green-600">Created ✔</div>
           )}
-          {deleteMut.isSuccess && <div className="text-xs">✔ Borrado</div>}
 
-          <div className="mt-4 text-sm text-muted-foreground">
-            <strong>UID:</strong> {selectedModel}
-          </div>
+          {updateMutation.isPending && <div>Updating…</div>}
+          {updateMutation.isError && (
+            <div className="text-red-600">
+              Error: {(updateMutation.error as Error).message} {((updateMutation.error as Error).cause as any)?.message ? `(${((updateMutation.error as Error).cause as any)?.message})` : ''}
+            </div>
+          )}
+          {updateMutation.isSuccess && (
+            <div className="text-green-600">Updated ✔</div>
+          )}
+
+          {deleteMutation.isPending && <div>Deleting…</div>}
+          {deleteMutation.isError && (
+            <div className="text-red-600">
+              Error: {(deleteMutation.error as Error).message} {((deleteMutation.error as Error).cause as any)?.message ? `(${((deleteMutation.error as Error).cause as any)?.message})` : ''}
+            </div>
+          )}
+          {deleteMutation.isSuccess && (
+            <div className="text-green-600">Deleted ✔</div>
+          )}
         </div>
+
+        {/* Tabla de registros */}
+        {selectedModel && tableSchema && (
+          <SmartDataTable
+            schema={tableSchema}
+            data={collection?.data ?? []}
+            isLoading={isLoadingCollection}
+            pagination={{
+              pageCount: collection?.meta?.pagination?.pageCount ?? 1,
+              currentPage: collection?.meta?.pagination?.page ?? 1,
+              onPageChange: (page) => setCurrentPage(page),
+            }}
+            onCreate={(data) => createMutation.mutateAsync(data)}
+            onUpdate={(id, data) => updateMutation.mutateAsync({ id, data })}
+            onDelete={(id) => deleteMutation.mutateAsync(id)}
+          />
+        )}
       </AppLayout>
     </ThemeProvider>
   );

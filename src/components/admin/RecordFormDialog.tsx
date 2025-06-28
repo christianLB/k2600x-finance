@@ -1,51 +1,73 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Dialog, DialogHeader, DialogTitle, DialogFooter, Button, Label } from "@k2600x/design-system";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  Button,
+} from "@k2600x/design-system";
 import { useConfirm } from "@/hooks/useConfirm";
 import { DynamicStrapiForm } from "@/components/dynamic-form/DynamicStrapiForm";
+import { strapiPublic } from "@/lib/strapi.public";
+import { useToast } from "@/hooks/useToast";
 
-/**
- * Dialog for creating or editing a record in the admin table.
- * @param open Whether the dialog is open
- * @param collection The collection name (key) for the form
- * @param record The record to edit, or null for create
- * @param onSave Async handler for saving the record
- * @param onClose Handler to close the dialog
- * @param loading Optional loading state for save button
- * @param title Optional dialog title
- */
-export interface RecordFormDialogProps {
+export interface RecordFormDialogProps<T extends { id: number }> {
   open: boolean;
   collection: string;
-  record: any | null;
-  onSave: (data: any) => Promise<void>;
+  record: Partial<T> | null;
+  onSuccess: (data: T) => void;
   onClose: () => void;
-  loading?: boolean;
   title?: string;
 }
 
-export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
+export function RecordFormDialog<T extends { id: number }>({
   open,
   collection,
   record,
-  onSave,
+  onSuccess,
   onClose,
-  loading = false,
-  title = "Edit Record",
-}) => {
-  // Create a ref to store the form submit function
-  const formRef = useRef<{ submitForm: () => void; isDirty: () => boolean }>(null);
+  title = record ? "Edit Record" : "Create Record",
+}: RecordFormDialogProps<T>) {
+  const formRef = useRef<{ submitForm: () => void; isDirty: () => boolean }>(
+    null
+  );
   const [dirty, setDirty] = useState(false);
   const confirm = useConfirm();
+  const queryClient = useQueryClient();
+  const toast = useToast();
 
   useEffect(() => {
     setDirty(false);
   }, [record, open]);
 
-  // Function to handle form submission from the footer button
+  const mutation = useMutation<T, Error, Partial<T>>({
+    mutationFn: async (data: Partial<T>) => {
+      const strapiCollection = strapiPublic.collection(collection);
+      const recordId = record?.id;
+      let response;
+      if (recordId) {
+        response = await strapiCollection.update(String(recordId), data);
+      } else {
+        response = await strapiCollection.create(data);
+      }
+      return { id: response.data.id, ...response.data.attributes } as T;
+    },
+    onSuccess: (savedData: T) => {
+      toast.success(`Record ${record?.id ? 'updated' : 'created'} successfully`);
+      queryClient.invalidateQueries({ queryKey: ['strapi', collection] });
+      if (onSuccess) {
+        onSuccess(savedData);
+      }
+      onClose();
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
   const handleFooterSubmit = () => {
-    if (formRef.current) {
-      formRef.current.submitForm();
-    }
+    formRef.current?.submitForm();
   };
 
   const handleClose = () => {
@@ -69,28 +91,28 @@ export const RecordFormDialog: React.FC<RecordFormDialogProps> = ({
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 -mr-2">
           <DynamicStrapiForm
             collection={collection}
-            document={record}
-            onSuccess={onSave}
-            onError={() => {}}
+            document={record ?? undefined}
+            onSuccess={(formData) => mutation.mutate(formData as unknown as Partial<T>)}
+            onError={(err) => toast.error(err.message)}
             ref={formRef}
-            hideSubmitButton={true} // Hide the form's own submit button
+            hideSubmitButton={true}
             onDirtyChange={setDirty}
           />
         </div>
         <DialogFooter className="flex flex-col gap-2">
-          {record?.documentId && (
+          {record?.id && (
             <span className="text-sm text-muted-foreground opacity-70">
-              {record.documentId}
+              ID: {record.id}
             </span>
           )}
           <Button
             onClick={handleFooterSubmit}
-            disabled={loading || !dirty}
+            disabled={mutation.isPending || !dirty}
           >
-            {record ? "Update" : "Create"}
+            {mutation.isPending ? "Saving..." : record ? "Update" : "Create"}
           </Button>
         </DialogFooter>
       </div>
     </Dialog>
   );
-};
+}

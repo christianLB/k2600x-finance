@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import { useStrapiGetOne } from './useStrapiGetOne';
 
 let capturedQueryFn: any;

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useStrapiSchemas } from "@/context/StrapiSchemaProvider";
+import { useQuery } from "@tanstack/react-query";
 import strapi from "@/lib/strapi";
 import { Button, Tooltip } from "@k2600x/design-system";
 import { PlusCircle, Settings } from "lucide-react";

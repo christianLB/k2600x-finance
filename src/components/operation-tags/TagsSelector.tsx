@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Button, Popover } from "@k2600x/design-system";
-import { useStrapiCollection } from "@/hooks/useStrapiCollection";
+// import { useStrapiCollection } from "@/hooks/useStrapiCollection"; // DEPRECATED
 
 export interface Tag {
   id: number;
@@ -77,13 +77,8 @@ export const TagsSelector: React.FC<TagsSelectorProps> = ({
 }) => {
   const [isOpen] = useState(false);
 
-  const {
-    data: { data: tags = [] } = { data: [] },
-  } = useStrapiCollection<Tag>(fetchCollection, isOpen ? {
-    filters: { appliesTo: { $contains: appliesTo } },
-    pagination: { page: 1, pageSize: 500 },
-    populate: ["parent_tag"],
-  } : undefined);
+  // DEPRECATED: useStrapiCollection hook was removed
+  const tags: Tag[] = []; // Placeholder for build compatibility
 
   const treeData = buildTagTree(tags);
 

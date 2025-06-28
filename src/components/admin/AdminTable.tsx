@@ -1,6 +1,13 @@
 import React from "react";
-import { SmartDataTable, PaginationState } from "@/modules/finance-dashboard/components/SmartDataTable";
+import SmartDataTable from "@/modules/finance-dashboard/components/SmartDataTable";
 import type { ColumnDef } from "@tanstack/react-table";
+
+// Define PaginationState interface to match SmartDataTable
+interface PaginationState {
+  pageCount: number;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+}
 
 /**
  * AdminTable displays data with actions and handles loading/error/empty states.
@@ -46,13 +53,20 @@ export const AdminTable: React.FC<AdminTableProps> = ({
     return <div className="p-6 text-center text-muted-foreground">{emptyMessage}</div>;
   }
 
+  // AdminTable is deprecated and SmartDataTable has different props
+  // This is a temporary compatibility wrapper
   return (
-    <SmartDataTable
-      data={data || []}
-      columns={columns}
-      pagination={pagination ?? { currentPage: 1, itemsPerPage: 0, totalItems: 0 }}
-      onPageChange={onPageChange ?? (() => {})}
-      collection={collection ?? ''}
-    />
+    <div>
+      <p className="text-orange-600 mb-4">
+        AdminTable is deprecated. Use SmartDataTable directly with proper schema props.
+      </p>
+      <div className="border rounded p-4">
+        {data?.map((item, index) => (
+          <div key={index} className="border-b py-2 last:border-b-0">
+            <pre className="text-xs">{JSON.stringify(item, null, 2)}</pre>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
