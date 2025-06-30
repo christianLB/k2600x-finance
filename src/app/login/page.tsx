@@ -1,19 +1,17 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./login.module.css";
-
-function Spinner() {
-  return (
-    <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-      <svg width="20" height="20" viewBox="0 0 50 50">
-        <circle cx="25" cy="25" r="20" fill="none" stroke="#3b82f6" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
-          <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.8s" repeatCount="indefinite" />
-        </circle>
-      </svg>
-    </span>
-  );
-}
+import { 
+  Button, 
+  Input, 
+  Label, 
+  Card, 
+  CardHeader, 
+  CardContent, 
+  CardTitle,
+  Alert,
+  ThemeProvider 
+} from "@k2600x/design-system";
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
@@ -36,7 +34,7 @@ export default function LoginPage() {
         const data = await res.json();
         setError(data?.message || "Login failed");
       } else {
-        router.push("/");
+        router.push("/finance-dashboard");
       }
     } catch {
       setError("Network error");
@@ -46,44 +44,62 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.logo}>Finance Dashboard</div>
-        <form onSubmit={handleSubmit}>
-          <div className={styles.inputGroup}>
-            <label htmlFor="identifier" className={styles.inputLabel}>Email or Username</label>
-            <input
-              id="identifier"
-              type="text"
-              value={identifier}
-              onChange={e => setIdentifier(e.target.value)}
-              required
-              className={styles.inputField}
-              autoComplete="username"
-              autoFocus
-            />
-          </div>
-          <div className={styles.inputGroup}>
-            <label htmlFor="password" className={styles.inputLabel}>Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className={styles.inputField}
-              autoComplete="current-password"
-            />
-          </div>
-          <div className={styles.forgot}>
-            <a href="#" tabIndex={-1}>Forgot password?</a>
-          </div>
-          {error && <div className={styles.error}>{error}</div>}
-          <button type="submit" disabled={loading} className={styles.button}>
-            {loading ? <><Spinner /> Logging in...</> : "Login"}
-          </button>
-        </form>
+    <ThemeProvider>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+        <Card className="w-full max-w-md shadow-xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">K2600X Finance</CardTitle>
+            <p className="text-muted-foreground">Sign in to your account</p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="identifier">Email or Username</Label>
+                <Input
+                  id="identifier"
+                  type="text"
+                  value={identifier}
+                  onChange={e => setIdentifier(e.target.value)}
+                  required
+                  autoComplete="username"
+                  autoFocus
+                  placeholder="Enter your email or username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                />
+              </div>
+              <div className="flex justify-end">
+                <a href="#" className="text-sm text-muted-foreground hover:text-primary">
+                  Forgot password?
+                </a>
+              </div>
+              {error && (
+                <Alert variant="destructive">
+                  {error}
+                </Alert>
+              )}
+              <Button 
+                type="submit" 
+                disabled={loading} 
+                className="w-full"
+                size="lg"
+              >
+                {loading ? "Logging in..." : "Sign In"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }
