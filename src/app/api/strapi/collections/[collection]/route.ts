@@ -34,7 +34,15 @@ export async function GET(
   });
 
   try {
-    const data = await strapiService.find(collection, query);
+    // Always populate all relations and media fields for the UI
+    const queryWithPopulate = {
+      ...query,
+      populate: '*'  // This will populate all media fields and relations
+    };
+    
+    console.log('📦 Fetching collection with populate:', { collection, query: queryWithPopulate });
+    const data = await strapiService.find(collection, queryWithPopulate);
+    console.log('✅ Data fetched with media populated');
     return NextResponse.json(data);
   } catch (error) {
     if (error instanceof StrapiError) {
@@ -70,19 +78,41 @@ export async function POST(
 ) {
   // Decode the collection UID from base64
   const collection = atob(params.collection);
+  
+  console.log('➕ POST request:', { collection });
+  
   try {
     const body = await req.json();
+    console.log('📦 POST body:', body);
+    
     const data = await strapiService.create(collection, body);
+    console.log('✅ POST successful:', { id: data.id, documentId: data.documentId });
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
+    console.error('❌ POST error:', error);
+    console.error('Error type:', typeof error);
+    console.error('Error constructor:', error?.constructor?.name);
     if (error instanceof StrapiError) {
+      console.error('StrapiError details:', { message: error.message, status: error.status, details: error.details });
       return NextResponse.json(
         { error: error.message, details: error.details },
         { status: error.status }
       );
     }
+    
+    // Log the actual error for debugging
+    console.error('Non-StrapiError:', {
+      message: (error as any)?.message,
+      stack: (error as any)?.stack,
+      response: (error as any)?.response?.data
+    });
+    
     return NextResponse.json(
-      { error: "An unknown error occurred" },
+      { 
+        error: "Create failed", 
+        details: (error as any)?.message || "Unknown error",
+        actualError: String(error)
+      },
       { status: 500 }
     );
   }

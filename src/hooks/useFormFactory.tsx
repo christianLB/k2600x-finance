@@ -58,6 +58,11 @@ export function useFormFactory(
 
   fieldsConfig: FieldConfig[],
 
+  formContext?: {
+    collection?: string;
+    documentId?: string;
+  }
+
 ) {
 
   const form = useForm({ resolver: zodResolver(schema), defaultValues });
@@ -313,6 +318,15 @@ export function useFormFactory(
                     accept={cfg.props?.accept}
                     maxSize={cfg.props?.maxSize}
                     disabled={cfg.disabled}
+                    autoUpdate={
+                      formContext?.collection && formContext?.documentId
+                        ? {
+                            collection: formContext.collection,
+                            documentId: formContext.documentId,
+                            fieldName: cfg.name,
+                          }
+                        : undefined
+                    }
                     // No label aquí para evitar duplicados
                   />
                 );

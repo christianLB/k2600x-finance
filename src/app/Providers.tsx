@@ -5,6 +5,7 @@ import { ReactNode, useState, useEffect } from "react";
 import { AuthProvider } from "../context/AuthContext";
 import { useTheme } from "@k2600x/design-system";
 import dynamic from "next/dynamic";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 // Dynamically import ThemeProvider to avoid SSR issues with localStorage
 const ThemeProvider = dynamic(
@@ -32,6 +33,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <ThemeProvider>
         <ApplyTheme />
         <AuthProvider>{children}</AuthProvider>
+        <ConfirmDialog />
       </ThemeProvider>
     </QueryClientProvider>
   );

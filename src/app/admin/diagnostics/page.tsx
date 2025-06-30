@@ -1,22 +1,26 @@
-// =============================================================
-// File: src/app/(admin)/diagnostics/page.tsx  (CRUD Diagnostics v5 – TanStack + @strapi/client; sin StrapiSchemaProvider)
-// =============================================================
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+
+import React, { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ThemeProvider,
   AppLayout,
   Button,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
   Textarea,
 } from "@k2600x/design-system";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-// Removed direct import of strapiPublic as we're using API routes now
 import SmartDataTable from "@/modules/finance-dashboard/components/SmartDataTable";
 
 export default function DiagnosticsPage() {
   const queryClient = useQueryClient();
+  const [selectedCollection, setSelectedCollection] = useState<string>("");
+  const [testPayload, setTestPayload] = useState<string>('');
 
-  /* --------------------------- cargar esquemas --------------------------- */
+  // Load available schemas
   const {
     data: schemas = [],
     isLoading: isLoadingSchemas,
@@ -26,309 +30,508 @@ export default function DiagnosticsPage() {
     queryFn: async () => {
       const response = await fetch("/api/strapi/schemas");
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `Failed to fetch schemas: ${errorData.error || response.statusText}`,
-          { cause: errorData.details }
-        );
+        throw new Error(`Failed to fetch schemas: ${response.statusText}`);
       }
-      // The API route already filters for collection types
       return response.json();
     },
   });
 
-  /* ----------------------- modelo seleccionado ----------------------- */
-  const [selectedModel, setSelectedModel] = useState<string>("");
-  useEffect(() => {
-    if (!selectedModel && schemas.length) {
-      setSelectedModel(schemas[0].uid);
-    }
-  }, [schemas, selectedModel]);
+  // Filter to only show API collections (not plugins)
+  const apiCollections = useMemo(() => {
+    return schemas.filter(schema => 
+      schema.uid.startsWith('api::') && 
+      schema.schema.kind === 'collectionType'
+    );
+  }, [schemas]);
 
-  /* ----------------------------- payload ----------------------------- */
-  const [payload, setPayload] = useState<string>("{}");
-  const safeParse = () => {
+  // Load collection data
+  const {
+    data: collectionData,
+    isLoading: isLoadingData,
+    error: dataError,
+  } = useQuery({
+    queryKey: ["collection", selectedCollection, 1], // page 1
+    queryFn: async () => {
+      if (!selectedCollection) return null;
+      
+      const response = await fetch(
+        `/api/strapi/collections/${btoa(selectedCollection)}?page=1&pageSize=10`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch data: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    enabled: !!selectedCollection,
+  });
+
+  // Get sample documentId from existing data for examples
+  const sampleDocumentId = useMemo(() => {
+    if (collectionData?.data?.length > 0) {
+      return collectionData.data[0].documentId;
+    }
+    return "abc123"; // fallback
+  }, [collectionData]);
+
+  // Auto-select first collection
+  React.useEffect(() => {
+    if (!selectedCollection && apiCollections.length > 0) {
+      setSelectedCollection(apiCollections[0].uid);
+    }
+  }, [apiCollections, selectedCollection]);
+
+  // Auto-update payload when collection or data changes
+  React.useEffect(() => {
+    if (!selectedCollection) return;
+
+    console.log("🔄 Payload Effect:", {
+      selectedCollection,
+      hasCollectionData: !!collectionData?.data?.length,
+      dataLength: collectionData?.data?.length,
+      firstRecord: collectionData?.data?.[0]
+    });
+
+    if (collectionData?.data?.length > 0) {
+      const firstRecord = collectionData.data[0];
+      const samplePayload = {
+        documentId: firstRecord.documentId,
+        ...Object.keys(firstRecord)
+          .filter(key => !['id', 'documentId', 'createdAt', 'updatedAt', 'publishedAt', 'content'].includes(key))
+          .filter(key => firstRecord[key] !== null && firstRecord[key] !== undefined)
+          .slice(0, 2) // Only first 2 non-null fields
+          .reduce((obj, key) => {
+            obj[key] = firstRecord[key];
+            return obj;
+          }, {} as any)
+      };
+      
+      console.log("✅ Auto-generated payload:", samplePayload);
+      setTestPayload(JSON.stringify(samplePayload, null, 2));
+    } else if (collectionData && collectionData.data?.length === 0) {
+      // Empty collection - provide create example
+      console.log("⚠️ Empty collection, providing create example");
+      setTestPayload(JSON.stringify({
+        estado: "pendiente",
+        resumen: "Test entry"
+      }, null, 2));
+    }
+  }, [selectedCollection, collectionData]);
+
+  // Get schema for selected collection
+  const selectedSchema = useMemo(() => {
+    if (!selectedCollection) return null;
+    const schema = apiCollections.find(s => s.uid === selectedCollection);
+    if (!schema) return null;
+    
+    return {
+      ...schema.schema,
+      uid: selectedCollection,
+      primaryKey: "documentId",
+      primaryField: "documentId",
+    };
+  }, [selectedCollection, apiCollections]);
+
+  // CRUD Mutations for standalone testing
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch(`/api/strapi/collections/${btoa(selectedCollection)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `HTTP ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["collection", selectedCollection] });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/strapi/collections/${btoa(selectedCollection)}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `HTTP ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["collection", selectedCollection] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/strapi/collections/${btoa(selectedCollection)}/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `HTTP ${response.status}`);
+      }
+      
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["collection", selectedCollection] });
+    },
+  });
+
+  // Parse test payload
+  const parsePayload = () => {
     try {
-      return JSON.parse(payload);
+      return JSON.parse(testPayload);
     } catch {
       return null;
     }
   };
 
-  /* -------------------- query de la colección -------------------- */
-  const [currentPage, setCurrentPage] = useState(1);
-  useEffect(() => {
-    setCurrentPage(1); // Reset page to 1 when model changes
-  }, [selectedModel]);
-
-  const {
-    data: collection,
-    isLoading: isLoadingCollection,
-    error: loadError,
-  } = useQuery({
-    queryKey: ["collection", selectedModel, currentPage],
-    queryFn: async () => {
-      if (!selectedModel) return null;
-      
-      const response = await fetch(
-        `/api/strapi/collections/${btoa(selectedModel)}?` +
-        new URLSearchParams({
-          page: currentPage.toString(),
-          pageSize: "5",
-          populate: ""
-        })
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `Failed to fetch collection: ${errorData.error || response.statusText}`,
-          { cause: errorData.details }
-        );
-      }
-      
-      return response.json();
-    },
-    enabled: Boolean(selectedModel),
-  });
-
-  /* ------------------------- operaciones CRUD ------------------------- */
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      if (!selectedModel) throw new Error("No collection selected");
-      
-      const response = await fetch(
-        `/api/strapi/collections/${btoa(selectedModel)}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        }
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `Failed to create record: ${errorData.error || response.statusText}`,
-          { cause: errorData.details }
-        );
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["collection", selectedModel],
-      });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number | string; data: any }) => {
-      if (!selectedModel) throw new Error("No collection selected");
-      
-      const response = await fetch(
-        `/api/strapi/collections/${btoa(selectedModel)}/${encodeURIComponent(String(id))}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        }
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `Failed to update record: ${errorData.error || response.statusText}`,
-          { cause: errorData.details }
-        );
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["collection", selectedModel],
-      });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number | string) => {
-      if (!selectedModel) throw new Error("No collection selected");
-      
-      const response = await fetch(
-        `/api/strapi/collections/${btoa(selectedModel)}/${encodeURIComponent(String(id))}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `Failed to delete record: ${errorData.error || response.statusText}`,
-          { cause: errorData.details }
-        );
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["collection", selectedModel],
-      });
-    },
-  });
-
-  /* ----------------------------- handlers ----------------------------- */
-  const handleCreate = () => {
-    const parsed = safeParse();
-    if (!parsed) return alert("Invalid JSON");
-    createMutation.mutate(parsed);
+  // Test handlers
+  const handleTestCreate = () => {
+    const data = parsePayload();
+    if (!data) {
+      alert("Invalid JSON payload");
+      return;
+    }
+    
+    // Remove any IDs for create
+    const { id, documentId, ...cleanData } = data;
+    createMutation.mutate(cleanData);
   };
 
-  const handleUpdate = () => {
-    const parsed = safeParse();
-    if (!parsed) return alert("Invalid JSON");
-    const id = parsed.id ?? parsed.documentId;
-    if (!id) return alert("Missing 'id' or 'documentId' in payload");
-    updateMutation.mutate({ id, data: parsed });
+  const handleTestUpdate = () => {
+    const data = parsePayload();
+    if (!data) {
+      alert("Invalid JSON payload");
+      return;
+    }
+    
+    console.log("🔍 Update Debug:", {
+      originalData: data,
+      sampleDocumentId,
+      collectionData: collectionData?.data?.slice(0, 1) // First record only
+    });
+    
+    const { id, documentId, ...updateData } = data;
+    const recordId = documentId || id;
+    
+    if (!recordId) {
+      const examplePayload = JSON.stringify({
+        documentId: sampleDocumentId,
+        estado: "procesado",
+        resumen: "Updated test entry"
+      }, null, 2);
+      
+      alert(`Update requires 'documentId' in payload.\n\nExample:\n${examplePayload}`);
+      return;
+    }
+    
+    console.log("📤 Sending UPDATE request:", {
+      selectedCollection,
+      recordId,
+      updateData,
+      url: `/api/strapi/collections/${btoa(selectedCollection)}/${recordId}`
+    });
+    
+    updateMutation.mutate({ id: recordId, data: updateData });
   };
 
-  const handleDelete = () => {
-    const parsed = safeParse();
-    if (!parsed) return alert("Invalid JSON");
-    const id = parsed.id ?? parsed.documentId;
-    if (!id) return alert("Missing 'id' or 'documentId' in payload");
-    deleteMutation.mutate(id);
+  const handleTestDelete = () => {
+    const data = parsePayload();
+    if (!data) {
+      alert("Invalid JSON payload");
+      return;
+    }
+    
+    const recordId = data.documentId || data.id;
+    if (!recordId) {
+      const examplePayload = JSON.stringify({
+        documentId: sampleDocumentId
+      }, null, 2);
+      
+      alert(`Delete requires 'documentId' in payload.\n\nExample:\n${examplePayload}`);
+      return;
+    }
+    
+    deleteMutation.mutate(recordId);
   };
 
-  /* ----------------------------- sidebar ----------------------------- */
-  const sidebar = useMemo(() => {
-    if (isLoadingSchemas) return <p className="p-4">Cargando modelos…</p>;
-    if (schemasError)
-      return <p className="p-4 text-red-600">Error cargando modelos</p>;
+  // Sidebar with collection selector
+  const sidebar = (
+    <div className="p-4 space-y-4">
+      <div>
+        <h3 className="font-semibold mb-3">Select Collection</h3>
+        {isLoadingSchemas ? (
+          <p className="text-sm text-gray-500">Loading collections...</p>
+        ) : schemasError ? (
+          <p className="text-sm text-red-600">Error loading collections</p>
+        ) : (
+          <Select value={selectedCollection} onValueChange={setSelectedCollection}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choose collection..." />
+            </SelectTrigger>
+            <SelectContent>
+              {apiCollections.map((collection) => (
+                <SelectItem key={collection.uid} value={collection.uid}>
+                  {collection.schema.displayName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+      
+      {selectedCollection && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-gray-600">Collection Info</p>
+          <div className="text-xs space-y-1">
+            <p><span className="font-medium">UID:</span> {selectedCollection}</p>
+            <p><span className="font-medium">Records:</span> {collectionData?.meta?.pagination?.total || 0}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
-    return (
-      <ul className="flex flex-col gap-2">
-        {schemas.map((s: any) => (
-          <li key={s.uid}>
-            <Button
-              size="sm"
-              variant={s.uid === selectedModel ? "primary" : "secondary"}
-              className="w-full justify-start"
-              onClick={() => setSelectedModel(s.uid)}
-            >
-              {s.schema.displayName}
-            </Button>
-          </li>
-        ))}
-      </ul>
-    );
-  }, [schemas, selectedModel, isLoadingSchemas, schemasError]);
-
-  /* ---------------------- schema para la tabla ---------------------- */
-  const tableSchema = useMemo(() => {
-    if (!selectedModel || !schemas.length) return null;
-    const selectedSchemaData = schemas.find((s) => s.uid === selectedModel);
-    if (!selectedSchemaData) return null;
-
-    return {
-      ...selectedSchemaData.schema,
-      uid: selectedSchemaData.uid,
-      primaryKey: "id",
-      primaryField: "id", // Default, as it's not provided by the API but required by the component type
-    };
-  }, [selectedModel, schemas]);
-
-  /* ----------------------------- render ----------------------------- */
   return (
     <ThemeProvider>
-      <AppLayout title="Diagnostics – Admin v5" sidebar={sidebar}>
-        <div className="p-4 space-y-6 max-w-xl">
-          <h2 className="text-xl font-bold">CRUD Diagnostics (TanStack)</h2>
-
-          {/* Editor JSON */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Payload (JSON)</label>
-            <Textarea
-              rows={6}
-              value={payload}
-              onChange={(e: any) => setPayload(e.target.value)}
-              className="font-mono"
-            />
+      <AppLayout title="Strapi Diagnostics" sidebar={sidebar}>
+        <div className="p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">Strapi API Diagnostics</h1>
+            <p className="text-gray-600">Test CRUD operations on your Strapi collections</p>
           </div>
 
-          {/* Botones */}
-          <div className="flex gap-2 flex-wrap">
-            <Button onClick={handleCreate} disabled={createMutation.isPending}>
-              Create
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={handleUpdate}
-              disabled={updateMutation.isPending}
-            >
-              Update
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-            >
-              Delete
-            </Button>
-          </div>
-
-          {/* Indicadores de estado */}
-          {createMutation.isPending && <div>Creating…</div>}
-          {createMutation.isError && (
-            <div className="text-red-600">
-              Error: {(createMutation.error as Error).message} {((createMutation.error as Error).cause as any)?.message ? `(${((createMutation.error as Error).cause as any)?.message})` : ''}
+          {!selectedCollection ? (
+            <div className="bg-white rounded-lg border p-6 shadow-sm">
+              <div className="flex items-center justify-center h-48">
+                <p className="text-gray-500">Select a collection from the sidebar to begin testing</p>
+              </div>
             </div>
-          )}
-          {createMutation.isSuccess && (
-            <div className="text-green-600">Created ✔</div>
-          )}
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* API Testing Panel */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-lg border shadow-sm">
+                  <div className="p-4 border-b">
+                    <h3 className="text-lg font-semibold">API Testing</h3>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Test Payload (JSON)</label>
+                      <Textarea
+                        value={testPayload}
+                        onChange={(e: any) => setTestPayload(e.target.value)}
+                        rows={8}
+                        className="font-mono text-xs"
+                        placeholder='{"field": "value"}'
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        💡 Create: data only | Update/Delete: include documentId
+                      </p>
+                    </div>
 
-          {updateMutation.isPending && <div>Updating…</div>}
-          {updateMutation.isError && (
-            <div className="text-red-600">
-              Error: {(updateMutation.error as Error).message} {((updateMutation.error as Error).cause as any)?.message ? `(${((updateMutation.error as Error).cause as any)?.message})` : ''}
-            </div>
-          )}
-          {updateMutation.isSuccess && (
-            <div className="text-green-600">Updated ✔</div>
-          )}
+                    <div className="border-t my-4"></div>
 
-          {deleteMutation.isPending && <div>Deleting…</div>}
-          {deleteMutation.isError && (
-            <div className="text-red-600">
-              Error: {(deleteMutation.error as Error).message} {((deleteMutation.error as Error).cause as any)?.message ? `(${((deleteMutation.error as Error).cause as any)?.message})` : ''}
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={handleTestCreate}
+                        disabled={createMutation.isPending}
+                        className="w-full"
+                        size="sm"
+                      >
+                        {createMutation.isPending ? "Creating..." : "Test CREATE"}
+                      </Button>
+                      
+                      <Button 
+                        onClick={handleTestUpdate}
+                        disabled={updateMutation.isPending}
+                        variant="secondary"
+                        className="w-full"
+                        size="sm"
+                      >
+                        {updateMutation.isPending ? "Updating..." : "Test UPDATE"}
+                      </Button>
+                      
+                      <Button 
+                        onClick={handleTestDelete}
+                        disabled={deleteMutation.isPending}
+                        variant="destructive"
+                        className="w-full"
+                        size="sm"
+                      >
+                        {deleteMutation.isPending ? "Deleting..." : "Test DELETE"}
+                      </Button>
+                    </div>
+
+                    <div className="border-t my-4"></div>
+
+                    {/* Status indicators */}
+                    <div className="space-y-2 text-sm">
+                      {createMutation.isSuccess && (
+                        <div className="flex items-center gap-2">
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">CREATE ✓</span>
+                          <span className="text-green-600">Success</span>
+                        </div>
+                      )}
+                      {createMutation.isError && (
+                        <div className="flex items-center gap-2">
+                          <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">CREATE ✗</span>
+                          <span className="text-red-600 text-xs">
+                            {(createMutation.error as Error)?.message}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {updateMutation.isSuccess && (
+                        <div className="flex items-center gap-2">
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">UPDATE ✓</span>
+                          <span className="text-green-600">Success</span>
+                        </div>
+                      )}
+                      {updateMutation.isError && (
+                        <div className="flex items-center gap-2">
+                          <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">UPDATE ✗</span>
+                          <span className="text-red-600 text-xs">
+                            {(updateMutation.error as Error)?.message}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {deleteMutation.isSuccess && (
+                        <div className="flex items-center gap-2">
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">DELETE ✓</span>
+                          <span className="text-green-600">Success</span>
+                        </div>
+                      )}
+                      {deleteMutation.isError && (
+                        <div className="flex items-center gap-2">
+                          <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">DELETE ✗</span>
+                          <span className="text-red-600 text-xs">
+                            {(deleteMutation.error as Error)?.message}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Table Panel */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-lg border shadow-sm">
+                  <div className="p-4 border-b">
+                    <h3 className="text-lg font-semibold">Collection Data & Table Operations</h3>
+                  </div>
+                  <div className="p-4">
+                    {selectedSchema && (
+                      <SmartDataTable
+                        schema={selectedSchema}
+                        data={collectionData?.data || []}
+                        isLoading={isLoadingData}
+                        pagination={{
+                          pageCount: collectionData?.meta?.pagination?.pageCount || 1,
+                          currentPage: collectionData?.meta?.pagination?.page || 1,
+                          onPageChange: (page) => {
+                            // Could implement page change here
+                            console.log("Page change:", page);
+                          },
+                        }}
+                        onCreate={(data) => {
+                          console.log('🆕 CREATE raw data:', data);
+                          
+                          // Clean top-level auto-generated fields
+                          const { id, documentId, createdAt, updatedAt, publishedAt, ...cleanData } = data;
+                          
+                          // Clean media fields - remove documentId from uploaded files
+                          const processedData = { ...cleanData };
+                          
+                          // Process each field to clean media objects
+                          Object.keys(processedData).forEach(key => {
+                            const value = processedData[key];
+                            
+                            if (Array.isArray(value)) {
+                              // Handle media arrays - remove documentId from each media object
+                              processedData[key] = value.map(item => {
+                                if (item && typeof item === 'object' && item.documentId) {
+                                  const { documentId: mediaDocId, ...cleanMedia } = item;
+                                  return cleanMedia;
+                                }
+                                return item;
+                              });
+                            } else if (value && typeof value === 'object' && value.documentId) {
+                              // Handle single media object - remove documentId
+                              const { documentId: mediaDocId, ...cleanMedia } = value;
+                              processedData[key] = cleanMedia;
+                            }
+                          });
+                          
+                          console.log('🆕 CREATE data cleaned:', { original: data, cleaned: processedData });
+                          return createMutation.mutateAsync(processedData);
+                        }}
+                        onUpdate={(id, data) => {
+                          console.log('✏️ UPDATE raw data:', { id, data });
+                          
+                          // Clean all auto-generated fields from UPDATE data
+                          const { id: dataId, documentId, createdAt, updatedAt, publishedAt, ...cleanData } = data;
+                          
+                          // Clean media fields - remove documentId from uploaded files
+                          const processedData = { ...cleanData };
+                          
+                          // Process each field to clean media objects
+                          Object.keys(processedData).forEach(key => {
+                            const value = processedData[key];
+                            
+                            if (Array.isArray(value)) {
+                              // Handle media arrays - remove documentId from each media object
+                              processedData[key] = value.map(item => {
+                                if (item && typeof item === 'object' && item.documentId) {
+                                  const { documentId: mediaDocId, ...cleanMedia } = item;
+                                  return cleanMedia;
+                                }
+                                return item;
+                              });
+                            } else if (value && typeof value === 'object' && value.documentId) {
+                              // Handle single media object - remove documentId
+                              const { documentId: mediaDocId, ...cleanMedia } = value;
+                              processedData[key] = cleanMedia;
+                            }
+                          });
+                          
+                          console.log('✏️ UPDATE data cleaned:', { id, original: data, cleaned: processedData });
+                          return updateMutation.mutateAsync({ id, data: processedData });
+                        }}
+                        onDelete={(id) => deleteMutation.mutateAsync(id)}
+                      />
+                    )}
+                    
+                    {dataError && (
+                      <div className="text-center py-8">
+                        <p className="text-red-600">Error loading collection data</p>
+                        <p className="text-sm text-gray-500">{(dataError as Error).message}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-          {deleteMutation.isSuccess && (
-            <div className="text-green-600">Deleted ✔</div>
           )}
         </div>
-
-        {/* Tabla de registros */}
-        {selectedModel && tableSchema && (
-          <SmartDataTable
-            schema={tableSchema}
-            data={collection?.data ?? []}
-            isLoading={isLoadingCollection}
-            pagination={{
-              pageCount: collection?.meta?.pagination?.pageCount ?? 1,
-              currentPage: collection?.meta?.pagination?.page ?? 1,
-              onPageChange: (page) => setCurrentPage(page),
-            }}
-            onCreate={(data) => createMutation.mutateAsync(data)}
-            onUpdate={(id, data) => updateMutation.mutateAsync({ id, data })}
-            onDelete={(id) => deleteMutation.mutateAsync(id)}
-          />
-        )}
       </AppLayout>
     </ThemeProvider>
   );

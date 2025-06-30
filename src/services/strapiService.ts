@@ -223,7 +223,15 @@ export class StrapiService {
    */
   async delete(contentType: string, id: string | number): Promise<void> {
     const endpoint = this.getContentApiEndpoint(contentType);
-    await this.api.delete(`/${endpoint}/${id}`);
+    console.log(`🗑️ Deleting ${contentType} with ID ${id} at /${endpoint}/${id}`);
+    
+    try {
+      const response = await this.api.delete(`/${endpoint}/${id}`);
+      console.log('✅ Delete response:', { status: response.status, data: response.data });
+    } catch (error) {
+      console.error('❌ Delete failed:', error);
+      throw error;
+    }
   }
 
   /**

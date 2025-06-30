@@ -87,6 +87,14 @@ export default function SmartDataTable({ schema, data, isLoading, onCreate, onUp
   const [deletingRow, setDeletingRow] = useState<any | null>(null);
   const [isDirty, setDirty] = useState(false);
 
+  // Debug modal state
+  console.log('🪟 SmartDataTable modal states:', {
+    isNewDialogOpen,
+    editingRow: !!editingRow,
+    deletingRow: !!deletingRow,
+    schemaUid: schema?.uid
+  });
+
   // Ref to access the DynamicStrapiForm's imperative methods (e.g., submitForm).
   const formRef = useRef<{ submitForm: () => void; isDirty: () => boolean }>(null);
 
@@ -174,7 +182,19 @@ export default function SmartDataTable({ schema, data, isLoading, onCreate, onUp
 
   const handleDelete = () => {
     if (!deletingRow) return;
+    
+    console.log('🗑️ Deleting row:', deletingRow);
+    console.log('🔑 Primary key config:', schema.primaryKey);
+    
     const id = deletingRow[schema.primaryKey];
+    console.log('🆔 Extracted ID:', id, typeof id);
+    
+    if (!id) {
+      alert(`❌ No ${schema.primaryKey} found in row data. Available fields: ${Object.keys(deletingRow).join(', ')}`);
+      console.error('Row data structure:', deletingRow);
+      return;
+    }
+    
     executeMutation(() => onDelete(id), () => setDeletingRow(null));
   };
 
@@ -189,7 +209,11 @@ export default function SmartDataTable({ schema, data, isLoading, onCreate, onUp
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Btn size="sm" onClick={() => setNewDialogOpen(true)}>
+        <Btn size="sm" onClick={() => {
+          console.log('🖱️ Add New Record clicked');
+          setNewDialogOpen(true);
+          console.log('📂 Dialog state set to true');
+        }}>
           Add New Record
         </Btn>
       </div>
@@ -207,19 +231,23 @@ export default function SmartDataTable({ schema, data, isLoading, onCreate, onUp
       />
 
       {/* Create Record Dialog */}
-      <Dlg isOpen={isNewDialogOpen} onClose={() => setNewDialogOpen(false)}>
+      <Dlg isOpen={isNewDialogOpen} onClose={() => {
+        console.log('🚪 Dialog close requested');
+        setNewDialogOpen(false);
+      }}>
         <div className="p-6 w-[95vw] max-w-xl">
           <DlgHeader><DlgTitle>New Record</DlgTitle></DlgHeader>
           <DynamicStrapiForm
             ref={formRef}
             collection={schema.uid}
+            schema={schema}
             onSuccess={handleCreate}
             hideSubmitButton
             onDirtyChange={setDirty}
           />
           <DlgFooter className="mt-4 flex justify-end gap-2">
-            <Btn variant="ghost" onClick={() => setNewDialogOpen(false)}>Cancel</Btn>
-            <Btn onClick={() => formRef.current?.submitForm()} disabled={!isDirty || mutationState === 'pending'}>
+            <Btn type="button" variant="ghost" onClick={() => setNewDialogOpen(false)}>Cancel</Btn>
+            <Btn type="button" onClick={() => formRef.current?.submitForm()} disabled={!isDirty || mutationState === 'pending'}>
               {mutationState === 'pending' ? 'Creating...' : 'Create'}
             </Btn>
           </DlgFooter>
@@ -232,17 +260,32 @@ export default function SmartDataTable({ schema, data, isLoading, onCreate, onUp
           {editingRow && (
             <>
               <DlgHeader><DlgTitle>Edit Record</DlgTitle></DlgHeader>
+              {console.log('✏️ Edit modal opening with data:', editingRow)}
               <DynamicStrapiForm
                 ref={formRef}
                 collection={schema.uid}
+                schema={schema}
                 document={editingRow}
-                onSuccess={handleUpdate}
+                onSuccess={(values) => {
+                  console.log('✏️ EDIT form submitted:', values);
+                  handleUpdate(values);
+                }}
                 hideSubmitButton
-                onDirtyChange={setDirty}
+                onDirtyChange={(dirty) => {
+                  console.log('📝 SmartDataTable received dirty change:', dirty);
+                  setDirty(dirty);
+                }}
               />
               <DlgFooter className="mt-4 flex justify-end gap-2">
-                <Btn variant="ghost" onClick={() => setEditingRow(null)}>Cancel</Btn>
-                <Btn onClick={() => formRef.current?.submitForm()} disabled={!isDirty || mutationState === 'pending'}>
+                <Btn type="button" variant="ghost" onClick={() => setEditingRow(null)}>Cancel</Btn>
+                <Btn 
+                  type="button" 
+                  onClick={() => {
+                    console.log('💾 Save Changes clicked:', { isDirty, mutationState });
+                    formRef.current?.submitForm();
+                  }} 
+                  disabled={!isDirty || mutationState === 'pending'}
+                >
                   {mutationState === 'pending' ? 'Saving...' : 'Save Changes'}
                 </Btn>
               </DlgFooter>

@@ -1,35 +1,28 @@
-import React, { useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { strapiPublic } from "@/lib/strapi.public";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
+import { 
+  Select, 
+  SelectTrigger, 
+  SelectValue, 
+  SelectContent, 
   SelectItem,
-  Loader,
-  MultiSelect,
+  Input,
+  Button
 } from "@k2600x/design-system";
-import { extractIds } from "@/utils/relationHelpers";
-
-// Strapi data structure
-interface StrapiDataItem<T> {
-  id: number;
-  attributes: T;
-}
-
-interface RelationOption {
-  label: string;
-  value: string | number;
-  link?: string; // URL to the related entity (optional)
-}
 
 interface StrapiRelationFieldProps {
   value: string | number | Array<string | number> | null;
-  onChange: (value: number | string | number[] | undefined) => void;
+  onChange: (value: string | number | Array<string | number> | undefined) => void;
   target: string; // Strapi collection name
   isMulti?: boolean;
   placeholder?: string;
   displayField?: string; // Field used as label (default: "name")
+}
+
+interface RelationRecord {
+  id: number;
+  documentId: string;
+  [key: string]: any;
 }
 
 export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
@@ -37,84 +30,242 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
   onChange,
   target,
   isMulti = false,
-  placeholder = "(Selecciona...)",
+  placeholder = "Select relation...",
   displayField = "name",
 }) => {
-  const { data: options = [], isLoading, error } = useQuery<RelationOption[], Error>({
-    queryKey: ['strapi', target, 'relation', displayField],
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Fetch related records
+  const { data: relationData, isLoading, error } = useQuery<{data: RelationRecord[]}>({
+    queryKey: ["relation", target, searchTerm],
     queryFn: async () => {
-      const response = await strapiPublic.collection(target).find({
-        fields: [displayField],
-        pagination: { limit: -1 }, // Fetch all items for the dropdown
-      });
-
-      if (!response.data) return [];
-
-      return response.data.map((item) => {
-        const attrs = item.attributes;
-        return {
-          label: String(attrs[displayField] || attrs.displayName || attrs.name || item.id),
-          value: item.id,
-          link: `/admin/${target}/${item.id}`,
-        };
-      });
+      const encodedTarget = btoa(target);
+      const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : '';
+      const response = await fetch(`/api/strapi/collections/${encodedTarget}?pageSize=50${searchParam}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch relation data: ${response.statusText}`);
+      }
+      
+      return response.json();
     },
+    enabled: !!target
   });
 
-  const normalizedIds = useMemo(() => extractIds(value), [value]);
+  // Get display value for current selection
+  const currentDisplayValue = useMemo(() => {
+    console.log('🔍 Computing display value:', { 
+      value, 
+      hasRelationData: !!relationData?.data,
+      dataLength: relationData?.data?.length,
+      displayField,
+      firstRecord: relationData?.data?.[0]
+    });
+    
+    if (!value) return '';
+    
+    // Handle when relation data is still loading or not available
+    if (!relationData?.data?.length) {
+      // If we have a value but no relation data yet, show a placeholder
+      if (typeof value === 'object' && value !== null) {
+        // Value is an object (full relation object), extract display field
+        return value[displayField] || value.name || value.documentId || value.id || 'Loading...';
+      }
+      return 'Loading...';
+    }
+    
+    if (isMulti && Array.isArray(value)) {
+      const selectedRecords = relationData.data.filter(record => 
+        value.includes(record.documentId) || value.includes(record.id)
+      );
+      return selectedRecords.map(record => 
+        record[displayField] || record.name || record.documentId || record.id
+      ).join(', ');
+    } else {
+      // Handle single selection
+      let selectedRecord;
+      
+      if (typeof value === 'object' && value !== null) {
+        // Value is a full object, find it by documentId or id
+        selectedRecord = relationData.data.find(record => 
+          record.documentId === value.documentId || 
+          record.id === value.id ||
+          record.documentId === value ||
+          record.id === value
+        );
+        
+        // If not found in data, use the object itself
+        if (!selectedRecord) {
+          return value[displayField] || value.name || value.documentId || value.id || 'Unknown';
+        }
+      } else {
+        // Value is just an id/documentId string
+        selectedRecord = relationData.data.find(record => 
+          record.documentId === value || record.id === value
+        );
+      }
+      
+      const displayValue = selectedRecord ? 
+        (selectedRecord[displayField] || selectedRecord.name || selectedRecord.documentId || selectedRecord.id) : 
+        'Not found';
+        
+      console.log('✅ Display value computed:', { 
+        selectedRecord, 
+        displayValue,
+        usedField: selectedRecord?.[displayField] ? displayField : 'fallback'
+      });
+      
+      return displayValue;
+    }
+  }, [value, relationData, displayField, isMulti]);
 
-  const { multiSelectOptions, selectValue, selectedLabel } = useMemo(() => {
-    const stringIds = normalizedIds.map(String);
+  // Handle single selection
+  const handleSingleSelect = (selectedValue: string) => {
+    console.log('🔗 Relation field value changed:', { 
+      target, 
+      selectedValue, 
+      currentValue: value 
+    });
+    
+    if (selectedValue === 'clear') {
+      onChange(undefined);
+      return;
+    }
+    
+    const selectedRecord = relationData?.data?.find(record => 
+      record.documentId === selectedValue || record.id.toString() === selectedValue
+    );
+    
+    if (selectedRecord) {
+      console.log('✅ Setting relation value:', selectedRecord.documentId || selectedRecord.id);
+      onChange(selectedRecord.documentId || selectedRecord.id);
+    }
+  };
 
-    const multiOpts = options.map((opt) => ({
-      id: Number(opt.value),
-      label: opt.label,
-    }));
-
-    const singleSelected = options.find((opt) => stringIds.includes(String(opt.value)));
-
-    return {
-      multiSelectOptions: multiOpts,
-      selectValue: singleSelected ? String(singleSelected.value) : undefined,
-      selectedLabel: singleSelected ? singleSelected.label : placeholder,
-    };
-  }, [options, normalizedIds, placeholder]);
-
+  // Handle multi selection (simplified - adds/removes items)
+  const handleMultiToggle = (selectedValue: string | number) => {
+    if (!isMulti) return;
+    
+    const currentValues = Array.isArray(value) ? value : [];
+    const isSelected = currentValues.includes(selectedValue);
+    
+    if (isSelected) {
+      // Remove from selection
+      const newValues = currentValues.filter(v => v !== selectedValue);
+      onChange(newValues.length > 0 ? newValues : undefined);
+    } else {
+      // Add to selection
+      onChange([...currentValues, selectedValue]);
+    }
+  };
 
   if (error) {
-    return <div style={{ color: "#d32f2f" }}>Error: {error.message}</div>;
+    return (
+      <Input
+        id="relation-error"
+        value={`Error loading ${target} relations`}
+        onChange={() => {}}
+        disabled
+        readOnly
+      />
+    );
   }
 
-  return (
-    <div>
-      {isLoading ? (
-        <div>
-          <Loader /> Cargando...
-        </div>
-      ) : isMulti ? (
-        <MultiSelect
-          options={multiSelectOptions}
-          selectedIds={normalizedIds}
-          onChange={(ids) => onChange(ids as any)}
+  // For multi-select relations, show a simplified interface
+  if (isMulti) {
+    return (
+      <div className="space-y-2">
+        <Input
+          id="relation-search"
+          placeholder="Search relations..."
+          value={searchTerm}
+          onChange={(e: any) => setSearchTerm(e.target.value)}
         />
-      ) : (
-        <Select
-          value={selectValue}
-          onValueChange={(val) => {
-            onChange(val ? Number(val) : undefined);
-          }}
-        >
-          <SelectTrigger>{selectedLabel}</SelectTrigger>
-          <SelectContent>
-            {options.map((opt: RelationOption) => (
-              <SelectItem key={opt.value} value={String(opt.value)}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
-    </div>
+        
+        <div className="text-sm text-gray-600">
+          Selected: {currentDisplayValue || 'None'}
+        </div>
+        
+        <div className="max-h-32 overflow-y-auto border rounded p-2 space-y-1">
+          {isLoading ? (
+            <div className="text-sm text-gray-500">Loading...</div>
+          ) : relationData?.data?.length ? (
+            relationData.data
+              .filter(record => {
+                if (!searchTerm) return true;
+                const searchValue = record[displayField] || record.documentId || record.id;
+                return searchValue.toString().toLowerCase().includes(searchTerm.toLowerCase());
+              })
+              .map(record => {
+                const isSelected = Array.isArray(value) && 
+                  (value.includes(record.documentId) || value.includes(record.id));
+                
+                return (
+                  <div 
+                    key={record.documentId || record.id}
+                    className={`text-xs p-1 cursor-pointer rounded ${
+                      isSelected ? 'bg-blue-100' : 'hover:bg-gray-100'
+                    }`}
+                    onClick={() => handleMultiToggle(record.documentId || record.id.toString())}
+                  >
+                    {record[displayField] || record.documentId || record.id}
+                  </div>
+                );
+              })
+          ) : (
+            <div className="text-sm text-gray-500">No records found</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Get the correct value for the Select component
+  const selectValue = useMemo(() => {
+    if (!value) return '';
+    
+    if (typeof value === 'object' && value !== null) {
+      // Value is an object, use its documentId or id
+      return value.documentId || value.id?.toString() || '';
+    }
+    
+    // Value is a primitive (string/number)
+    return value.toString();
+  }, [value]);
+
+  // Single select interface
+  return (
+    <Select value={selectValue} onValueChange={handleSingleSelect}>
+      <SelectTrigger>
+        <SelectValue placeholder={isLoading ? "Loading..." : placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="clear">
+          <span className="text-gray-500">Clear selection</span>
+        </SelectItem>
+        
+        {relationData?.data?.map(record => (
+          <SelectItem 
+            key={record.documentId || record.id} 
+            value={record.documentId || record.id.toString()}
+          >
+            {record[displayField] || record.documentId || record.id}
+          </SelectItem>
+        ))}
+        
+        {isLoading && (
+          <SelectItem value="" disabled>
+            Loading...
+          </SelectItem>
+        )}
+        
+        {!isLoading && !relationData?.data?.length && (
+          <SelectItem value="" disabled>
+            No records found
+          </SelectItem>
+        )}
+      </SelectContent>
+    </Select>
   );
 };
 
