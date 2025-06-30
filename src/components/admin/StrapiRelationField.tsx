@@ -69,7 +69,7 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
       // If we have a value but no relation data yet, show a placeholder
       if (typeof value === 'object' && value !== null) {
         // Value is an object (full relation object), extract display field
-        return value[displayField] || value.name || value.documentId || value.id || 'Loading...';
+        return (value as any)[displayField] || (value as any).name || (value as any).documentId || (value as any).id || 'Loading...';
       }
       return 'Loading...';
     }
@@ -88,15 +88,13 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
       if (typeof value === 'object' && value !== null) {
         // Value is a full object, find it by documentId or id
         selectedRecord = relationData.data.find(record => 
-          record.documentId === value.documentId || 
-          record.id === value.id ||
-          record.documentId === value ||
-          record.id === value
+          record.documentId === (value as any).documentId || 
+          record.id === (value as any).id
         );
         
         // If not found in data, use the object itself
         if (!selectedRecord) {
-          return value[displayField] || value.name || value.documentId || value.id || 'Unknown';
+          return (value as any)[displayField] || (value as any).name || (value as any).documentId || (value as any).id || 'Unknown';
         }
       } else {
         // Value is just an id/documentId string
@@ -226,7 +224,7 @@ export const StrapiRelationField: React.FC<StrapiRelationFieldProps> = ({
     
     if (typeof value === 'object' && value !== null) {
       // Value is an object, use its documentId or id
-      return value.documentId || value.id?.toString() || '';
+      return (value as any).documentId || (value as any).id?.toString() || '';
     }
     
     // Value is a primitive (string/number)

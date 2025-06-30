@@ -112,7 +112,7 @@ export const DynamicStrapiForm = React.forwardRef(
 
     const formFactory = useFormFactory(zodSchema, mergedDefaultValues, fieldsConfig, {
       collection: collection,
-      documentId: document?.documentId
+      documentId: (document as any)?.documentId
     });
 
     // Force reset when document changes to ensure correct default values
@@ -148,8 +148,8 @@ export const DynamicStrapiForm = React.forwardRef(
       
       // Compare each field
       for (const key in mergedDefaultValues) {
-        const defaultValue = mergedDefaultValues[key];
-        const currentValue = watchedValues[key];
+        const defaultValue = (mergedDefaultValues as any)[key];
+        const currentValue = (watchedValues as any)[key];
         
         // Skip comparison for system fields
         if (['id', 'createdAt', 'updatedAt', 'publishedAt', 'documentId'].includes(key)) {
@@ -181,9 +181,9 @@ export const DynamicStrapiForm = React.forwardRef(
         defaultValues: mergedDefaultValues,
         // Compare specific field
         estadoComparison: {
-          current: currentValues.estado,
-          default: mergedDefaultValues.estado,
-          equal: currentValues.estado === mergedDefaultValues.estado
+          current: (currentValues as any).estado,
+          default: (mergedDefaultValues as any).estado,
+          equal: (currentValues as any).estado === (mergedDefaultValues as any).estado
         }
       });
       

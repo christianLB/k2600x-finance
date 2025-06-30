@@ -86,7 +86,7 @@ export async function POST(
     console.log('📦 POST body:', body);
     
     const data = await strapiService.create(collection, body);
-    console.log('✅ POST successful:', { id: data.id, documentId: data.documentId });
+    console.log('✅ POST successful:', { id: (data as any).id, documentId: (data as any).documentId });
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('❌ POST error:', error);
